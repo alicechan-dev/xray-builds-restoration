@@ -39,7 +39,7 @@ void			crc32_init	()
 	} 
 } 
 
-u32				crc32		(const void* P, u32 len) 
+XRCORE_API u32	crc32		(const void* P, u32 len) 
 {
 	if (!crc32_ready)	
 	{

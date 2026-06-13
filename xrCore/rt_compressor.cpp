@@ -8,18 +8,18 @@
 
 __declspec(thread) HEAP_ALLOC(rtc_wrkmem,LZO1X_1_MEM_COMPRESS);
 
-void	rtc_initialize	()
+XRCORE_API void	rtc_initialize	()
 {
 	VERIFY			(lzo_init()==LZO_E_OK);
 }
 
-u32		rtc_csize		(u32 in)
+XRCORE_API u32	rtc_csize		(u32 in)
 {
 	VERIFY			(in);
 	return			in + in/64 + 16 + 3;
 }
 
-u32		rtc_compress	(void *dst, u32 dst_len, const void* src, u32 src_len)
+XRCORE_API u32	rtc_compress	(void *dst, u32 dst_len, const void* src, u32 src_len)
 {
 	u32		out_size	= dst_len;
 	int r = lzo1x_1_compress	( 
@@ -29,7 +29,7 @@ u32		rtc_compress	(void *dst, u32 dst_len, const void* src, u32 src_len)
 	VERIFY	(r==LZO_E_OK);
 	return	out_size;
 }
-u32		rtc_decompress	(void *dst, u32 dst_len, const void* src, u32 src_len)
+XRCORE_API u32	rtc_decompress	(void *dst, u32 dst_len, const void* src, u32 src_len)
 {
 	u32		out_size	= dst_len;
 	int r = lzo1x_decompress	( 
