@@ -668,7 +668,7 @@ IReader* CLocatorAPI::r_open	(LPCSTR path, LPCSTR _fname)
 						if (fit!=files.end())	
 						{
 							// use
-							file&	fc	= *fit;
+							const file&	fc	= *fit;
 							if ((fc.size_real == desc.size_real)&&(fc.modif==desc.modif))	{
 								// use
 							} else {

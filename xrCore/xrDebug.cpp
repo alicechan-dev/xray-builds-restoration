@@ -7,6 +7,10 @@
  
 #include "dxerr9.h"
 
+#ifndef __BORLANDC__
+#	include <new.h>
+#endif
+
 #ifdef __BORLANDC__
 	#include "d3d9.h"
 	#include "d3dx9.h"
@@ -307,10 +311,6 @@ namespace std{
         ::SetUnhandledExceptionFilter	( UnhandledFilter );	// exception handler to all "unhandled" exceptions
     }
 #else
-    typedef int		(__cdecl * _PNH)( size_t );
-    _CRTIMP int		__cdecl _set_new_mode( int );
-    _CRTIMP _PNH	__cdecl _set_new_handler( _PNH );
-
     void	xrDebug::_initialize		()
     {
         _set_new_mode					(1);					// gen exception if can't allocate memory
