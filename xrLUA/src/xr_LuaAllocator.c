@@ -360,6 +360,14 @@ extern "C" {
   or other mallocs available that do this.
 */
 
+#if defined(_MSC_VER) && defined(DEBUG)
+#undef DEBUG
+#endif
+
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
 #if DEBUG
 #include <assert.h>
 #else
