@@ -351,9 +351,13 @@ set(XRLUA_SOURCES
   "${XRLUA_DIR}/StdAfx.cpp"
 )
 
+set(XRLUA_CXX_SOURCES ${XRLUA_SOURCES})
+list(REMOVE_ITEM XRLUA_CXX_SOURCES "${XRLUA_DIR}/src/xr_LuaAllocator.c")
+
 add_library(xrLUA SHARED ${XRLUA_SOURCES})
 
-set_source_files_properties(${XRLUA_SOURCES} PROPERTIES LANGUAGE CXX)
+set_source_files_properties(${XRLUA_CXX_SOURCES} PROPERTIES LANGUAGE CXX)
+set_source_files_properties("${XRLUA_DIR}/src/xr_LuaAllocator.c" PROPERTIES LANGUAGE C)
 
 set_target_properties(xrLUA PROPERTIES
   OUTPUT_NAME "xrLUA"
