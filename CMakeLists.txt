@@ -804,6 +804,236 @@ target_link_libraries(xrParticles PRIVATE
   odbccp32
 )
 
+set(XRSE_FACTORY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xrSE_Factory")
+set(XRSE_FACTORY_LUABIND_INCLUDE_DIR "" CACHE PATH "Optional path containing the legacy luabind public header tree used by xrSE_Factory")
+set(XRAY_LOKI_ROOT "" CACHE PATH "Optional Loki include root containing typelist.h for smart_cast")
+set(XRAY_BOOST_ROOT "" CACHE PATH "Optional Boost 1.30.x-compatible include root for legacy luabind consumers")
+
+if(NOT XRAY_LOKI_ROOT)
+  message(WARNING "xrSE_Factory smart_cast.h includes <typelist.h>, but typelist.h was not found in this snapshot. Set XRAY_LOKI_ROOT to the original Loki include root.")
+elseif(NOT EXISTS "${XRAY_LOKI_ROOT}/typelist.h")
+  message(WARNING "XRAY_LOKI_ROOT='${XRAY_LOKI_ROOT}' does not contain typelist.h.")
+endif()
+
+if(NOT XRSE_FACTORY_LUABIND_INCLUDE_DIR)
+  message(WARNING "xrSE_Factory includes <luabind/...> headers, but this snapshot does not contain the matching luabind public header tree under xrSE_Factory. Set XRSE_FACTORY_LUABIND_INCLUDE_DIR to the original legacy luabind include root.")
+elseif(NOT EXISTS "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}/luabind/lua_include.hpp")
+  message(WARNING "XRSE_FACTORY_LUABIND_INCLUDE_DIR='${XRSE_FACTORY_LUABIND_INCLUDE_DIR}' does not contain luabind/lua_include.hpp.")
+endif()
+
+if(NOT XRAY_BOOST_ROOT)
+  message(WARNING "xrSE_Factory's legacy luabind sources usually require Boost 1.30.x-compatible headers. Set XRAY_BOOST_ROOT if they are not available through the compiler environment.")
+endif()
+
+set(XRSE_FACTORY_SOURCES
+  "${XRSE_FACTORY_DIR}/ai_space.cpp"
+  "${XRSE_FACTORY_DIR}/alife_event_personal.cpp"
+  "${XRSE_FACTORY_DIR}/character_info.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/class.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/class_info.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/class_registry.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/class_rep.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/create_class.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/error.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/find_best_match.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/function.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/implicit_cast.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/link_compatibility.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/object.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/object_rep.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/open.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/pcall.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/ref.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/scope.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/stack_content_by_name.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/weak_ref.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/wrapper_base.cpp"
+  "${XRSE_FACTORY_DIR}/object_factory.cpp"
+  "${XRSE_FACTORY_DIR}/object_factory_register.cpp"
+  "${XRSE_FACTORY_DIR}/object_factory_script.cpp"
+  "${XRSE_FACTORY_DIR}/object_item_script.cpp"
+  "${XRSE_FACTORY_DIR}/PHNetState.cpp"
+  "${XRSE_FACTORY_DIR}/PHSynchronize.cpp"
+  "${XRSE_FACTORY_DIR}/properties_list_helper_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_callStack.cpp"
+  "${XRSE_FACTORY_DIR}/script_debugger.cpp"
+  "${XRSE_FACTORY_DIR}/script_debugger_threads.cpp"
+  "${XRSE_FACTORY_DIR}/script_debugger_utils.cpp"
+  "${XRSE_FACTORY_DIR}/script_engine.cpp"
+  "${XRSE_FACTORY_DIR}/script_engine_export.cpp"
+  "${XRSE_FACTORY_DIR}/script_engine_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_file.cpp"
+  "${XRSE_FACTORY_DIR}/script_flags_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_fmatrix_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_fvector_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_ini_file.cpp"
+  "${XRSE_FACTORY_DIR}/script_ini_file_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_lua_helper.cpp"
+  "${XRSE_FACTORY_DIR}/script_net_packet_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_process.cpp"
+  "${XRSE_FACTORY_DIR}/script_properties_list_helper.cpp"
+  "${XRSE_FACTORY_DIR}/script_rtoken_list_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_sound_type_script.cpp"
+  "${XRSE_FACTORY_DIR}/script_stack_tracker.cpp"
+  "${XRSE_FACTORY_DIR}/script_storage.cpp"
+  "${XRSE_FACTORY_DIR}/script_thread.cpp"
+  "${XRSE_FACTORY_DIR}/script_token_list.cpp"
+  "${XRSE_FACTORY_DIR}/script_token_list_script.cpp"
+  "${XRSE_FACTORY_DIR}/smart_cast.cpp"
+  "${XRSE_FACTORY_DIR}/smart_cast_stats.cpp"
+  "${XRSE_FACTORY_DIR}/stdafx.cpp"
+  "${XRSE_FACTORY_DIR}/xrSE_Factory.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Factory.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Object_Base.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_Abstract.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife_Items.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife_Items_script.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife_Items_script2.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife_Monsters.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife_Monsters_script.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife_Monsters_script2.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife_script.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_ALife_script2.cpp"
+  "${XRSE_FACTORY_DIR}/xrServer_Objects_script.cpp"
+)
+
+set(XRSE_FACTORY_LUABIND_SOURCES
+  "${XRSE_FACTORY_DIR}/luabind/class.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/class_info.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/class_registry.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/class_rep.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/create_class.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/error.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/find_best_match.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/function.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/implicit_cast.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/link_compatibility.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/object.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/object_rep.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/open.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/pcall.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/ref.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/scope.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/stack_content_by_name.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/weak_ref.cpp"
+  "${XRSE_FACTORY_DIR}/luabind/wrapper_base.cpp"
+)
+
+add_library(xrSE_Factory SHARED ${XRSE_FACTORY_SOURCES})
+
+set_target_properties(xrSE_Factory PROPERTIES
+  OUTPUT_NAME "xrSE_Factory"
+  # xrSE_Factory.vcproj CharacterSet="2" is the VS2003 Multi-Byte setting.
+  VS_GLOBAL_CharacterSet "MultiByte"
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+  RUNTIME_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  LIBRARY_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  ARCHIVE_OUTPUT_DIRECTORY "${XRAY_LIBRARY_DIR}"
+  PDB_OUTPUT_DIRECTORY     "${XRAY_OUTPUT_ROOT}/pdb"
+  INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
+)
+
+foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
+  string(TOUPPER "${config}" config_upper)
+  set_target_properties(xrSE_Factory PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${XRAY_LIBRARY_DIR}"
+    PDB_OUTPUT_DIRECTORY_${config_upper}     "${XRAY_OUTPUT_ROOT}/pdb"
+  )
+endforeach()
+
+target_include_directories(xrSE_Factory
+  PUBLIC
+    "${XRSE_FACTORY_DIR}"
+  PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xrLUA/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc"
+)
+
+if(XRSE_FACTORY_LUABIND_INCLUDE_DIR)
+  target_include_directories(xrSE_Factory PRIVATE "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}")
+endif()
+
+if(XRAY_LOKI_ROOT)
+  target_include_directories(xrSE_Factory PRIVATE "${XRAY_LOKI_ROOT}")
+endif()
+
+if(XRAY_BOOST_ROOT)
+  target_include_directories(xrSE_Factory PRIVATE "${XRAY_BOOST_ROOT}")
+endif()
+
+target_compile_definitions(xrSE_Factory
+  PRIVATE
+    WIN32
+    _WINDOWS
+    _USRDLL
+    XRSE_FACTORY_EXPORTS
+    MSVC
+    # xrSE_Factory includes xrCore.h, so it needs the same modern MSVC
+    # compatibility switches for legacy xrCore/STL headers even though they
+    # were implicit in the original VC2003 environment.
+    _FARQ=
+    _HAS_AUTO_PTR_ETC=1
+    $<$<CONFIG:Debug>:_DEBUG>
+    $<$<CONFIG:Debug>:DEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    $<$<CONFIG:Mixed>:DEBUG>
+    $<$<CONFIG:Mixed>:MIXED>
+    $<$<CONFIG:Mixed>:dSINGLE>
+)
+
+if(MSVC)
+  target_compile_options(xrSE_Factory
+    PRIVATE
+      /nologo
+      /W4
+      /GR
+      /Gz
+      /EHs-
+      /EHa-
+  )
+
+  # Mirrors xrSE_Factory.vcproj optimization/runtime choices where modern MSVC
+  # still supports them; obsolete VC2003 settings such as /G7 and /Wp64 are
+  # omitted.
+  target_compile_options(xrSE_Factory PRIVATE
+    $<$<CONFIG:Debug>:/Od /Zi /RTC1 /Gy /Oi->
+    $<$<NOT:$<CONFIG:Debug>>:/O2 /Ob2 /Oi /Ot /GF /GS->
+    $<$<CONFIG:Release>:/Oy /Zc:wchar_t->
+  )
+
+  target_link_options(xrSE_Factory PRIVATE
+    /nologo
+    /MACHINE:I386
+    # stdafx.cpp and xrXMLParser.h have original #pragma comment(lib, "x:\\...").
+    # CMake links the corresponding targets directly, so ignore only those
+    # hardcoded X: drive default library directives.
+    /NODEFAULTLIB:x:\\xrCore.lib
+    /NODEFAULTLIB:x:\\xrLUA.lib
+    /NODEFAULTLIB:x:\\xrXMLParser.lib
+    $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL /MAP>
+    $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
+  )
+endif()
+
+target_precompile_headers(xrSE_Factory PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${XRSE_FACTORY_DIR}/stdafx.h>")
+set_source_files_properties(${XRSE_FACTORY_LUABIND_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+
+target_link_libraries(xrSE_Factory PRIVATE
+  xrCore
+  xrLUA
+  xrXMLParser
+  $<$<CONFIG:Mixed>:odbc32>
+  $<$<CONFIG:Mixed>:odbccp32>
+)
+
 set(XRNETSERVER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xrNetServer")
 
 if(NOT XRAY_EFFECTIVE_DXSDK_ROOT)
