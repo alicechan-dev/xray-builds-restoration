@@ -36,7 +36,8 @@ void CPSVisual::Update(u32 dt)
 	
 	// calculate number of particles to destroy
 	int iCount_Destroy	= 0;
-	for (int i=0; i<int(m_Particles.size()); i++)
+	int i;
+	for (i=0; i<int(m_Particles.size()); i++)
 		if (fTime>m_Particles[i].m_Time.end)	iCount_Destroy++;
 		
 	// calculate how many particles we should create from ParticlesPerSec and time elapsed

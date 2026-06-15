@@ -237,7 +237,8 @@ void CRender::LoadSectors(IReader* fs)
 
 	// load sectors
 	IReader* S = fs->open_chunk(fsL_SECTORS);
-	for (u32 i=0; ; i++)
+	u32 i;
+	for (i=0; ; i++)
 	{
 		IReader* P = S->open_chunk(i);
 		if (0==P) break;

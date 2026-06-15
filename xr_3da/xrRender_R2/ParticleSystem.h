@@ -215,7 +215,7 @@ namespace PS
 				strlwr(m_Computer);
 
 				// Time
-				_tzset(); time( (long*)&m_dwCreationTime );
+				_tzset(); time_t now; time(&now); m_dwCreationTime = u32(now);
 				return true;
 			}
 			return false;

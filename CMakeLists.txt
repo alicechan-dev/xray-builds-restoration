@@ -2127,6 +2127,217 @@ target_link_libraries(xrRender_R1 PRIVATE
   d3dx9
 )
 
+set(XRRENDER_R2_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xr_3da/xrRender_R2")
+
+if(NOT XRAY_EFFECTIVE_DXSDK_ROOT)
+  message(WARNING "xrRender_R2 includes legacy DirectX 9 headers such as d3dx9.h through its PCH. Set XRAY_DXSDK_ROOT, D3DXSDK_DIR, DXSDK_DIR, or DIRECTX_SDK_DIR to the original DirectX SDK root if the active SDK does not provide them.")
+elseif(NOT EXISTS "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include/d3dx9.h" AND NOT EXISTS "${XRAY_EFFECTIVE_DXSDK_ROOT}/include/d3dx9.h")
+  message(WARNING "xrRender_R2 needs d3dx9.h, but it was not found under XRAY_EFFECTIVE_DXSDK_ROOT='${XRAY_EFFECTIVE_DXSDK_ROOT}'.")
+endif()
+
+set(XRRENDER_R2_SOURCES
+  "${XRRENDER_R2_DIR}/stdafx.cpp"
+  "${XRRENDER_R2_DIR}/xrRender_console.cpp"
+  "${XRRENDER_R2_DIR}/xrRender_R2.cpp"
+  "${XRRENDER_R2_DIR}/PSLibrary.cpp"
+  "${XRRENDER_R2_DIR}/r2.cpp"
+  "${XRRENDER_R2_DIR}/r2_blenders.cpp"
+  "${XRRENDER_R2_DIR}/r2_loader.cpp"
+  "${XRRENDER_R2_DIR}/r2_R_calculate.cpp"
+  "${XRRENDER_R2_DIR}/r2_R_lights.cpp"
+  "${XRRENDER_R2_DIR}/r2_R_render.cpp"
+  "${XRRENDER_R2_DIR}/r2_R_sun.cpp"
+  "${XRRENDER_R2_DIR}/r2_screenshot.cpp"
+  "${XRRENDER_R2_DIR}/r2_sector_detect.cpp"
+  "${XRRENDER_R2_DIR}/r__dsgraph_build.cpp"
+  "${XRRENDER_R2_DIR}/r__dsgraph_render.cpp"
+  "${XRRENDER_R2_DIR}/r__dsgraph_render_lods.cpp"
+  "${XRRENDER_R2_DIR}/r__occlusion.cpp"
+  "${XRRENDER_R2_DIR}/Texture.cpp"
+  "${XRRENDER_R2_DIR}/DetailManager.cpp"
+  "${XRRENDER_R2_DIR}/DetailManager_CACHE.cpp"
+  "${XRRENDER_R2_DIR}/DetailManager_Decompress.cpp"
+  "${XRRENDER_R2_DIR}/DetailManager_soft.cpp"
+  "${XRRENDER_R2_DIR}/DetailManager_VS.cpp"
+  "${XRRENDER_R2_DIR}/DetailModel.cpp"
+  "${XRRENDER_R2_DIR}/NvTriStrip.cpp"
+  "${XRRENDER_R2_DIR}/NvTriStripObjects.cpp"
+  "${XRRENDER_R2_DIR}/VertexCache.cpp"
+  "${XRRENDER_R2_DIR}/xrStripify.cpp"
+  "${XRRENDER_R2_DIR}/light.cpp"
+  "${XRRENDER_R2_DIR}/Light_DB.cpp"
+  "${XRRENDER_R2_DIR}/light_GI.cpp"
+  "${XRRENDER_R2_DIR}/Light_Package.cpp"
+  "${XRRENDER_R2_DIR}/Light_Render_Direct.cpp"
+  "${XRRENDER_R2_DIR}/Light_Render_Direct_ComputeXFS.cpp"
+  "${XRRENDER_R2_DIR}/light_smapvis.cpp"
+  "${XRRENDER_R2_DIR}/light_vis.cpp"
+  "${XRRENDER_R2_DIR}/WallmarksEngine.cpp"
+  "${XRRENDER_R2_DIR}/blender_bloom_build.cpp"
+  "${XRRENDER_R2_DIR}/blender_combine.cpp"
+  "${XRRENDER_R2_DIR}/blender_deffer_aref.cpp"
+  "${XRRENDER_R2_DIR}/blender_deffer_flat.cpp"
+  "${XRRENDER_R2_DIR}/blender_deffer_model.cpp"
+  "${XRRENDER_R2_DIR}/blender_light_direct.cpp"
+  "${XRRENDER_R2_DIR}/blender_light_mask.cpp"
+  "${XRRENDER_R2_DIR}/blender_light_occq.cpp"
+  "${XRRENDER_R2_DIR}/blender_light_point.cpp"
+  "${XRRENDER_R2_DIR}/blender_light_reflected.cpp"
+  "${XRRENDER_R2_DIR}/blender_light_spot.cpp"
+  "${XRRENDER_R2_DIR}/blender_luminance.cpp"
+  "${XRRENDER_R2_DIR}/Blender_Particle.cpp"
+  "${XRRENDER_R2_DIR}/uber_deffer.cpp"
+  "${XRRENDER_R2_DIR}/Blender_detail_still.cpp"
+  "${XRRENDER_R2_DIR}/Blender_Screen_SET.cpp"
+  "${XRRENDER_R2_DIR}/Blender_tree.cpp"
+  "${XRRENDER_R2_DIR}/ModelPool.cpp"
+  "${XRRENDER_R2_DIR}/FTreeVisual.cpp"
+  "${XRRENDER_R2_DIR}/ParticleEffect.cpp"
+  "${XRRENDER_R2_DIR}/ParticleEffectDef.cpp"
+  "${XRRENDER_R2_DIR}/ParticleGroup.cpp"
+  "${XRRENDER_R2_DIR}/psvisual.cpp"
+  "${XRRENDER_R2_DIR}/r__sector.cpp"
+  "${XRRENDER_R2_DIR}/r__sector_traversal.cpp"
+  "${XRRENDER_R2_DIR}/HOM.cpp"
+  "${XRRENDER_R2_DIR}/occRasterizer.cpp"
+  "${XRRENDER_R2_DIR}/occRasterizer_core.cpp"
+  "${XRRENDER_R2_DIR}/du_sphere_part.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_accum_direct.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_accum_omnipart_geom.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_accum_point.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_accum_point_geom.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_accum_reflected.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_accum_spot.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_accum_spot_geom.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_draw_volume.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_enable_scissor.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_accumulator.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_accumulator_init.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_bloom.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_combine.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_distortion.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_luminance.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_occq.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_scene.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_smap_D.cpp"
+  "${XRRENDER_R2_DIR}/r2_rendertarget_phase_smap_S.cpp"
+  # Legacy d3dx9.lib references old MSVC CRT symbols; keep the compatibility
+  # entry points local to the renderer that links those legacy D3DX helpers.
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc/d3dx9_r2_crt_compat.cpp"
+)
+
+add_library(xrRender_R2 SHARED ${XRRENDER_R2_SOURCES})
+
+set_target_properties(xrRender_R2 PROPERTIES
+  OUTPUT_NAME "xrRender_R2"
+  # xrRender_R2.vcproj CharacterSet="2" is the VS2003 Multi-Byte setting.
+  VS_GLOBAL_CharacterSet "MultiByte"
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
+  RUNTIME_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  LIBRARY_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  ARCHIVE_OUTPUT_DIRECTORY "${XRAY_LIBRARY_DIR}"
+  PDB_OUTPUT_DIRECTORY     "${XRAY_OUTPUT_ROOT}/pdb"
+  INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
+)
+
+foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
+  string(TOUPPER "${config}" config_upper)
+  set_target_properties(xrRender_R2 PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${XRAY_LIBRARY_DIR}"
+    PDB_OUTPUT_DIRECTORY_${config_upper}     "${XRAY_OUTPUT_ROOT}/pdb"
+  )
+endforeach()
+
+target_include_directories(xrRender_R2
+  PRIVATE
+    "${XRRENDER_R2_DIR}"
+    "${XR3DA_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xrCore"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc"
+)
+
+if(XRAY_EFFECTIVE_DXSDK_ROOT)
+  target_include_directories(xrRender_R2 PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include" "${XRAY_EFFECTIVE_DXSDK_ROOT}/include")
+  target_link_directories(xrRender_R2 PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib/x86" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib/x86")
+endif()
+
+target_compile_definitions(xrRender_R2
+  PRIVATE
+    WIN32
+    _WINDOWS
+    _USRDLL
+    XRRENDER_R2_EXPORTS
+    _FARQ=
+    _HAS_AUTO_PTR_ETC=1
+    $<$<CONFIG:Debug>:_DEBUG;DEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    $<$<CONFIG:Mixed>:MIXED>
+)
+
+if(MSVC)
+  target_compile_options(xrRender_R2
+    PRIVATE
+      /nologo
+      /W4
+      /GR
+      /Gz
+      /EHs-
+      /EHa-
+  )
+
+  # Mirrors xrRender_R2.vcproj optimization/runtime choices where modern MSVC
+  # still supports them; obsolete VC2003 settings such as /G7 and /Wp64 are
+  # omitted.
+  target_compile_options(xrRender_R2 PRIVATE
+    $<$<CONFIG:Debug>:/Od /Zi /RTC1 /Gy /Oi->
+    $<$<NOT:$<CONFIG:Debug>>:/O2 /Ob2 /Oi /Ot /GF /GS->
+    $<$<CONFIG:Release>:/Oy>
+  )
+
+  target_link_options(xrRender_R2 PRIVATE
+    /nologo
+    /SUBSYSTEM:WINDOWS
+    /MACHINE:I386
+    # xrRender_R2 includes xr_3da/stdafx.h and xrRender_R2.cpp carries an
+    # x:\xr_3DA pragma. CMake links the already-ported targets directly.
+    /NODEFAULTLIB:x:\\xrCore.lib
+    /NODEFAULTLIB:x:\\xrCDB.lib
+    /NODEFAULTLIB:x:\\xrSound.lib
+    /NODEFAULTLIB:x:\\xrLUA.lib
+    /NODEFAULTLIB:x:\\xrParticles.lib
+    /NODEFAULTLIB:x:\\xr_3DA.lib
+    # Legacy DirectX SDK d3dx9.lib is not SAFESEH-compatible and carries a
+    # VS2003-era /DEFAULTLIB:libcp directive.
+    /SAFESEH:NO
+    /NODEFAULTLIB:libcp
+    $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL /MAP>
+    $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
+  )
+endif()
+
+target_precompile_headers(xrRender_R2 PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${XRRENDER_R2_DIR}/stdafx.h>")
+set_source_files_properties("${XRRENDER_R2_DIR}/stdafx.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc/d3dx9_r2_crt_compat.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+
+target_link_libraries(xrRender_R2 PRIVATE
+  XR_3DA
+  xrCore
+  xrCDB
+  xrSound
+  xrLUA
+  xrParticles
+  winmm
+  d3d9
+  dinput
+  dxguid
+  d3dx9
+)
+
 set(XRCPU_PIPE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xr_3da/xrCPU_Pipe")
 
 if(NOT XRAY_EFFECTIVE_DXSDK_ROOT)
