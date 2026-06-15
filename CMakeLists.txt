@@ -33,11 +33,12 @@ if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 
 set(DXSDK_DIR "$ENV{DXSDK_DIR}" CACHE PATH "Legacy DirectX SDK root, usually from the DXSDK_DIR environment variable")
+set(D3DXSDK_DIR "$ENV{D3DXSDK_DIR}" CACHE PATH "Legacy DirectX SDK root, alternative historical cache variable name")
 set(DIRECTX_SDK_DIR "$ENV{DIRECTX_SDK_DIR}" CACHE PATH "Legacy DirectX SDK root, alternative cache variable name")
 set(XRAY_DXSDK_ROOT "" CACHE PATH "Optional legacy DirectX 9 SDK root; needed for legacy headers such as dplay8.h")
 
 set(XRAY_EFFECTIVE_DXSDK_ROOT "")
-foreach(candidate IN ITEMS "${XRAY_DXSDK_ROOT}" "${DXSDK_DIR}" "${DIRECTX_SDK_DIR}")
+foreach(candidate IN ITEMS "${XRAY_DXSDK_ROOT}" "${D3DXSDK_DIR}" "${DXSDK_DIR}" "${DIRECTX_SDK_DIR}")
   if(candidate)
     set(XRAY_EFFECTIVE_DXSDK_ROOT "${candidate}")
     break()
