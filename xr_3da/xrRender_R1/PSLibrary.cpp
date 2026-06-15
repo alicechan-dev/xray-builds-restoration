@@ -37,7 +37,8 @@ void CPSLibrary::OnDestroy()
 {
 	for (PS::PSIt s_it = m_PSs.begin(); s_it!=m_PSs.end(); s_it++)
 		s_it->m_CachedShader.destroy	();
-	for (PS::PEDIt e_it = m_PEDs.begin(); e_it!=m_PEDs.end(); e_it++)
+	PS::PEDIt e_it;
+	for (e_it = m_PEDs.begin(); e_it!=m_PEDs.end(); e_it++)
     	(*e_it)->DestroyShader();
 
     m_PSs.clear		();
@@ -128,7 +129,7 @@ void CPSLibrary::Remove(const char* nm)
     PS::SDef* sh = FindPS(nm);
     if (sh){ 
     	sh->m_CachedShader.destroy();
-    	m_PSs.erase(sh);
+    	m_PSs.erase(m_PSs.begin()+(sh-&*m_PSs.begin()));
     }else{
     	PS::PEDIt it = FindPEDIt(nm);
         if (it!=m_PEDs.end()){
