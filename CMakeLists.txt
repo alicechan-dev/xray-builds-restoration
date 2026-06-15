@@ -1085,6 +1085,113 @@ target_link_libraries(xrSE_Factory PRIVATE
   $<$<CONFIG:Mixed>:odbccp32>
 )
 
+set(XRODE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xrODE")
+
+set(XRODE_SOURCES
+  "${XRODE_DIR}/ode/src/array.cpp"
+  "${XRODE_DIR}/ode/src/Bounder33.cpp"
+  "${XRODE_DIR}/ode/src/collision_kernel.cpp"
+  "${XRODE_DIR}/ode/src/collision_quadtreespace.cpp"
+  "${XRODE_DIR}/ode/src/collision_space.cpp"
+  "${XRODE_DIR}/ode/src/collision_std.cpp"
+  "${XRODE_DIR}/ode/src/collision_transform.cpp"
+  "${XRODE_DIR}/ode/src/collision_util.cpp"
+  "${XRODE_DIR}/ode/src/error.cpp"
+  "${XRODE_DIR}/ode/src/export-dif.cpp"
+  "${XRODE_DIR}/ode/src/fastdot.c"
+  "${XRODE_DIR}/ode/src/fastldlt.c"
+  "${XRODE_DIR}/ode/src/fastlsolve.c"
+  "${XRODE_DIR}/ode/src/fastltsolve.c"
+  "${XRODE_DIR}/ode/src/joint.cpp"
+  "${XRODE_DIR}/ode/src/lcp.cpp"
+  "${XRODE_DIR}/ode/src/mass.cpp"
+  "${XRODE_DIR}/ode/src/mat.cpp"
+  "${XRODE_DIR}/ode/src/matrix.cpp"
+  "${XRODE_DIR}/ode/src/memory.cpp"
+  "${XRODE_DIR}/ode/src/misc.cpp"
+  "${XRODE_DIR}/ode/src/obstack.cpp"
+  "${XRODE_DIR}/ode/src/ode.cpp"
+  "${XRODE_DIR}/ode/src/odemath.cpp"
+  "${XRODE_DIR}/ode/src/quickstep.cpp"
+  "${XRODE_DIR}/ode/src/rotation.cpp"
+  "${XRODE_DIR}/ode/src/step.cpp"
+  "${XRODE_DIR}/ode/src/stepfast.cpp"
+  "${XRODE_DIR}/ode/src/StepJointInternal.cpp"
+  "${XRODE_DIR}/ode/src/testing.cpp"
+  "${XRODE_DIR}/ode/src/timer.cpp"
+  "${XRODE_DIR}/ode/src/util.cpp"
+)
+
+add_library(ode SHARED ${XRODE_SOURCES})
+
+set_target_properties(ode PROPERTIES
+  OUTPUT_NAME "ode"
+  # ode_default.vcproj CharacterSet="2" is the VS2003 Multi-Byte setting.
+  VS_GLOBAL_CharacterSet "MultiByte"
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
+  MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+  RUNTIME_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  LIBRARY_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  ARCHIVE_OUTPUT_DIRECTORY "${XRAY_LIBRARY_DIR}"
+  PDB_OUTPUT_DIRECTORY     "${XRAY_OUTPUT_ROOT}/pdb"
+  INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
+)
+
+foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
+  string(TOUPPER "${config}" config_upper)
+  set_target_properties(ode PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${XRAY_LIBRARY_DIR}"
+    PDB_OUTPUT_DIRECTORY_${config_upper}     "${XRAY_OUTPUT_ROOT}/pdb"
+  )
+endforeach()
+
+target_include_directories(ode
+  PUBLIC
+    "${XRODE_DIR}/include"
+)
+
+target_compile_definitions(ode
+  PRIVATE
+    WIN32
+    _WINDOWS
+    _USRDLL
+    MSVC
+    dSINGLE
+    $<$<CONFIG:Debug>:_DEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:dNODEBUG>
+)
+
+if(MSVC)
+  target_compile_options(ode
+    PRIVATE
+      /nologo
+      /W3
+      /Gz
+      /EHs-
+      /EHa-
+      $<$<CONFIG:Debug>:/Od /Zi /RTC1>
+      $<$<NOT:$<CONFIG:Debug>>:/O2 /Ob2 /Oi /Ot /GF /GS->
+      $<$<CONFIG:Release>:/Oy>
+  )
+
+  target_link_options(ode PRIVATE
+    /nologo
+    /DEF:${XRODE_DIR}/config/msvcdefs.def
+    /MACHINE:I386
+    $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL>
+    $<$<NOT:$<CONFIG:Debug>>:/INCREMENTAL:NO /OPT:REF /OPT:ICF>
+  )
+endif()
+
+# ode_default.vcproj contains a regsvr32 post-build event, but it is marked
+# ExcludedFromBuild="TRUE" in all original configurations. Keep registration
+# outside the default CMake build.
+
 set(XRNETSERVER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xrNetServer")
 
 if(NOT XRAY_EFFECTIVE_DXSDK_ROOT)
