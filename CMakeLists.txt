@@ -1805,6 +1805,9 @@ add_executable(XR_3DA ${XR3DA_SOURCES})
 
 set_target_properties(XR_3DA PROPERTIES
   OUTPUT_NAME "XR_3DA"
+  # xrCPU_Pipe links the executable import library from the original
+  # x:\xr_3da.lib dependency.
+  ENABLE_EXPORTS ON
   # XR_3DA.vcproj CharacterSet="2" is the VS2003 Multi-Byte setting.
   VS_GLOBAL_CharacterSet "MultiByte"
   CXX_STANDARD 14
@@ -1933,4 +1936,134 @@ target_link_libraries(XR_3DA PRIVATE
   dinput
   dxguid
   d3dx9
+)
+
+set(XRCPU_PIPE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xr_3da/xrCPU_Pipe")
+
+if(NOT XRAY_EFFECTIVE_DXSDK_ROOT)
+  message(WARNING "xrCPU_Pipe uses xr_3da/stdafx.h, which includes legacy DirectPlay header dplay8.h. Set XRAY_DXSDK_ROOT, D3DXSDK_DIR, DXSDK_DIR, or DIRECTX_SDK_DIR to the original DirectX SDK root if the active SDK does not provide it.")
+elseif(NOT EXISTS "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include/dplay8.h" AND NOT EXISTS "${XRAY_EFFECTIVE_DXSDK_ROOT}/include/dplay8.h")
+  message(WARNING "xrCPU_Pipe needs dplay8.h through xr_3da/stdafx.h, but it was not found under XRAY_EFFECTIVE_DXSDK_ROOT='${XRAY_EFFECTIVE_DXSDK_ROOT}'.")
+endif()
+
+set(XRCPU_PIPE_SOURCES
+  "${XRCPU_PIPE_DIR}/StdAfx.cpp"
+  "${XRCPU_PIPE_DIR}/xrCPU_Pipe.cpp"
+  "${XRCPU_PIPE_DIR}/3DNow!Lib.cpp"
+  "${XRCPU_PIPE_DIR}/xrM44mul_3DNow!.cpp"
+  "${XRCPU_PIPE_DIR}/xrMemCopy8_3DNow!.cpp"
+  "${XRCPU_PIPE_DIR}/xrMemFill32_3DNow!.cpp"
+  "${XRCPU_PIPE_DIR}/xrM44mul.cpp"
+  "${XRCPU_PIPE_DIR}/xrQuatSlerp.cpp"
+  "${XRCPU_PIPE_DIR}/xrSkin1W.cpp"
+  "${XRCPU_PIPE_DIR}/xrSkin2W.cpp"
+  "${XRCPU_PIPE_DIR}/xrTransfer.cpp"
+)
+
+add_library(xrCPU_Pipe SHARED ${XRCPU_PIPE_SOURCES})
+
+set_target_properties(xrCPU_Pipe PROPERTIES
+  OUTPUT_NAME "xrCPU_Pipe"
+  # xrCPU_Pipe.vcproj CharacterSet="2" is the VS2003 Multi-Byte setting.
+  VS_GLOBAL_CharacterSet "MultiByte"
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
+  RUNTIME_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  LIBRARY_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  ARCHIVE_OUTPUT_DIRECTORY "${XRAY_LIBRARY_DIR}"
+  PDB_OUTPUT_DIRECTORY     "${XRAY_OUTPUT_ROOT}/pdb"
+)
+
+foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
+  string(TOUPPER "${config}" config_upper)
+  set_target_properties(xrCPU_Pipe PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${XRAY_LIBRARY_DIR}"
+    PDB_OUTPUT_DIRECTORY_${config_upper}     "${XRAY_OUTPUT_ROOT}/pdb"
+  )
+endforeach()
+
+target_include_directories(xrCPU_Pipe
+  PRIVATE
+    "${XRCPU_PIPE_DIR}"
+    "${XR3DA_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xrCore"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc"
+)
+
+if(XRAY_EFFECTIVE_DXSDK_ROOT)
+  target_include_directories(xrCPU_Pipe PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include" "${XRAY_EFFECTIVE_DXSDK_ROOT}/include")
+  target_link_directories(xrCPU_Pipe PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib/x86" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib/x86")
+endif()
+
+target_compile_definitions(xrCPU_Pipe
+  PRIVATE
+    WIN32
+    _WINDOWS
+    _USRDLL
+    XRCPU_PIPE_EXPORTS
+    _FARQ=
+    _HAS_AUTO_PTR_ETC=1
+    $<$<CONFIG:Debug>:_DEBUG;DEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    $<$<CONFIG:Mixed>:MIXED>
+)
+
+if(MSVC)
+  target_compile_options(xrCPU_Pipe
+    PRIVATE
+      /nologo
+      /W4
+      /GR
+      /Gz
+      /EHs-
+      /EHa-
+  )
+
+  # Mirrors xrCPU_Pipe.vcproj optimization/runtime choices where modern MSVC
+  # still supports them; obsolete VC2003 settings such as /G7 and /Wp64 are
+  # omitted.
+  target_compile_options(xrCPU_Pipe PRIVATE
+    $<$<CONFIG:Debug>:/Od /Zi /RTC1 /Gy /Oi->
+    $<$<NOT:$<CONFIG:Debug>>:/O2 /Ob2 /Oi /Ot /GF /GS->
+    $<$<CONFIG:Release>:/Oy>
+  )
+
+  target_link_options(xrCPU_Pipe PRIVATE
+    /nologo
+    /SUBSYSTEM:WINDOWS
+    /MACHINE:I386
+    # xrCPU_Pipe.vcproj linked x:\xr_3da.lib. CMake links the XR_3DA
+    # executable import library target directly instead.
+    /NODEFAULTLIB:x:\\xr_3da.lib
+    # xr_3da/stdafx.h carries the historical hardcoded pragma, while this
+    # target links the CMake xrCore import library explicitly below.
+    /NODEFAULTLIB:x:\\xrCore.lib
+    # Same historical pragma path from xr_3da/stdafx.h; link xrCDB through
+    # the CMake target instead of the old X: drive import library.
+    /NODEFAULTLIB:x:\\xrCDB.lib
+    # Same historical pragma path from xr_3da/stdafx.h; link xrSound through
+    # the CMake target instead of the old X: drive import library.
+    /NODEFAULTLIB:x:\\xrSound.lib
+    # Same historical pragma path from xr_3da/stdafx.h; link xrLUA through
+    # the CMake target instead of the old X: drive import library.
+    /NODEFAULTLIB:x:\\xrLUA.lib
+    $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL /MAP>
+    $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
+  )
+endif()
+
+target_precompile_headers(xrCPU_Pipe PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${XRCPU_PIPE_DIR}/StdAfx.h>")
+set_source_files_properties("${XRCPU_PIPE_DIR}/StdAfx.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+
+target_link_libraries(xrCPU_Pipe PRIVATE
+  XR_3DA
+  xrCore
+  xrCDB
+  xrSound
+  xrLUA
+  odbc32
+  odbccp32
 )
