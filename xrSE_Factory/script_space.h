@@ -21,6 +21,7 @@
 #include "lualib.h"
 #include "lauxlib.h"
 #include <luabind/luabind.hpp>
+#include <luabind/error.hpp>
 #include <luabind/object.hpp>
 
 extern	string4096	g_ca_stdout;

@@ -76,7 +76,7 @@ void lua_cast_failed(CLuaVirtualMachine *L, LUABIND_TYPE_INFO info)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-#ifdef DEBUG
+#if defined(DEBUG) && defined(XRAY_ENABLE_LEGACY_LUABIND_HELP)
 
 #ifndef BOOST_NO_STRINGSTREAM
 #	include <sstream>
@@ -84,11 +84,30 @@ void lua_cast_failed(CLuaVirtualMachine *L, LUABIND_TYPE_INFO info)
 #	include <strstream>
 #endif
 
+static lua_State *object_lua_state			(luabind::object const& object)
+{
+	return			(object.interpreter());
+}
+
+static int object_lua_type					(luabind::object const& object)
+{
+	lua_State		*L = object_lua_state(object);
+	object.push		(L);
+	luabind::detail::stack_pop pop(L,1);
+	return			(lua_type(L,-1));
+}
+
+static void push_luabind_object				(luabind::object const& object)
+{
+	object.push		(object_lua_state(object));
+}
+
 std::string to_string					(luabind::object const& o)
 {
 	using namespace luabind;
-	if (o.type() == LUA_TSTRING) return object_cast<std::string>(o);
-	lua_State* L = o.lua_state();
+	int type = object_lua_type(o);
+	if (type == LUA_TSTRING) return object_cast<std::string>(o);
+	lua_State* L = object_lua_state(o);
 	LUABIND_CHECK_STACK(L);
 
 #ifdef BOOST_NO_STRINGSTREAM
@@ -97,13 +116,13 @@ std::string to_string					(luabind::object const& o)
 	std::stringstream s;
 #endif
 
-	if (o.type() == LUA_TNUMBER)
+	if (type == LUA_TNUMBER)
 	{
 		s << object_cast<float>(o);
 		return s.str();
 	}
 
-	s << "<" << lua_typename(L, o.type()) << ">";
+	s << "<" << lua_typename(L, type) << ">";
 #ifdef BOOST_NO_STRINGSTREAM
 	s << std::ends;
 #endif
@@ -112,7 +131,7 @@ std::string to_string					(luabind::object const& o)
 
 void strreplaceall						(std::string &str, LPCSTR S, LPCSTR N)
 {
-	LPSTR	A;
+	LPCSTR	A;
 	int		S_len = xr_strlen(S);
 	while ((A = strstr(str.c_str(),S)) != 0)
 		str.replace(A - str.c_str(),S_len,N);
@@ -132,12 +151,12 @@ std::string member_to_string			(luabind::object const& e, LPCSTR function_signat
 {
 #if !defined(LUABIND_NO_ERROR_CHECKING)
     using namespace luabind;
-	lua_State* L = e.lua_state();
+	lua_State* L = object_lua_state(e);
 	LUABIND_CHECK_STACK(L);
 
-	if (e.type() == LUA_TFUNCTION)
+	if (object_lua_type(e) == LUA_TFUNCTION)
 	{
-		e.pushvalue();
+		push_luabind_object(e);
 		detail::stack_pop p(L, 1);
 
 		{
@@ -203,16 +222,9 @@ void print_class						(lua_State *L, luabind::detail::class_rep *crep)
 		}
 		Msg				("%s {",S.c_str());
 	}
-	// print class constants
-	{
-		const luabind::detail::class_rep::STATIC_CONSTANTS	&constants = crep->static_constants();
-		luabind::detail::class_rep::STATIC_CONSTANTS::const_iterator	I = constants.begin();
-		luabind::detail::class_rep::STATIC_CONSTANTS::const_iterator	E = constants.end();
-		for ( ; I != E; ++I)
-			Msg		("    const %s = %d;",(*I).first,(*I).second);
-		if (!constants.empty())
-			Msg		("    ");
-	}
+	// luabind 0.7 keeps static constants private, with no public
+	// static_constants() accessor. Registration still works; this only omits
+	// that subsection from the debug help printer.
 	// print class properties
 	{
 		typedef std::map<const char*, luabind::detail::class_rep::callback, luabind::detail::ltstr> PROPERTIES;
@@ -224,30 +236,15 @@ void print_class						(lua_State *L, luabind::detail::class_rep *crep)
 		if (!properties.empty())
 			Msg		("    ");
 	}
-	// print class constructors
-	{
-		const std::vector<luabind::detail::construct_rep::overload_t>	&constructors = crep->constructors().overloads;
-		std::vector<luabind::detail::construct_rep::overload_t>::const_iterator	I = constructors.begin();
-		std::vector<luabind::detail::construct_rep::overload_t>::const_iterator	E = constructors.end();
-		for ( ; I != E; ++I) {
-			std::string S;
-			(*I).get_signature(L,S);
-			strreplaceall	(S,"custom [","");
-			strreplaceall	(S,"]","");
-			strreplaceall	(S,"float","number");
-			strreplaceall	(S,"lua_State*, ","");
-			strreplaceall	(S," ,lua_State*","");
-			Msg		("    %s %s;",crep->name(),S.c_str());
-		}
-		if (!constructors.empty())
-			Msg		("    ");
-	}
+	// luabind 0.7 keeps constructor overloads private, with no public
+	// constructors() accessor. Registration still works; this only omits that
+	// subsection from the debug help printer.
 	// print class methods
 	{
 		crep->get_table	(L);
-		luabind::object	table(L);
-		table.set		();
-		for (luabind::object::iterator i = table.begin(); i != table.end(); ++i) {
+		luabind::object	table(luabind::from_stack(L,-1));
+		luabind::detail::stack_pop pop(L,1);
+		for (luabind::iterator i(table), e; i != e; ++i) {
 			luabind::object	object = *i;
 			std::string	S;
 			S			= "    function ";
@@ -270,12 +267,13 @@ void print_class						(lua_State *L, luabind::detail::class_rep *crep)
 void print_free_functions				(lua_State *L, const luabind::object &object, LPCSTR header, const std::string &indent)
 {
 	u32							count = 0;
-	luabind::object::iterator	I = object.begin();
-	luabind::object::iterator	E = object.end();
+	luabind::iterator			I(object);
+	luabind::iterator			E;
 	for ( ; I != E; ++I) {
-		if ((*I).type() != LUA_TFUNCTION)
+		luabind::object			value = *I;
+		if (object_lua_type(value) != LUA_TFUNCTION)
 			continue;
-		(*I).pushvalue();
+		push_luabind_object(value);
 		luabind::detail::free_functions::function_rep* rep = 0;
 		if (lua_iscfunction(L, -1))
 		{
@@ -308,14 +306,13 @@ void print_free_functions				(lua_State *L, const luabind::object &object, LPCST
 	{
 		std::string				_indent = indent;
 		_indent.append			("    ");
-		object.pushvalue();
+		push_luabind_object		(object);
 		lua_pushnil		(L);
 		while (lua_next(L, -2) != 0) {
 			if (lua_type(L, -1) == LUA_TTABLE) {
 				if (xr_strcmp("_G",lua_tostring(L, -2))) {
 					LPCSTR				S = lua_tostring(L, -2);
-					luabind::object		object(L);
-					object.set			();
+					luabind::object		object(luabind::from_stack(L,-1));
 					if (!xr_strcmp("security",S)) {
 						S = S;
 					}
@@ -347,7 +344,7 @@ void print_help							(lua_State *L)
 #else
 void print_help							(lua_State *L)
 {
-	Msg					("! Release build doesn't support lua-help :(");
+	Msg					("! lua-help is not available with this luabind build :(");
 }
 #endif
 
@@ -469,12 +466,12 @@ void CScriptEngine::register_script_classes	()
 	string256					I;
 	for (u32 i=0; i<n; ++i) {
 		_GetItem				(*m_class_registrators,i,I);
-		luabind::functor<void>	result;
-		if (!functor(I,result)) {
+		luabind::object			result;
+		if (!function_object(I,result)) {
 			script_log			(eLuaMessageTypeError,"Cannot load class registrator %s!",I);
 			continue;
 		}
-		result					(const_cast<CObjectFactory*>(&object_factory()));
+		luabind::call_function<void>(result,const_cast<CObjectFactory*>(&object_factory()));
 	}
 }
 

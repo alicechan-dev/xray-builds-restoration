@@ -27,9 +27,9 @@ void CScriptEngine::export_server_entities()
 		
 		class_<CSE_ALifeObject,CSE_Abstract>("alife_object")
 			.def(							constructor<LPCSTR>())
-			.def("can_switch_online",		(bool (CSE_ALifeObject::*)	() const)(CSE_ALifeObject::can_switch_online))
-			.def("can_switch_offline",		(bool (CSE_ALifeObject::*)	() const)(CSE_ALifeObject::can_switch_offline))
-			.def("interactive",				(bool (CSE_ALifeObject::*)	() const)(CSE_ALifeObject::interactive)),
+			.def("can_switch_online",		(bool (CSE_ALifeObject::*)	() const)(&CSE_ALifeObject::can_switch_online))
+			.def("can_switch_offline",		(bool (CSE_ALifeObject::*)	() const)(&CSE_ALifeObject::can_switch_offline))
+			.def("interactive",				(bool (CSE_ALifeObject::*)	() const)(&CSE_ALifeObject::interactive)),
 
 		class_<CSE_ALifeDynamicObject,CSE_ALifeObject>("alife_dynamic_object")
 			.def(							constructor<LPCSTR>()),

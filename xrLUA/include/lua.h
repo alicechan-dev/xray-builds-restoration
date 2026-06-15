@@ -92,7 +92,15 @@ typedef LUA_NUMBER lua_Number;
 
 /* mark for all API functions */
 #ifndef LUA_API
+#if defined(_WIN32) && defined(__cplusplus)
+#ifdef XRLUA_EXPORTS
+#define LUA_API		extern "C" __declspec(dllexport)
+#else
+#define LUA_API		extern "C" __declspec(dllimport)
+#endif
+#else
 #define LUA_API		extern
+#endif
 #endif
 
 

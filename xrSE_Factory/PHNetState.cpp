@@ -3,6 +3,14 @@
 
 #include "PHNetState.h"
 //////////////////////////////////////8/////////////////////////////////////////////////////
+static void copy_quaternion(Fquaternion& dest, const Fquaternion& src)
+{
+	dest.x = src.x;
+	dest.y = src.y;
+	dest.z = src.z;
+	dest.w = src.w;
+}
+
 static void w_vec_q8(NET_Packet& P,const Fvector& vec,const Fvector& min,const Fvector& max)
 {
 	P.w_float_q8(vec.x,min.x,max.x);
@@ -139,7 +147,7 @@ void	SPHNetState::net_Import(NET_Packet&	P)
 	torque.set(0.f,0.f,0.f);			//P.r_vec3(torque);
 	P.r_vec3(position);
 	P.r_vec4(*((Fvector4*)&quaternion));
-	previous_quaternion.set(quaternion);//P.r_vec4(*((Fvector4*)&previous_quaternion));
+	copy_quaternion(previous_quaternion,quaternion);//P.r_vec4(*((Fvector4*)&previous_quaternion));
 	enabled=!!P.r_u8	();
 }
 
@@ -177,7 +185,7 @@ void SPHNetState::net_Load(NET_Packet &P,const Fvector& min,const Fvector& max)
 	r_vec_q8(P,position,min,max);
 	previous_position.set(position);
 	r_qt_q8(P,quaternion);
-	previous_quaternion.set(quaternion);
+	copy_quaternion(previous_quaternion,quaternion);
 	enabled=true;
 
 }

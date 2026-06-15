@@ -34,7 +34,7 @@ endif()
 
 set(DXSDK_DIR "$ENV{DXSDK_DIR}" CACHE PATH "Legacy DirectX SDK root, usually from the DXSDK_DIR environment variable")
 set(DIRECTX_SDK_DIR "$ENV{DIRECTX_SDK_DIR}" CACHE PATH "Legacy DirectX SDK root, alternative cache variable name")
-set(XRAY_DXSDK_ROOT "" CACHE PATH "Optional legacy DirectX 9 SDK root; needed if dxerr9.h/dxerr9.lib are not provided by the active toolchain")
+set(XRAY_DXSDK_ROOT "" CACHE PATH "Optional legacy DirectX 9 SDK root; needed for legacy headers such as dplay8.h")
 
 set(XRAY_EFFECTIVE_DXSDK_ROOT "")
 foreach(candidate IN ITEMS "${XRAY_DXSDK_ROOT}" "${DXSDK_DIR}" "${DIRECTX_SDK_DIR}")
@@ -116,14 +116,15 @@ target_include_directories(xrCore
     "${CMAKE_CURRENT_SOURCE_DIR}/xrCore"
 )
 
+# Keep xrCore on the local dxerr9.h fallback with modern MSVC even when a
+# legacy DirectX SDK is configured for other targets such as xrNetServer. The
+# old dxerr9.lib imports _vsnwprintf and is not link-compatible with VS2022.
+target_include_directories(xrCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc")
+
 if(XRAY_EFFECTIVE_DXSDK_ROOT)
   target_include_directories(xrCore PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include" "${XRAY_EFFECTIVE_DXSDK_ROOT}/include")
   target_link_directories(xrCore PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib/x86" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib/x86")
 endif()
-
-# Keep compatibility headers after any real SDK include path so a legacy
-# DirectX SDK dxerr9.h wins when the user provides one.
-target_include_directories(xrCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc")
 
 target_compile_definitions(xrCore
   PRIVATE
@@ -174,14 +175,10 @@ target_link_libraries(xrCore PRIVATE
   winmm
 )
 
-if(XRAY_EFFECTIVE_DXSDK_ROOT)
-  # xrDebug.cpp has a legacy #pragma comment(lib, "dxerr9.lib"). Keeping this
-  # explicit helps CMake-based link diagnostics point at the SDK requirement.
-  target_link_libraries(xrCore PRIVATE dxerr9)
-elseif(MSVC)
-  # Modern Windows SDKs do not ship the old DirectX SDK dxerr9 helper. The
-  # local compatibility header lets xrDebug.cpp fall through to its existing
-  # FormatMessage path, and this suppresses the matching legacy pragma lib.
+if(MSVC)
+  # The local compatibility header lets xrDebug.cpp fall through to its existing
+  # FormatMessage path, and this suppresses the matching legacy pragma lib even
+  # when XRAY_DXSDK_ROOT is set for other DirectX headers.
   target_link_options(xrCore PRIVATE /NODEFAULTLIB:dxerr9.lib)
 endif()
 
@@ -817,12 +814,53 @@ endif()
 
 if(NOT XRSE_FACTORY_LUABIND_INCLUDE_DIR)
   message(WARNING "xrSE_Factory includes <luabind/...> headers, but this snapshot does not contain the matching luabind public header tree under xrSE_Factory. Set XRSE_FACTORY_LUABIND_INCLUDE_DIR to the original legacy luabind include root.")
-elseif(NOT EXISTS "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}/luabind/lua_include.hpp")
-  message(WARNING "XRSE_FACTORY_LUABIND_INCLUDE_DIR='${XRSE_FACTORY_LUABIND_INCLUDE_DIR}' does not contain luabind/lua_include.hpp.")
+else()
+  set(XRSE_FACTORY_LUABIND_LUA_INCLUDE "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}/luabind/lua_include.hpp")
+  message(STATUS "XRSE_FACTORY_LUABIND_INCLUDE_DIR='${XRSE_FACTORY_LUABIND_INCLUDE_DIR}'")
+  message(STATUS "xrSE_Factory luabind/lua_include.hpp: ${XRSE_FACTORY_LUABIND_LUA_INCLUDE}")
+  if(NOT EXISTS "${XRSE_FACTORY_LUABIND_LUA_INCLUDE}")
+    file(GLOB_RECURSE XRSE_FACTORY_LUABIND_LUA_INCLUDE_CANDIDATES
+      "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}/lua_include.hpp"
+      "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}/*/lua_include.hpp"
+      "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}/*/*/lua_include.hpp"
+    )
+    message(WARNING "XRSE_FACTORY_LUABIND_INCLUDE_DIR='${XRSE_FACTORY_LUABIND_INCLUDE_DIR}' does not contain luabind/lua_include.hpp. Candidate lua_include.hpp files under this path: ${XRSE_FACTORY_LUABIND_LUA_INCLUDE_CANDIDATES}")
+  endif()
+  set(XRSE_FACTORY_LUABIND_VERSION_HEADER "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}/luabind/version.hpp")
+  if(EXISTS "${XRSE_FACTORY_LUABIND_VERSION_HEADER}")
+    file(STRINGS "${XRSE_FACTORY_LUABIND_VERSION_HEADER}" XRSE_FACTORY_LUABIND_VERSION_LINES REGEX "LUABIND_VERSION|090216")
+    message(STATUS "xrSE_Factory luabind/version.hpp markers: ${XRSE_FACTORY_LUABIND_VERSION_LINES}")
+    if(XRSE_FACTORY_LUABIND_VERSION_LINES MATCHES "LUABIND_VERSION[ \t]+900|090216")
+      message(FATAL_ERROR "XRSE_FACTORY_LUABIND_INCLUDE_DIR points to luabind 0.9/current headers. Build 1935 uses Lua 5.0-era luabind; use the luabind 0.7 include root directly above luabind/lua_include.hpp.")
+    endif()
+  endif()
+endif()
+
+set(XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE "")
+if(XRSE_FACTORY_LUABIND_INCLUDE_DIR)
+  get_filename_component(XRSE_FACTORY_LUABIND_ROOT "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}" DIRECTORY)
+  foreach(candidate IN ITEMS
+      "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}/src/overload_rep.cpp"
+      "${XRSE_FACTORY_LUABIND_ROOT}/src/overload_rep.cpp"
+  )
+    if(NOT XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE AND EXISTS "${candidate}")
+      set(XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE "${candidate}")
+    endif()
+  endforeach()
+  if(NOT XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE)
+    message(WARNING "xrSE_Factory needs luabind::detail::overload_rep::call from luabind 0.7, but overload_rep.cpp was not found next to XRSE_FACTORY_LUABIND_INCLUDE_DIR.")
+  endif()
 endif()
 
 if(NOT XRAY_BOOST_ROOT)
   message(WARNING "xrSE_Factory's legacy luabind sources usually require Boost 1.30.x-compatible headers. Set XRAY_BOOST_ROOT if they are not available through the compiler environment.")
+else()
+  message(STATUS "XRAY_BOOST_ROOT='${XRAY_BOOST_ROOT}'")
+  set(XRSE_FACTORY_REQUIRED_BOOST_HEADER "${XRAY_BOOST_ROOT}/boost/type_traits/is_member_object_pointer.hpp")
+  message(STATUS "xrSE_Factory required Boost header: ${XRSE_FACTORY_REQUIRED_BOOST_HEADER}")
+  if(NOT EXISTS "${XRSE_FACTORY_REQUIRED_BOOST_HEADER}")
+    message(WARNING "XRAY_BOOST_ROOT does not contain boost/type_traits/is_member_object_pointer.hpp. This Boost tree is incomplete or too old for the supplied legacy luabind headers.")
+  endif()
 endif()
 
 set(XRSE_FACTORY_SOURCES
@@ -839,7 +877,6 @@ set(XRSE_FACTORY_SOURCES
   "${XRSE_FACTORY_DIR}/luabind/function.cpp"
   "${XRSE_FACTORY_DIR}/luabind/implicit_cast.cpp"
   "${XRSE_FACTORY_DIR}/luabind/link_compatibility.cpp"
-  "${XRSE_FACTORY_DIR}/luabind/object.cpp"
   "${XRSE_FACTORY_DIR}/luabind/object_rep.cpp"
   "${XRSE_FACTORY_DIR}/luabind/open.cpp"
   "${XRSE_FACTORY_DIR}/luabind/pcall.cpp"
@@ -848,6 +885,7 @@ set(XRSE_FACTORY_SOURCES
   "${XRSE_FACTORY_DIR}/luabind/stack_content_by_name.cpp"
   "${XRSE_FACTORY_DIR}/luabind/weak_ref.cpp"
   "${XRSE_FACTORY_DIR}/luabind/wrapper_base.cpp"
+  ${XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE}
   "${XRSE_FACTORY_DIR}/object_factory.cpp"
   "${XRSE_FACTORY_DIR}/object_factory_register.cpp"
   "${XRSE_FACTORY_DIR}/object_factory_script.cpp"
@@ -910,7 +948,6 @@ set(XRSE_FACTORY_LUABIND_SOURCES
   "${XRSE_FACTORY_DIR}/luabind/function.cpp"
   "${XRSE_FACTORY_DIR}/luabind/implicit_cast.cpp"
   "${XRSE_FACTORY_DIR}/luabind/link_compatibility.cpp"
-  "${XRSE_FACTORY_DIR}/luabind/object.cpp"
   "${XRSE_FACTORY_DIR}/luabind/object_rep.cpp"
   "${XRSE_FACTORY_DIR}/luabind/open.cpp"
   "${XRSE_FACTORY_DIR}/luabind/pcall.cpp"
@@ -919,6 +956,7 @@ set(XRSE_FACTORY_LUABIND_SOURCES
   "${XRSE_FACTORY_DIR}/luabind/stack_content_by_name.cpp"
   "${XRSE_FACTORY_DIR}/luabind/weak_ref.cpp"
   "${XRSE_FACTORY_DIR}/luabind/wrapper_base.cpp"
+  ${XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE}
 )
 
 add_library(xrSE_Factory SHARED ${XRSE_FACTORY_SOURCES})
@@ -953,7 +991,9 @@ target_include_directories(xrSE_Factory
     "${XRSE_FACTORY_DIR}"
   PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${XRSE_FACTORY_DIR}/luabind_compat"
     "${CMAKE_CURRENT_SOURCE_DIR}/xrLUA/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xrLUA/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc"
 )
 
@@ -976,6 +1016,9 @@ target_compile_definitions(xrSE_Factory
     _USRDLL
     XRSE_FACTORY_EXPORTS
     MSVC
+    # xrSE_Factory.vcproj sets ExceptionHandling="FALSE"; luabind 0.7 exposes
+    # the error/cast callback API used by script_engine.cpp only in this mode.
+    LUABIND_NO_EXCEPTIONS
     # xrSE_Factory includes xrCore.h, so it needs the same modern MSVC
     # compatibility switches for legacy xrCore/STL headers even though they
     # were implicit in the original VC2003 environment.
@@ -1016,8 +1059,11 @@ if(MSVC)
     # CMake links the corresponding targets directly, so ignore only those
     # hardcoded X: drive default library directives.
     /NODEFAULTLIB:x:\\xrCore.lib
+    /NODEFAULTLIB:x:/xrCore.lib
     /NODEFAULTLIB:x:\\xrLUA.lib
+    /NODEFAULTLIB:x:/xrLUA.lib
     /NODEFAULTLIB:x:\\xrXMLParser.lib
+    /NODEFAULTLIB:x:/xrXMLParser.lib
     $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL /MAP>
     $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
   )
@@ -1025,6 +1071,11 @@ endif()
 
 target_precompile_headers(xrSE_Factory PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${XRSE_FACTORY_DIR}/stdafx.h>")
 set_source_files_properties(${XRSE_FACTORY_LUABIND_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+if(MSVC)
+  set_source_files_properties(${XRSE_FACTORY_LUABIND_SOURCES} PROPERTIES
+    COMPILE_OPTIONS "/FI${XRSE_FACTORY_DIR}/luabind_compat/xray_luabind_compat.hpp"
+  )
+endif()
 
 target_link_libraries(xrSE_Factory PRIVATE
   xrCore

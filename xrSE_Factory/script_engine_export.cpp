@@ -12,6 +12,13 @@
 #include "script_export_space.h"
 #include "script_engine_export.h"
 
+#ifndef ASSERT_TYPELIST
+	// Modern MSVC selects Loki's Reference Typelist.h, which does not define
+	// this VC2003-era assertion helper. Keep the original declaration shape
+	// local to this translation unit without changing registration behavior.
+#	define ASSERT_TYPELIST(type) typedef char assert_typelist[1]
+#endif
+
 template <typename TList> struct Register
 {
 	ASSERT_TYPELIST(TList);

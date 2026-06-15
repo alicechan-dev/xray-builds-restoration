@@ -27,8 +27,8 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-//возможное отклонение от значения репутации
-//заданого в профиле и для конкретного персонажа
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 #define REPUTATION_DELTA	10
 #define RANK_DELTA			10
 
@@ -127,16 +127,16 @@ SPECIFIC_CHARACTER_INDEX CSE_ALifeTraderAbstract::specific_character()
 	CCharacterInfo char_info;
 	char_info.Load(character_profile());
 
-	//профиль задан индексом
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if(NO_SPECIFIC_CHARACTER != char_info.m_iSpecificCharacterIndex)
 	{
 		set_specific_character(char_info.m_iSpecificCharacterIndex);
 		return m_iSpecificCharacter;
 	}
-	//профиль задан шаблоном
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	//
-	//проверяем все информации о персонаже, запоминаем подходящие,
-	//а потом делаем случайный выбор
+	//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ,
+	//пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 	else
 	{	
 		m_CheckedCharacters.clear();
@@ -151,7 +151,7 @@ SPECIFIC_CHARACTER_INDEX CSE_ALifeTraderAbstract::specific_character()
 
 			if(char_info.data()->m_Community.index() == NO_COMMUNITY_INDEX || spec_char.Community().index() == char_info.data()->m_Community.index())
 			{
-				//запомнить первый (если группировка явно не задана) подходящий персонаж с флажком m_bDefaultForCommunity
+				//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ) пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ m_bDefaultForCommunity
 				if(team_default_index == NO_SPECIFIC_CHARACTER && spec_char.data()->m_bDefaultForCommunity)
 					team_default_index = i;
 
@@ -162,7 +162,7 @@ SPECIFIC_CHARACTER_INDEX CSE_ALifeTraderAbstract::specific_character()
 						int* count = NULL;
 						if(ai().get_alife())
 							count = ai().alife().registry(specific_characters).object(i, true);
-						//если индекс еще не был использован
+						//пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 						if(NULL == count)
 							m_CheckedCharacters.push_back(i);
 					}
@@ -200,7 +200,7 @@ void CSE_ALifeTraderAbstract::set_specific_character	(SPECIFIC_CHARACTER_INDEX n
 {
 	R_ASSERT(new_spec_char != NO_SPECIFIC_CHARACTER);
 
-	//убрать предыдущий номер из реестра
+	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (NO_SPECIFIC_CHARACTER != m_iSpecificCharacter) 
 	{
 		if(ai().get_alife())
@@ -211,7 +211,7 @@ void CSE_ALifeTraderAbstract::set_specific_character	(SPECIFIC_CHARACTER_INDEX n
 
 	if(ai().get_alife())
 	{
-		//запомнить, то что мы использовали индекс
+		//пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 		int a = 1;
 		ai().alife().registry(specific_characters).add(m_iSpecificCharacter, a, true);
 	}
@@ -547,7 +547,8 @@ void CSE_ALifeAnomalousZone::STATE_Read		(NET_Packet	&tNetPacket, u16 size)
 		float					*l_faWeights			= (float*)xr_malloc(l_wItemCount*sizeof(float));
 		string64				*l_cppArtefactSections	= (string64*)xr_malloc(l_wItemCount*sizeof(string64));
 
-		for (u16 i=0; i<l_wItemCount; ++i) {
+		u16						i;
+		for (i=0; i<l_wItemCount; ++i) {
 			tNetPacket.r_stringZ(l_cppArtefactSections[i]);
 			if (m_wVersion > 26)
 				tNetPacket.r_float	(l_faWeights[i]);
