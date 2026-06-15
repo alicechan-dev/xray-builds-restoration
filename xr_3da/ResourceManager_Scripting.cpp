@@ -8,6 +8,7 @@
 #include	"blenders\blender_recorder.h"
 #include	"ai_script_space.h"
 #include	"ai_script_lua_extension.h"
+#include	"luabind/function.hpp"
 #include	"luabind/return_reference_to_policy.hpp"
 
 using namespace				luabind;
@@ -285,10 +286,10 @@ ShaderElement*		CBlender_Compile::_lua_Compile	(LPCSTR namesp, LPCSTR name)
 	LPCSTR				t_1		= (L_textures.size() > 1)	? *L_textures[1] : "null";
 	LPCSTR				t_d		= detail_texture			? detail_texture : "null" ;
 	lua_State*			LSVM	= Device.Resources->LSVM;
-	object				shader	= get_globals(LSVM)[namesp];
-	functor<void>		element	= object_cast<functor<void> >(shader[name]);
+	object				shader	= globals(LSVM)[namesp];
+	object				element	= shader[name];
 	adopt_compiler		ac		= adopt_compiler(this);
-	element						(ac,t_0,t_1,t_d);
+	call_function<void>			(element,ac,t_0,t_1,t_d);
 	r_End				();
 	ShaderElement*	_r	= Device.Resources->_CreateElement(E);
 	return			_r;

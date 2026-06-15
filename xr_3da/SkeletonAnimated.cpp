@@ -490,7 +490,8 @@ void CSkeletonAnimated::IBlend_Startup	()
 	CBlend B; ZeroMemory(&B,sizeof(B));
 	B.blend				= CBlend::eFREE_SLOT;
 	blend_pool.clear	();
-	for (u32 i=0; i<MAX_BLENDED_POOL; i++)
+	u32 i;
+	for (i=0; i<MAX_BLENDED_POOL; i++)
 		blend_pool.push_back(B);
 
 	// cycles+fx clear

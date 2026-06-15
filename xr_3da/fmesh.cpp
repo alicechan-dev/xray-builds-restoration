@@ -136,7 +136,8 @@ void ConvertVertices(u32 dwTypeDest, void *pDest, u32 dwTypeSrc, void *pSource, 
 		}
 		// Copy real TC
 		u32 dwStage0TC = tmPosSrc;
-		for (u32 i=0; i<dwTSrc; i++) {
+		u32 i;
+		for (i=0; i<dwTSrc; i++) {
 			TransferMask[tmPos++]=tmPosSrc++;
 			TransferMask[tmPos++]=tmPosSrc++;
 		}

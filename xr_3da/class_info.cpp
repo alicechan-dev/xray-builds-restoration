@@ -29,17 +29,18 @@ namespace luabind
 {
 	class_info get_class_info(const object& o)
 	{
-		lua_State* L = o.lua_state();
+		lua_State* L = xray_luabind_compat::lua_state(o);
 	
-		class_info result(L);
+		class_info result;
 	
-		o.pushvalue();
+		xray_luabind_compat::pushvalue(o);
 		detail::object_rep* obj = static_cast<detail::object_rep*>(lua_touserdata(L, -1));
 		lua_pop(L, 1);
 
 		result.name = obj->crep()->name();
 		obj->crep()->get_table(L);
-		result.methods.set();
+		xray_luabind_compat::assign_from_stack(result.methods, L);
+		lua_pop(L, 1);
 
 		result.attributes = newtable(L);
 

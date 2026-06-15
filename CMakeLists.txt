@@ -52,6 +52,7 @@ set(XRCORE_SOURCES
   xrCore/xrCore.rc
   xrCore/_compressed_normal.cpp
   xrCore/_math.cpp
+  xrCore/_quaternion.cpp
   xrCore/_sphere.cpp
   xrCore/cpuid.cpp
   xrCore/_std_extensions.cpp
@@ -1301,4 +1302,635 @@ target_link_libraries(xrNetServer PRIVATE
   odbc32
   odbccp32
   dxguid
+)
+
+set(XRSOUND_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xr_3da/xrSound")
+set(XRAY_OGG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/External Library/OGG" CACHE PATH "Legacy Ogg/Vorbis source or SDK root for xrSound")
+set(XRAY_OPENAL_ROOT "" CACHE PATH "Legacy OpenAL SDK root containing AL/al.h, AL/alc.h, AL/alut.h and wrap_oal.lib for xrSound")
+set(XRAY_WRAP_OAL_DLL "C:/Windows/SysWOW64/wrap_oal.dll" CACHE FILEPATH "Installed 32-bit OpenAL wrapper runtime used to generate an xrSound import library when wrap_oal.lib is missing")
+set(XRAY_EAX_ROOT "" CACHE PATH "Legacy Creative EAX SDK root containing eax.h and eax.lib for xrSound")
+
+set(XRSOUND_OGG_INCLUDE_DIR "")
+set(XRSOUND_OGG_LIB_DEBUG "")
+set(XRSOUND_OGG_LIB_RELEASE "")
+set(XRSOUND_VORBIS_LIB_DEBUG "")
+set(XRSOUND_VORBIS_LIB_RELEASE "")
+set(XRSOUND_VORBISFILE_LIB_DEBUG "")
+set(XRSOUND_VORBISFILE_LIB_RELEASE "")
+if(EXISTS "${XRAY_OGG_ROOT}/include/vorbis/vorbisfile.h" AND EXISTS "${XRAY_OGG_ROOT}/include/ogg/ogg.h" AND EXISTS "${XRAY_OGG_ROOT}/lib/Win32/vorbisfile.lib")
+  set(XRSOUND_OGG_INCLUDE_DIR "${XRAY_OGG_ROOT}/include")
+  set(XRSOUND_OGG_LIB_DEBUG "${XRAY_OGG_ROOT}/lib/Win32/ogg.lib")
+  set(XRSOUND_OGG_LIB_RELEASE "${XRAY_OGG_ROOT}/lib/Win32/ogg.lib")
+  set(XRSOUND_VORBIS_LIB_DEBUG "${XRAY_OGG_ROOT}/lib/Win32/vorbis.lib")
+  set(XRSOUND_VORBIS_LIB_RELEASE "${XRAY_OGG_ROOT}/lib/Win32/vorbis.lib")
+  set(XRSOUND_VORBISFILE_LIB_DEBUG "${XRAY_OGG_ROOT}/lib/Win32/vorbisfile.lib")
+  set(XRSOUND_VORBISFILE_LIB_RELEASE "${XRAY_OGG_ROOT}/lib/Win32/vorbisfile.lib")
+elseif(EXISTS "${XRAY_OGG_ROOT}/Include/vorbis/vorbisfile.h" AND EXISTS "${XRAY_OGG_ROOT}/Include/ogg/ogg.h")
+  set(XRSOUND_OGG_INCLUDE_DIR "${XRAY_OGG_ROOT}/Include")
+  set(XRSOUND_OGG_LIB_DEBUG "${XRAY_OGG_ROOT}/Libs/ogg_static_d.lib")
+  set(XRSOUND_OGG_LIB_RELEASE "${XRAY_OGG_ROOT}/Libs/ogg_static.lib")
+  set(XRSOUND_VORBIS_LIB_DEBUG "${XRAY_OGG_ROOT}/Libs/vorbis_static_d.lib")
+  set(XRSOUND_VORBIS_LIB_RELEASE "${XRAY_OGG_ROOT}/Libs/vorbis_static.lib")
+  set(XRSOUND_VORBISFILE_LIB_DEBUG "${XRAY_OGG_ROOT}/Libs/vorbisfile_static_d.lib")
+  set(XRSOUND_VORBISFILE_LIB_RELEASE "${XRAY_OGG_ROOT}/Libs/vorbisfile_static.lib")
+elseif(EXISTS "${XRAY_OGG_ROOT}/vorbis/include/vorbis/vorbisfile.h" AND EXISTS "${XRAY_OGG_ROOT}/ogg/include/ogg/ogg.h")
+  set(XRSOUND_OGG_INCLUDE_DIR "${XRAY_OGG_ROOT}/ogg/include" "${XRAY_OGG_ROOT}/vorbis/include")
+else()
+  message(WARNING "xrSound needs Ogg/Vorbis headers. Set XRAY_OGG_ROOT to either the Xiph root containing Include/ and Libs/, or the legacy source root containing ogg/include and vorbis/include.")
+endif()
+foreach(required_lib IN ITEMS
+    XRSOUND_OGG_LIB_DEBUG
+    XRSOUND_OGG_LIB_RELEASE
+    XRSOUND_VORBIS_LIB_DEBUG
+    XRSOUND_VORBIS_LIB_RELEASE
+    XRSOUND_VORBISFILE_LIB_DEBUG
+    XRSOUND_VORBISFILE_LIB_RELEASE
+)
+  if(${required_lib} AND NOT EXISTS "${${required_lib}}")
+    message(WARNING "xrSound expected ${required_lib}='${${required_lib}}', but that file does not exist.")
+  endif()
+endforeach()
+if(NOT XRSOUND_VORBIS_LIB_RELEASE AND NOT XRSOUND_VORBISFILE_LIB_RELEASE)
+  message(WARNING "xrSound original pragmas request vorbis.lib and vorbisfile.lib. Configure XRAY_OGG_ROOT to a Xiph binary root or provide compatible libraries.")
+endif()
+if(NOT XRAY_OPENAL_ROOT)
+  message(WARNING "xrSound needs legacy OpenAL headers AL/al.h, AL/alc.h, AL/alut.h and wrap_oal.lib. Set XRAY_OPENAL_ROOT to the original OpenAL SDK root.")
+else()
+  set(XRSOUND_GENERATED_OPENAL_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/compat/openal/include")
+  set(XRSOUND_OPENAL_AL_H "")
+  set(XRSOUND_OPENAL_ALC_H "")
+  set(XRSOUND_OPENAL_ALUT_H "")
+  foreach(candidate IN ITEMS
+      "${XRAY_OPENAL_ROOT}/include/AL/al.h"
+      "${XRAY_OPENAL_ROOT}/Include/AL/al.h"
+      "${XRAY_OPENAL_ROOT}/AL/al.h"
+  )
+    if(NOT XRSOUND_OPENAL_AL_H AND EXISTS "${candidate}")
+      set(XRSOUND_OPENAL_AL_H "${candidate}")
+    endif()
+  endforeach()
+  foreach(candidate IN ITEMS
+      "${XRAY_OPENAL_ROOT}/include/AL/alc.h"
+      "${XRAY_OPENAL_ROOT}/Include/AL/alc.h"
+      "${XRAY_OPENAL_ROOT}/AL/alc.h"
+  )
+    if(NOT XRSOUND_OPENAL_ALC_H AND EXISTS "${candidate}")
+      set(XRSOUND_OPENAL_ALC_H "${candidate}")
+    endif()
+  endforeach()
+  foreach(candidate IN ITEMS
+      "${XRAY_OPENAL_ROOT}/include/AL/alut.h"
+      "${XRAY_OPENAL_ROOT}/Include/AL/alut.h"
+      "${XRAY_OPENAL_ROOT}/AL/alut.h"
+  )
+    if(NOT XRSOUND_OPENAL_ALUT_H AND EXISTS "${candidate}")
+      set(XRSOUND_OPENAL_ALUT_H "${candidate}")
+    endif()
+  endforeach()
+  if(NOT XRSOUND_OPENAL_AL_H)
+    if(EXISTS "${XRAY_OPENAL_ROOT}/include/al.h" OR EXISTS "${XRAY_OPENAL_ROOT}/Include/al.h")
+      message(WARNING "XRAY_OPENAL_ROOT='${XRAY_OPENAL_ROOT}' has flat OpenAL headers, but xrSound includes <AL/al.h>. Generating a build-tree include overlay for xrSound.")
+      file(MAKE_DIRECTORY "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL")
+      if(EXISTS "${XRAY_OPENAL_ROOT}/include/al.h")
+        set(XRSOUND_OPENAL_FLAT_AL_H_SOURCE "${XRAY_OPENAL_ROOT}/include/al.h")
+      else()
+        set(XRSOUND_OPENAL_FLAT_AL_H_SOURCE "${XRAY_OPENAL_ROOT}/Include/al.h")
+      endif()
+      file(TO_CMAKE_PATH "${XRSOUND_OPENAL_FLAT_AL_H_SOURCE}" XRSOUND_OPENAL_FLAT_AL_H)
+      file(WRITE "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL/al.h" "#pragma once\n#include \"${XRSOUND_OPENAL_FLAT_AL_H}\"\n")
+      set(XRSOUND_OPENAL_AL_H "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL/al.h")
+    else()
+      message(WARNING "XRAY_OPENAL_ROOT='${XRAY_OPENAL_ROOT}' does not contain AL/al.h.")
+    endif()
+  endif()
+  if(NOT XRSOUND_OPENAL_ALC_H AND (EXISTS "${XRAY_OPENAL_ROOT}/include/alc.h" OR EXISTS "${XRAY_OPENAL_ROOT}/Include/alc.h"))
+    file(MAKE_DIRECTORY "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL")
+    if(EXISTS "${XRAY_OPENAL_ROOT}/include/alc.h")
+      set(XRSOUND_OPENAL_FLAT_ALC_H_SOURCE "${XRAY_OPENAL_ROOT}/include/alc.h")
+    else()
+      set(XRSOUND_OPENAL_FLAT_ALC_H_SOURCE "${XRAY_OPENAL_ROOT}/Include/alc.h")
+    endif()
+    file(TO_CMAKE_PATH "${XRSOUND_OPENAL_FLAT_ALC_H_SOURCE}" XRSOUND_OPENAL_FLAT_ALC_H)
+    file(WRITE "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL/alc.h" "#pragma once\n#include \"${XRSOUND_OPENAL_FLAT_ALC_H}\"\n")
+    set(XRSOUND_OPENAL_ALC_H "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL/alc.h")
+  endif()
+  if(NOT XRSOUND_OPENAL_ALUT_H AND (EXISTS "${XRAY_OPENAL_ROOT}/include/alut.h" OR EXISTS "${XRAY_OPENAL_ROOT}/Include/alut.h"))
+    file(MAKE_DIRECTORY "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL")
+    if(EXISTS "${XRAY_OPENAL_ROOT}/include/alut.h")
+      set(XRSOUND_OPENAL_FLAT_ALUT_H_SOURCE "${XRAY_OPENAL_ROOT}/include/alut.h")
+    else()
+      set(XRSOUND_OPENAL_FLAT_ALUT_H_SOURCE "${XRAY_OPENAL_ROOT}/Include/alut.h")
+    endif()
+    file(TO_CMAKE_PATH "${XRSOUND_OPENAL_FLAT_ALUT_H_SOURCE}" XRSOUND_OPENAL_FLAT_ALUT_H)
+    file(WRITE "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL/alut.h" "#pragma once\n#include \"${XRSOUND_OPENAL_FLAT_ALUT_H}\"\n")
+    set(XRSOUND_OPENAL_ALUT_H "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}/AL/alut.h")
+  endif()
+  if(NOT XRSOUND_OPENAL_ALUT_H)
+    message(WARNING "xrSound includes <AL/alut.h>, but XRAY_OPENAL_ROOT='${XRAY_OPENAL_ROOT}' does not provide alut.h. Provide the matching legacy OpenAL/ALUT headers.")
+  endif()
+
+  set(XRSOUND_OPENAL_WRAP_OAL_LIB "")
+  foreach(candidate IN ITEMS
+      "${XRAY_OPENAL_ROOT}/libs/Win32/wrap_oal.lib"
+      "${XRAY_OPENAL_ROOT}/lib/Win32/wrap_oal.lib"
+      "${XRAY_OPENAL_ROOT}/lib/wrap_oal.lib"
+      "${XRAY_OPENAL_ROOT}/wrap_oal.lib"
+  )
+    if(NOT XRSOUND_OPENAL_WRAP_OAL_LIB AND EXISTS "${candidate}")
+      set(XRSOUND_OPENAL_WRAP_OAL_LIB "${candidate}")
+    endif()
+  endforeach()
+  if(NOT XRSOUND_OPENAL_WRAP_OAL_LIB)
+    if(EXISTS "${XRAY_OPENAL_ROOT}/libs/Win32/OpenAL32.lib" OR EXISTS "${XRAY_OPENAL_ROOT}/lib/Win32/OpenAL32.lib" OR EXISTS "${XRAY_OPENAL_ROOT}/lib/OpenAL32.lib" OR EXISTS "${XRAY_OPENAL_ROOT}/OpenAL32.lib")
+      message(WARNING "XRAY_OPENAL_ROOT='${XRAY_OPENAL_ROOT}' contains OpenAL32.lib, but original xrSound explicitly links wrap_oal.lib. OpenAL32.lib is not substituted; provide the original wrap_oal.lib.")
+    else()
+      message(WARNING "XRAY_OPENAL_ROOT='${XRAY_OPENAL_ROOT}' does not contain wrap_oal.lib required by the original xrSound pragmas.")
+    endif()
+    if(MSVC AND EXISTS "${XRAY_WRAP_OAL_DLL}")
+      set(XRSOUND_OPENAL_WRAP_OAL_LIB "${CMAKE_CURRENT_BINARY_DIR}/compat/openal/wrap_oal.lib")
+      set(XRSOUND_WRAP_OAL_DEF "${CMAKE_CURRENT_BINARY_DIR}/compat/openal/wrap_oal.def")
+      file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/compat/openal")
+      file(WRITE "${XRSOUND_WRAP_OAL_DEF}" "LIBRARY wrap_oal.dll\nEXPORTS\n  EAXGet\n  EAXSet\n  alBuffer3f\n  alBuffer3i\n  alBufferData\n  alBufferf\n  alBufferfv\n  alBufferi\n  alBufferiv\n  alDeleteBuffers\n  alDeleteSources\n  alDisable\n  alDistanceModel\n  alDopplerFactor\n  alDopplerVelocity\n  alEnable\n  alGenBuffers\n  alGenSources\n  alGetBoolean\n  alGetBooleanv\n  alGetBuffer3f\n  alGetBuffer3i\n  alGetBufferf\n  alGetBufferfv\n  alGetBufferi\n  alGetBufferiv\n  alGetDouble\n  alGetDoublev\n  alGetEnumValue\n  alGetError\n  alGetFloat\n  alGetFloatv\n  alGetInteger\n  alGetIntegerv\n  alGetListener3f\n  alGetListener3i\n  alGetListenerf\n  alGetListenerfv\n  alGetListeneri\n  alGetListeneriv\n  alGetProcAddress\n  alGetSource3f\n  alGetSource3i\n  alGetSourcef\n  alGetSourcefv\n  alGetSourcei\n  alGetSourceiv\n  alGetString\n  alIsBuffer\n  alIsEnabled\n  alIsExtensionPresent\n  alIsSource\n  alListener3f\n  alListener3i\n  alListenerf\n  alListenerfv\n  alListeneri\n  alListeneriv\n  alSource3f\n  alSource3i\n  alSourcePause\n  alSourcePausev\n  alSourcePlay\n  alSourcePlayv\n  alSourceQueueBuffers\n  alSourceRewind\n  alSourceRewindv\n  alSourceStop\n  alSourceStopv\n  alSourceUnqueueBuffers\n  alSourcef\n  alSourcefv\n  alSourcei\n  alSourceiv\n  alSpeedOfSound\n  alcCaptureCloseDevice\n  alcCaptureOpenDevice\n  alcCaptureSamples\n  alcCaptureStart\n  alcCaptureStop\n  alcCloseDevice\n  alcCreateContext\n  alcDestroyContext\n  alcGetContextsDevice\n  alcGetCurrentContext\n  alcGetEnumValue\n  alcGetError\n  alcGetIntegerv\n  alcGetProcAddress\n  alcGetString\n  alcIsExtensionPresent\n  alcMakeContextCurrent\n  alcOpenDevice\n  alcProcessContext\n  alcSuspendContext\n")
+      execute_process(
+        COMMAND "${CMAKE_AR}" /nologo /machine:x86 /def:${XRSOUND_WRAP_OAL_DEF} /out:${XRSOUND_OPENAL_WRAP_OAL_LIB}
+        RESULT_VARIABLE XRSOUND_WRAP_OAL_LIB_RESULT
+      )
+      if(XRSOUND_WRAP_OAL_LIB_RESULT EQUAL 0)
+        message(STATUS "xrSound generated wrap_oal import library: ${XRSOUND_OPENAL_WRAP_OAL_LIB} from ${XRAY_WRAP_OAL_DLL}")
+      else()
+        message(WARNING "Failed to generate xrSound wrap_oal import library from '${XRAY_WRAP_OAL_DLL}'.")
+        set(XRSOUND_OPENAL_WRAP_OAL_LIB "")
+      endif()
+    endif()
+  endif()
+endif()
+if(NOT XRAY_EAX_ROOT)
+  message(WARNING "xrSound needs legacy EAX headers/libs: eax.h and eax.lib. Set XRAY_EAX_ROOT to the original EAX SDK root.")
+elseif(NOT EXISTS "${XRAY_EAX_ROOT}/include/eax.h" AND NOT EXISTS "${XRAY_EAX_ROOT}/eax.h")
+  message(WARNING "XRAY_EAX_ROOT='${XRAY_EAX_ROOT}' does not contain eax.h.")
+endif()
+
+set(XRSOUND_SOURCES
+  "${XRSOUND_DIR}/guids.cpp"
+  "${XRSOUND_DIR}/sound.cpp"
+  "${XRSOUND_DIR}/stdafx.cpp"
+  "${XRSOUND_DIR}/SoundRender_Core.cpp"
+  "${XRSOUND_DIR}/SoundRender_Core_Processor.cpp"
+  "${XRSOUND_DIR}/SoundRender_Core_SourceManager.cpp"
+  "${XRSOUND_DIR}/SoundRender_Core_StartStop.cpp"
+  "${XRSOUND_DIR}/SoundRender_CoreA.cpp"
+  "${XRSOUND_DIR}/SoundRender_CoreD.cpp"
+  "${XRSOUND_DIR}/SoundRender_Emitter.cpp"
+  "${XRSOUND_DIR}/SoundRender_Emitter_FSM.cpp"
+  "${XRSOUND_DIR}/SoundRender_Emitter_StartStop.cpp"
+  "${XRSOUND_DIR}/SoundRender_Emitter_streamer.cpp"
+  "${XRSOUND_DIR}/SoundRender_Source.cpp"
+  "${XRSOUND_DIR}/SoundRender_Source_loader.cpp"
+  "${XRSOUND_DIR}/SoundRender_Target.cpp"
+  "${XRSOUND_DIR}/SoundRender_TargetA.cpp"
+  "${XRSOUND_DIR}/SoundRender_TargetD.cpp"
+  "${XRSOUND_DIR}/SoundRender_Environment.cpp"
+  "${XRSOUND_DIR}/SoundRender_Cache.cpp"
+)
+
+add_library(xrSound SHARED ${XRSOUND_SOURCES})
+
+set_target_properties(xrSound PROPERTIES
+  OUTPUT_NAME "xrSound"
+  # xrSound.vcproj CharacterSet="2" is the VS2003 Multi-Byte setting.
+  VS_GLOBAL_CharacterSet "MultiByte"
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
+  RUNTIME_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  LIBRARY_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  ARCHIVE_OUTPUT_DIRECTORY "${XRAY_LIBRARY_DIR}"
+  PDB_OUTPUT_DIRECTORY     "${XRAY_OUTPUT_ROOT}/pdb"
+)
+
+foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
+  string(TOUPPER "${config}" config_upper)
+  set_target_properties(xrSound PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${XRAY_LIBRARY_DIR}"
+    PDB_OUTPUT_DIRECTORY_${config_upper}     "${XRAY_OUTPUT_ROOT}/pdb"
+  )
+endforeach()
+
+target_include_directories(xrSound
+  PRIVATE
+    "${XRSOUND_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xr_3da/xrCDB"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc"
+    ${XRSOUND_OGG_INCLUDE_DIR}
+)
+
+if(XRAY_OPENAL_ROOT)
+  target_include_directories(xrSound PRIVATE "${XRSOUND_GENERATED_OPENAL_INCLUDE_DIR}" "${XRAY_OPENAL_ROOT}/include" "${XRAY_OPENAL_ROOT}/Include" "${XRAY_OPENAL_ROOT}")
+  target_link_directories(xrSound PRIVATE "${XRAY_OPENAL_ROOT}/libs/Win32" "${XRAY_OPENAL_ROOT}/lib/Win32" "${XRAY_OPENAL_ROOT}/lib" "${XRAY_OPENAL_ROOT}/libs" "${XRAY_OPENAL_ROOT}")
+endif()
+
+if(XRAY_EAX_ROOT)
+  target_include_directories(xrSound PRIVATE "${XRAY_EAX_ROOT}/include" "${XRAY_EAX_ROOT}")
+  target_link_directories(xrSound PRIVATE "${XRAY_EAX_ROOT}/lib" "${XRAY_EAX_ROOT}")
+endif()
+
+if(XRAY_EFFECTIVE_DXSDK_ROOT)
+  target_include_directories(xrSound PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include" "${XRAY_EFFECTIVE_DXSDK_ROOT}/include")
+  target_link_directories(xrSound PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib/x86" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib/x86")
+endif()
+
+target_compile_definitions(xrSound
+  PRIVATE
+    WIN32
+    _WINDOWS
+    _USRDLL
+    XRSOUND_EXPORTS
+    # xrSound includes xrCore.h, so it needs the same modern MSVC compatibility
+    # switches for legacy xrCore/STL headers even though they were implicit in
+    # the original VC2003 environment.
+    _FARQ=
+    _HAS_AUTO_PTR_ETC=1
+    $<$<CONFIG:Debug>:_DEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    $<$<CONFIG:Mixed>:MIXED>
+)
+
+if(MSVC)
+  target_compile_options(xrSound
+    PRIVATE
+      /nologo
+      /W4
+      /GR
+      /Gz
+      /EHs-
+      /EHa-
+  )
+
+  # Mirrors xrSound.vcproj optimization/runtime choices where modern MSVC still
+  # supports them; obsolete VC2003 settings such as /G7 and /Wp64 are omitted.
+  target_compile_options(xrSound PRIVATE
+    $<$<CONFIG:Debug>:/Od /Zi /RTC1 /Gy /Oi->
+    $<$<NOT:$<CONFIG:Debug>>:/O2 /Ob2 /Oi /Ot /GF /GS->
+    $<$<CONFIG:Release>:/Oy>
+  )
+
+  target_link_options(xrSound PRIVATE
+    /nologo
+    /SUBSYSTEM:WINDOWS
+    /MACHINE:I386
+    # Legacy Xiph static libraries were built without SAFESEH metadata.
+    /SAFESEH:NO
+    # stdafx.cpp has original hardcoded X: drive pragma libraries. CMake links
+    # the already-ported targets directly and resolves third-party audio libs
+    # through cache-configured legacy SDK paths.
+    /NODEFAULTLIB:x:\\xrCore
+    /NODEFAULTLIB:x:\\xrCore.lib
+    /NODEFAULTLIB:x:\\xrCDB
+    /NODEFAULTLIB:x:\\xrCDB.lib
+    /NODEFAULTLIB:x:\\eax.lib
+    /NODEFAULTLIB:x:\\vorbis.lib
+    /NODEFAULTLIB:x:\\vorbisfile.lib
+    /NODEFAULTLIB:vorbis.lib
+    /NODEFAULTLIB:vorbisfile.lib
+    /NODEFAULTLIB:x:\\wrap_oal.lib
+    $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL /MAP>
+    $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
+  )
+endif()
+
+target_precompile_headers(xrSound PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${XRSOUND_DIR}/stdafx.h>")
+set_source_files_properties("${XRSOUND_DIR}/stdafx.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties("${XRSOUND_DIR}/guids.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(
+  "${XRSOUND_DIR}/SoundRender_Source.cpp"
+  "${XRSOUND_DIR}/SoundRender_Source_loader.cpp"
+  PROPERTIES SKIP_PRECOMPILE_HEADERS ON
+)
+if(MSVC)
+  # The original xrSound project uses /Gz globally, but this Xiph Vorbisfile
+  # header has plain extern prototypes while the linked static libs export
+  # cdecl symbols. Keep /Gz for xrSound itself and compile only the Vorbis
+  # call sites with /Gd so their declarations match the Xiph library ABI.
+  set_source_files_properties(
+    "${XRSOUND_DIR}/SoundRender_Source.cpp"
+    "${XRSOUND_DIR}/SoundRender_Source_loader.cpp"
+    PROPERTIES COMPILE_OPTIONS /Gd
+  )
+endif()
+
+target_link_libraries(xrSound PRIVATE
+  xrCore
+  xrCDB
+  eax
+  $<$<CONFIG:Debug>:${XRSOUND_OGG_LIB_DEBUG}>
+  $<$<NOT:$<CONFIG:Debug>>:${XRSOUND_OGG_LIB_RELEASE}>
+  $<$<CONFIG:Debug>:${XRSOUND_VORBIS_LIB_DEBUG}>
+  $<$<NOT:$<CONFIG:Debug>>:${XRSOUND_VORBIS_LIB_RELEASE}>
+  $<$<CONFIG:Debug>:${XRSOUND_VORBISFILE_LIB_DEBUG}>
+  $<$<NOT:$<CONFIG:Debug>>:${XRSOUND_VORBISFILE_LIB_RELEASE}>
+  ${XRSOUND_OPENAL_WRAP_OAL_LIB}
+  dsound
+  dxguid
+  msacm32
+)
+
+set(XR3DA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xr_3da")
+
+if(NOT XRAY_EFFECTIVE_DXSDK_ROOT)
+  message(WARNING "XR_3DA includes legacy DirectX 9 headers such as d3d9.h, dplay8.h, dinput.h, and d3dx9.h. Set XRAY_DXSDK_ROOT, D3DXSDK_DIR, DXSDK_DIR, or DIRECTX_SDK_DIR to the original DirectX SDK root if the active SDK does not provide them.")
+elseif(NOT EXISTS "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include/d3dx9.h" AND NOT EXISTS "${XRAY_EFFECTIVE_DXSDK_ROOT}/include/d3dx9.h")
+  message(WARNING "XR_3DA needs d3dx9.h, but it was not found under XRAY_EFFECTIVE_DXSDK_ROOT='${XRAY_EFFECTIVE_DXSDK_ROOT}'.")
+endif()
+
+set(XR3DA_SOURCES
+  "${XR3DA_DIR}/defines.cpp"
+  "${XR3DA_DIR}/stdafx.cpp"
+  "${XR3DA_DIR}/x_ray.cpp"
+  "${XR3DA_DIR}/resource.rc"
+  "${XR3DA_DIR}/IInputReceiver.cpp"
+  "${XR3DA_DIR}/Xr_input.cpp"
+  "${XR3DA_DIR}/ISheduled.cpp"
+  "${XR3DA_DIR}/xrSheduler.cpp"
+  "${XR3DA_DIR}/IRenderable.cpp"
+  "${XR3DA_DIR}/Render.cpp"
+  "${XR3DA_DIR}/ISpatial.cpp"
+  "${XR3DA_DIR}/ISpatial_q_box.cpp"
+  "${XR3DA_DIR}/ISpatial_q_frustum.cpp"
+  "${XR3DA_DIR}/ISpatial_q_ray.cpp"
+  "${XR3DA_DIR}/ISpatial_verify.cpp"
+  "${XR3DA_DIR}/ICollidable.cpp"
+  "${XR3DA_DIR}/IGame_Level.cpp"
+  "${XR3DA_DIR}/IGame_Level_check_textures.cpp"
+  "${XR3DA_DIR}/IGame_Persistent.cpp"
+  "${XR3DA_DIR}/IGame_ObjectPool.cpp"
+  "${XR3DA_DIR}/xr_object.cpp"
+  "${XR3DA_DIR}/xr_object_list.cpp"
+  "${XR3DA_DIR}/CustomHUD.cpp"
+  "${XR3DA_DIR}/Environment.cpp"
+  "${XR3DA_DIR}/Rain.cpp"
+  "${XR3DA_DIR}/thunderbolt.cpp"
+  "${XR3DA_DIR}/xr_efflensflare.cpp"
+  "${XR3DA_DIR}/CameraBase.cpp"
+  "${XR3DA_DIR}/CameraManager.cpp"
+  "${XR3DA_DIR}/Effector.cpp"
+  "${XR3DA_DIR}/EffectorFall.cpp"
+  "${XR3DA_DIR}/EffectorPP.cpp"
+  "${XR3DA_DIR}/FDemoPlay.cpp"
+  "${XR3DA_DIR}/FDemoRecord.cpp"
+  "${XR3DA_DIR}/xr_area.cpp"
+  "${XR3DA_DIR}/xr_area_movement.cpp"
+  "${XR3DA_DIR}/xr_area_query.cpp"
+  "${XR3DA_DIR}/xr_area_raypick.cpp"
+  "${XR3DA_DIR}/xr_collide_form.cpp"
+  "${XR3DA_DIR}/Envelope.cpp"
+  "${XR3DA_DIR}/interp.cpp"
+  "${XR3DA_DIR}/motion.cpp"
+  "${XR3DA_DIR}/ObjectAnimator.cpp"
+  "${XR3DA_DIR}/Feel_Touch.cpp"
+  "${XR3DA_DIR}/Feel_Vision.cpp"
+  "${XR3DA_DIR}/FBasicVisual.cpp"
+  "${XR3DA_DIR}/fmesh.cpp"
+  "${XR3DA_DIR}/FVisual.cpp"
+  "${XR3DA_DIR}/FProgressive.cpp"
+  "${XR3DA_DIR}/FProgressiveFixedVisual.cpp"
+  "${XR3DA_DIR}/FHierrarhyVisual.cpp"
+  # FastSprite.cpp and FastSpriteRail.cpp are excluded in XR_3DA.vcproj.
+  "${XR3DA_DIR}/FCached.cpp"
+  "${XR3DA_DIR}/ParticleCustom.cpp"
+  "${XR3DA_DIR}/SkeletonAnimated.cpp"
+  "${XR3DA_DIR}/SkeletonCustom.cpp"
+  "${XR3DA_DIR}/SkeletonRigid.cpp"
+  "${XR3DA_DIR}/SkeletonX.cpp"
+  "${XR3DA_DIR}/FLOD.cpp"
+  "${XR3DA_DIR}/Frustum.cpp"
+  "${XR3DA_DIR}/PS_instance.cpp"
+  "${XR3DA_DIR}/LightAnimLibrary.cpp"
+  "${XR3DA_DIR}/GameFont.cpp"
+  "${XR3DA_DIR}/device.cpp"
+  "${XR3DA_DIR}/Device_create.cpp"
+  "${XR3DA_DIR}/Device_destroy.cpp"
+  "${XR3DA_DIR}/Device_Initialize.cpp"
+  "${XR3DA_DIR}/Device_Misc.cpp"
+  "${XR3DA_DIR}/Device_overdraw.cpp"
+  "${XR3DA_DIR}/Device_wndproc.cpp"
+  "${XR3DA_DIR}/Stats.cpp"
+  "${XR3DA_DIR}/HW.cpp"
+  "${XR3DA_DIR}/HWCaps.cpp"
+  "${XR3DA_DIR}/xr_effgamma.cpp"
+  "${XR3DA_DIR}/Blenders/Blender.cpp"
+  "${XR3DA_DIR}/Blenders/Blender_Palette.cpp"
+  "${XR3DA_DIR}/Blenders/Blender_Recorder.cpp"
+  "${XR3DA_DIR}/Blender_Recorder_R2.cpp"
+  "${XR3DA_DIR}/Blender_Recorder_StandartBinding.cpp"
+  "${XR3DA_DIR}/tss_def.cpp"
+  "${XR3DA_DIR}/xr_avi.cpp"
+  "${XR3DA_DIR}/xrImage_Resampler.cpp"
+  "${XR3DA_DIR}/ResourceManager.cpp"
+  "${XR3DA_DIR}/ResourceManager_Loader.cpp"
+  "${XR3DA_DIR}/ResourceManager_Reset.cpp"
+  "${XR3DA_DIR}/ResourceManager_Resources.cpp"
+  "${XR3DA_DIR}/ResourceManager_Scripting.cpp"
+  "${XR3DA_DIR}/r_constants.cpp"
+  "${XR3DA_DIR}/SH_Atomic.cpp"
+  "${XR3DA_DIR}/SH_Constant.cpp"
+  "${XR3DA_DIR}/SH_Matrix.cpp"
+  "${XR3DA_DIR}/SH_RT.cpp"
+  "${XR3DA_DIR}/SH_Texture.cpp"
+  "${XR3DA_DIR}/Shader.cpp"
+  "${XR3DA_DIR}/r_constants_cache.cpp"
+  "${XR3DA_DIR}/R_Backend.cpp"
+  "${XR3DA_DIR}/R_Backend_DBG.cpp"
+  "${XR3DA_DIR}/R_Backend_Runtime.cpp"
+  "${XR3DA_DIR}/R_Backend_xform.cpp"
+  "${XR3DA_DIR}/R_DStreams.cpp"
+  "${XR3DA_DIR}/pure.cpp"
+  "${XR3DA_DIR}/xrXRC.cpp"
+  "${XR3DA_DIR}/xr_ioc_cmd.cpp"
+  "${XR3DA_DIR}/XR_IOConsole.cpp"
+  "${XR3DA_DIR}/Engine.cpp"
+  "${XR3DA_DIR}/EngineAPI.cpp"
+  "${XR3DA_DIR}/EventAPI.cpp"
+  "${XR3DA_DIR}/mailSlot.cpp"
+  "${XR3DA_DIR}/tga.cpp"
+  "${XR3DA_DIR}/_scripting.cpp"
+  "${XR3DA_DIR}/ai_script_lua_debug.cpp"
+  "${XR3DA_DIR}/ai_script_lua_extension.cpp"
+  "${XR3DA_DIR}/class.cpp"
+  "${XR3DA_DIR}/class_info.cpp"
+  "${XR3DA_DIR}/class_registry.cpp"
+  "${XR3DA_DIR}/class_rep.cpp"
+  "${XR3DA_DIR}/create_class.cpp"
+  "${XR3DA_DIR}/error.cpp"
+  "${XR3DA_DIR}/find_best_match.cpp"
+  "${XR3DA_DIR}/function.cpp"
+  "${XR3DA_DIR}/implicit_cast.cpp"
+  "${XR3DA_DIR}/link_compatibility.cpp"
+  "${XR3DA_DIR}/object_rep.cpp"
+  "${XR3DA_DIR}/open.cpp"
+  "${XR3DA_DIR}/pcall.cpp"
+  "${XR3DA_DIR}/ref.cpp"
+  "${XR3DA_DIR}/scope.cpp"
+  "${XR3DA_DIR}/stack_content_by_name.cpp"
+  "${XR3DA_DIR}/weak_ref.cpp"
+  ${XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE}
+  # Legacy d3dx9.lib references the old MSVC _snprintf symbol; keep the
+  # compatibility entry point local to XR_3DA.
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc/d3dx9_snprintf_compat.cpp"
+)
+
+set(XR3DA_LUABIND_SOURCES
+  "${XR3DA_DIR}/class.cpp"
+  "${XR3DA_DIR}/class_info.cpp"
+  "${XR3DA_DIR}/class_registry.cpp"
+  "${XR3DA_DIR}/class_rep.cpp"
+  "${XR3DA_DIR}/create_class.cpp"
+  "${XR3DA_DIR}/error.cpp"
+  "${XR3DA_DIR}/find_best_match.cpp"
+  "${XR3DA_DIR}/function.cpp"
+  "${XR3DA_DIR}/implicit_cast.cpp"
+  "${XR3DA_DIR}/link_compatibility.cpp"
+  "${XR3DA_DIR}/object_rep.cpp"
+  "${XR3DA_DIR}/open.cpp"
+  "${XR3DA_DIR}/pcall.cpp"
+  "${XR3DA_DIR}/ref.cpp"
+  "${XR3DA_DIR}/scope.cpp"
+  "${XR3DA_DIR}/stack_content_by_name.cpp"
+  "${XR3DA_DIR}/weak_ref.cpp"
+  ${XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE}
+)
+
+add_executable(XR_3DA ${XR3DA_SOURCES})
+
+set_target_properties(XR_3DA PROPERTIES
+  OUTPUT_NAME "XR_3DA"
+  # XR_3DA.vcproj CharacterSet="2" is the VS2003 Multi-Byte setting.
+  VS_GLOBAL_CharacterSet "MultiByte"
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
+  RUNTIME_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  LIBRARY_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  ARCHIVE_OUTPUT_DIRECTORY "${XRAY_LIBRARY_DIR}"
+  PDB_OUTPUT_DIRECTORY     "${XRAY_OUTPUT_ROOT}/pdb"
+)
+
+foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
+  string(TOUPPER "${config}" config_upper)
+  set_target_properties(XR_3DA PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${XRAY_LIBRARY_DIR}"
+    PDB_OUTPUT_DIRECTORY_${config_upper}     "${XRAY_OUTPUT_ROOT}/pdb"
+  )
+endforeach()
+
+target_include_directories(XR_3DA
+  PRIVATE
+    "${XR3DA_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc"
+)
+
+if(XRAY_EFFECTIVE_DXSDK_ROOT)
+  target_include_directories(XR_3DA PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include" "${XRAY_EFFECTIVE_DXSDK_ROOT}/include")
+  target_link_directories(XR_3DA PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib/x86" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib/x86")
+endif()
+
+if(XRSE_FACTORY_LUABIND_INCLUDE_DIR)
+  target_include_directories(XR_3DA PRIVATE "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}")
+endif()
+
+if(XRAY_BOOST_ROOT)
+  target_include_directories(XR_3DA PRIVATE "${XRAY_BOOST_ROOT}")
+endif()
+
+target_compile_definitions(XR_3DA
+  PRIVATE
+    WIN32
+    _WINDOWS
+    ENGINE_BUILD
+    # XR_3DA.vcproj sets ExceptionHandling="FALSE"; keep luabind in the same
+    # no-exceptions mode used by the other restored script-binding target.
+    LUABIND_NO_EXCEPTIONS
+    # XR_3DA Debug.vcproj also defines SECURE_GAMEDATA.
+    $<$<CONFIG:Debug>:SECURE_GAMEDATA>
+    # XR_3DA includes xrCore.h, so it needs the same modern MSVC compatibility
+    # switches for legacy xrCore/STL headers even though they were implicit in
+    # the original VC2003 environment.
+    _FARQ=
+    _HAS_AUTO_PTR_ETC=1
+    $<$<CONFIG:Debug>:_DEBUG>
+    $<$<CONFIG:Debug>:DEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    $<$<CONFIG:Mixed>:DEBUG>
+    $<$<CONFIG:Mixed>:MIXED>
+)
+
+if(MSVC)
+  target_compile_options(XR_3DA
+    PRIVATE
+      /nologo
+      /W4
+      /GR
+      /Gz
+      /EHs-
+      /EHa-
+      /Zm200
+  )
+
+  # Mirrors XR_3DA.vcproj optimization/runtime choices where modern MSVC still
+  # supports them; obsolete VC2003 settings such as /G7 and /Wp64 are omitted.
+  target_compile_options(XR_3DA PRIVATE
+    $<$<CONFIG:Debug>:/Od /Zi /RTC1 /Gy /Oi->
+    $<$<NOT:$<CONFIG:Debug>>:/O2 /Ob2 /Oi /Ot /GF /GS->
+    $<$<CONFIG:Release>:/Oy>
+  )
+
+  target_link_options(XR_3DA PRIVATE
+    /nologo
+    /SUBSYSTEM:WINDOWS
+    /MACHINE:I386
+    # Legacy DirectX SDK dinput/d3dx9 libraries are not SAFESEH-compatible.
+    # d3dx9.lib also carries a VS2003-era /DEFAULTLIB:libcp directive; keep
+    # the modern CRT selected by XR_3DA.vcproj's RuntimeLibrary setting.
+    /SAFESEH:NO
+    /NODEFAULTLIB:libcp
+    # stdafx.h, psystem.h, and NET_Shared.h have original hardcoded X: drive
+    # pragma libraries. CMake links the already-ported targets directly.
+    /NODEFAULTLIB:x:\\xrCore.lib
+    /NODEFAULTLIB:x:\\xrCDB.lib
+    /NODEFAULTLIB:x:\\xrSound.lib
+    /NODEFAULTLIB:x:\\xrLUA.lib
+    /NODEFAULTLIB:x:\\xrParticles.lib
+    /NODEFAULTLIB:x:\\xrParticlesB.lib
+    /NODEFAULTLIB:x:\\xrNetServer.lib
+    $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL /MAP>
+    $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
+  )
+endif()
+
+target_precompile_headers(XR_3DA PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${XR3DA_DIR}/stdafx.h>")
+set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc/d3dx9_snprintf_compat.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(${XR3DA_LUABIND_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+if(MSVC)
+  set_source_files_properties(${XR3DA_LUABIND_SOURCES} PROPERTIES
+    COMPILE_OPTIONS "/FI${XRSE_FACTORY_DIR}/luabind_compat/xray_luabind_compat.hpp"
+  )
+endif()
+
+target_link_libraries(XR_3DA PRIVATE
+  xrCore
+  xrCDB
+  xrLUA
+  xrParticles
+  xrSound
+  msacm32
+  vfw32
+  winmm
+  d3d9
+  dinput
+  dxguid
+  d3dx9
 )

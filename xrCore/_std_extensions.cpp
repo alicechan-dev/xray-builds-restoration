@@ -4,7 +4,7 @@
 #include <time.h>
 
 #ifdef BREAK_AT_STRCMP
-int								xr_strcmp				( const char* S1, const char* S2 )
+XRCORE_API int __stdcall		xr_strcmp				( const char* S1, const char* S2 )
 {
 #ifdef DEBUG
 	Memory.stat_strcmp	++;

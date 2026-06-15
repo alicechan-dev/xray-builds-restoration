@@ -138,6 +138,7 @@ void CInput::KeyUpdate	( )
 	DWORD dwElements			= KEYBOARDBUFFERSIZE;
 	DIDEVICEOBJECTDATA			od[KEYBOARDBUFFERSIZE];
 	DWORD key					= 0;
+	u32 i						= 0;
 
 	VERIFY(pKeyboard);
 
@@ -149,7 +150,7 @@ void CInput::KeyUpdate	( )
 		if ( hr != S_OK ) return;
 	}
 
-	for (u32 i = 0; i < dwElements; i++){
+	for (i = 0; i < dwElements; i++){
 		key					= od[i].dwOfs;
 		KBState[key]		= od[i].dwData & 0x80;
 		if ( KBState[key])	cbStack.top()->IR_OnKeyboardPress	( key );
