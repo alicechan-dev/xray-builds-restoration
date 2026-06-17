@@ -85,7 +85,8 @@ void CStepManager::update()
 	// время одного цикла анимации
 	float cycle_anim_time	= get_current_animation_time() / step.cycles;
 
-	for (u32 i=0; i<m_legs_count; i++) {
+	u32 i;
+	for (i=0; i<m_legs_count; i++) {
 
 		// если событие уже обработано для этой ноги, то skip
 		if (m_step_info.activity[i].handled && (m_step_info.activity[i].cycle == m_step_info.cur_cycle)) continue;
