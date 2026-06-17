@@ -9,6 +9,9 @@
 #pragma once
 
 #include "object_type_traits.h"
+#ifndef STATIC_CHECK
+#	include <static_check.h>
+#endif
 
 #pragma pack(push,4)
 

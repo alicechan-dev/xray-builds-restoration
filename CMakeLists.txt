@@ -2467,3 +2467,202 @@ target_link_libraries(xrCPU_Pipe PRIVATE
   odbc32
   odbccp32
 )
+
+set(XRGAME_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xr_3da/xrGame")
+set(XRGAME_VCPROJ "${XRGAME_DIR}/xrGame.vcproj")
+
+find_program(XRAY_POWERSHELL_EXECUTABLE powershell REQUIRED)
+
+execute_process(
+  COMMAND "${XRAY_POWERSHELL_EXECUTABLE}" -NoProfile -ExecutionPolicy Bypass
+          -File "${CMAKE_CURRENT_SOURCE_DIR}/cmake/read_vs2003_sources.ps1"
+          "${XRGAME_VCPROJ}" "${XRGAME_DIR}" -Mode sources
+  OUTPUT_VARIABLE XRGAME_SOURCES_RAW
+  RESULT_VARIABLE XRGAME_SOURCES_RESULT
+  ERROR_VARIABLE XRGAME_SOURCES_ERROR
+)
+if(NOT XRGAME_SOURCES_RESULT EQUAL 0)
+  message(FATAL_ERROR "Failed to read xrGame sources from ${XRGAME_VCPROJ}: ${XRGAME_SOURCES_ERROR}")
+endif()
+if(NOT XRGAME_SOURCES_RAW)
+  message(FATAL_ERROR "No xrGame sources were read from ${XRGAME_VCPROJ}")
+endif()
+set(XRGAME_SOURCES "${XRGAME_SOURCES_RAW}")
+list(LENGTH XRGAME_SOURCES XRGAME_SOURCE_COUNT)
+message(STATUS "xrGame sources imported from xrGame.vcproj: ${XRGAME_SOURCE_COUNT}")
+
+execute_process(
+  COMMAND "${XRAY_POWERSHELL_EXECUTABLE}" -NoProfile -ExecutionPolicy Bypass
+          -File "${CMAKE_CURRENT_SOURCE_DIR}/cmake/read_vs2003_sources.ps1"
+          "${XRGAME_VCPROJ}" "${XRGAME_DIR}" -Mode no-pch -Configuration "Debug|Win32"
+  OUTPUT_VARIABLE XRGAME_NO_PCH_SOURCES_RAW
+  RESULT_VARIABLE XRGAME_NO_PCH_RESULT
+  ERROR_VARIABLE XRGAME_NO_PCH_ERROR
+)
+if(NOT XRGAME_NO_PCH_RESULT EQUAL 0)
+  message(FATAL_ERROR "Failed to read xrGame no-PCH sources from ${XRGAME_VCPROJ}: ${XRGAME_NO_PCH_ERROR}")
+endif()
+set(XRGAME_NO_PCH_SOURCES "${XRGAME_NO_PCH_SOURCES_RAW}")
+
+set(XRGAME_LUABIND_SOURCES ${XRGAME_SOURCES})
+list(FILTER XRGAME_LUABIND_SOURCES INCLUDE REGEX "/luabind/")
+
+if(NOT XRAY_EFFECTIVE_DXSDK_ROOT)
+  message(WARNING "xrGame uses xr_3da/stdafx.h and dinput.h, and transitively needs legacy DirectX SDK headers such as dplay8.h. Set XRAY_DXSDK_ROOT, D3DXSDK_DIR, DXSDK_DIR, or DIRECTX_SDK_DIR to the original DirectX SDK root if the active SDK does not provide them.")
+elseif(NOT EXISTS "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include/dplay8.h" AND NOT EXISTS "${XRAY_EFFECTIVE_DXSDK_ROOT}/include/dplay8.h")
+  message(WARNING "xrGame needs dplay8.h through xr_3da/stdafx.h, but it was not found under XRAY_EFFECTIVE_DXSDK_ROOT='${XRAY_EFFECTIVE_DXSDK_ROOT}'.")
+endif()
+
+add_library(xrGame SHARED ${XRGAME_SOURCES})
+
+set_target_properties(xrGame PROPERTIES
+  OUTPUT_NAME "xrGame"
+  # xrGame.vcproj CharacterSet="2" is the VS2003 Multi-Byte setting.
+  VS_GLOBAL_CharacterSet "MultiByte"
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
+  RUNTIME_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  LIBRARY_OUTPUT_DIRECTORY "${XRAY_RUNTIME_DIR}"
+  ARCHIVE_OUTPUT_DIRECTORY "${XRAY_LIBRARY_DIR}"
+  PDB_OUTPUT_DIRECTORY     "${XRAY_OUTPUT_ROOT}/pdb"
+)
+
+foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
+  string(TOUPPER "${config}" config_upper)
+  set_target_properties(xrGame PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    LIBRARY_OUTPUT_DIRECTORY_${config_upper} "${XRAY_RUNTIME_DIR}"
+    ARCHIVE_OUTPUT_DIRECTORY_${config_upper} "${XRAY_LIBRARY_DIR}"
+    PDB_OUTPUT_DIRECTORY_${config_upper}     "${XRAY_OUTPUT_ROOT}/pdb"
+  )
+endforeach()
+
+target_include_directories(xrGame
+  PRIVATE
+    "${XRGAME_DIR}"
+    "${XRGAME_DIR}/ui"
+    "${XRGAME_DIR}/GameSpy"
+    "${XRGAME_DIR}/GameSpy/Qr2"
+    "${XRGAME_DIR}/GameSpy/CDKey"
+    "${XR3DA_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xrCore"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xrLUA/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/xrLUA/src"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc"
+)
+
+if(XRAY_EFFECTIVE_DXSDK_ROOT)
+  target_include_directories(xrGame PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include" "${XRAY_EFFECTIVE_DXSDK_ROOT}/include")
+  target_link_directories(xrGame PRIVATE "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib" "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib/x86" "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib/x86")
+endif()
+
+if(XRSE_FACTORY_LUABIND_INCLUDE_DIR)
+  target_include_directories(xrGame PRIVATE "${XRSE_FACTORY_LUABIND_INCLUDE_DIR}")
+endif()
+
+if(XRAY_BOOST_ROOT)
+  target_include_directories(xrGame PRIVATE "${XRAY_BOOST_ROOT}")
+endif()
+
+if(XRAY_LOKI_ROOT)
+  target_include_directories(xrGame PRIVATE "${XRAY_LOKI_ROOT}")
+endif()
+
+target_compile_definitions(xrGame
+  PRIVATE
+    WIN32
+    _WINDOWS
+    _USRDLL
+    XRGAME_EXPORTS
+    dSINGLE
+    MSVC
+    LUABIND_NO_EXCEPTIONS
+    _FARQ=
+    _HAS_AUTO_PTR_ETC=1
+    $<$<CONFIG:Debug>:_DEBUG;DEBUG>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+    $<$<CONFIG:Mixed>:DEBUG>
+    $<$<CONFIG:Mixed>:MIXED>
+)
+
+if(MSVC)
+  target_compile_options(xrGame
+    PRIVATE
+      /nologo
+      /W4
+      /GR
+      /Gz
+      /EHs-
+      /EHa-
+      /Zm200
+  )
+
+  # Mirrors xrGame.vcproj optimization/runtime choices where modern MSVC still
+  # supports them; obsolete VC2003 settings such as /G7 and /Wp64 are omitted.
+  target_compile_options(xrGame PRIVATE
+    $<$<CONFIG:Debug>:/Od /Zi /RTC1 /Gy /Oi->
+    $<$<CONFIG:Debug>:/FS>
+    $<$<NOT:$<CONFIG:Debug>>:/O2 /Ob2 /Oi /Ot /GF /GS->
+    $<$<CONFIG:Release>:/Oy>
+  )
+
+  target_link_options(xrGame PRIVATE
+    /nologo
+    /SUBSYSTEM:WINDOWS
+    /MACHINE:I386
+    # xrGame.vcproj linked x:\xr_3da.lib. CMake links the XR_3DA executable
+    # import library target directly instead.
+    /NODEFAULTLIB:x:\\xr_3da.lib
+    # Historical hardcoded pragma paths from inherited engine headers; link the
+    # already-restored CMake targets explicitly below.
+    /NODEFAULTLIB:x:\\xrCore.lib
+    /NODEFAULTLIB:x:\\xrCDB.lib
+    /NODEFAULTLIB:x:\\xrSound.lib
+    /NODEFAULTLIB:x:\\xrLUA.lib
+    /NODEFAULTLIB:x:\\xrParticles.lib
+    /NODEFAULTLIB:x:\\xrParticlesB.lib
+    /NODEFAULTLIB:x:\\xrNetServer.lib
+    /NODEFAULTLIB:x:\\xrXMLParser.lib
+    /NODEFAULTLIB:ode.lib
+    $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL /MAP>
+    $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
+  )
+endif()
+
+target_precompile_headers(xrGame PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${XRGAME_DIR}/stdafx.h>")
+set_source_files_properties("${XRGAME_DIR}/StdAfx.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+if(XRGAME_NO_PCH_SOURCES)
+  set_source_files_properties(${XRGAME_NO_PCH_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+endif()
+if(XRGAME_LUABIND_SOURCES)
+  set_source_files_properties(${XRGAME_LUABIND_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+  if(MSVC)
+    set_source_files_properties(${XRGAME_LUABIND_SOURCES} PROPERTIES
+      COMPILE_OPTIONS "/FI${XRSE_FACTORY_DIR}/luabind_compat/xray_luabind_compat.hpp"
+    )
+  endif()
+endif()
+
+target_link_libraries(xrGame PRIVATE
+  XR_3DA
+  xrCore
+  xrCDB
+  xrLUA
+  xrXMLParser
+  xrParticles
+  xrNetServer
+  xrSound
+  xrCPU_Pipe
+  ode
+  winmm
+  ws2_32
+  wsock32
+  advapi32
+  d3d9
+  dinput
+  dxguid
+  $<$<NOT:$<CONFIG:Debug>>:odbc32>
+  $<$<NOT:$<CONFIG:Debug>>:odbccp32>
+)

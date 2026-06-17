@@ -13,12 +13,12 @@ IC	void CSoundMemoryManager::update_sound_threshold			()
 	VERIFY		(!fis_zero(m_decrease_factor));
 	// t = max(t*f^((tc - tl)/tq),min_threshold)
 	m_sound_threshold		= _max(
-		0*m_sound_threshold*
+		float(0*m_sound_threshold*
 			exp(
 				float(Level().timeServer() - m_last_sound_time)/
 				float(m_sound_decrease_quant)*
 				log(m_decrease_factor)
-				),
+				)),
 		m_min_sound_threshold
 	);
 	VERIFY		(_valid(m_sound_threshold));

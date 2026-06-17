@@ -12,6 +12,7 @@
 #define  TL_FAST_COMPILATION
 #undef   STATIC_CHECK
 #include <typelist.h>
+#include <static_check.h>
 
 //#define PURE_DYNAMIC_CAST
 #define PURE_DYNAMIC_CAST_COMPATIBILITY_CHECK
