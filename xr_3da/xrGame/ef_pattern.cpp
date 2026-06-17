@@ -78,7 +78,8 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName, CEF_Storage *tpAI_DDD)
 	u32				*m_dwaAtomicIndexes = (u32 *)xr_malloc(m_dwVariableCount*sizeof(u32));
 	ZeroMemory		(m_dwaAtomicIndexes,m_dwVariableCount*sizeof(u32));
 
-	for (u32 i=0; i<m_dwVariableCount; ++i) {
+	u32 i;
+	for (i=0; i<m_dwVariableCount; ++i) {
 		F->r(m_dwaAtomicFeatureRange + i,sizeof(u32));
 		if (i)
 			m_dwaAtomicIndexes[i] = m_dwaAtomicIndexes[i-1] + m_dwaAtomicFeatureRange[i-1];
@@ -137,7 +138,8 @@ float CPatternFunction::ffGetValue()
 	if (bfCheckForCachedResult())
 		return(m_fLastValue);
 
-	for (u32 i=0; i<m_dwVariableCount; ++i)
+	u32 i;
+	for (i=0; i<m_dwVariableCount; ++i)
 		m_dwaVariableValues[i] = ai().ef_storage().m_fpaBaseFunctions[m_dwaVariableTypes[i]]->dwfGetDiscreteValue(m_dwaAtomicFeatureRange[i]);
 
 	
