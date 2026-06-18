@@ -100,7 +100,8 @@ void CMonsterDebug::L_Update()
 #ifdef DEBUG
 	if (!active) return;
 
-	for (u32 i=0; i<_points.size(); i++) {
+	u32 i;
+	for (i=0; i<_points.size(); i++) {
 		RCache.dbg_DrawAABB(_points[i].pos,_points[i].box_size,_points[i].box_size,_points[i].box_size,_points[i].col);
 
 		Fvector upV;

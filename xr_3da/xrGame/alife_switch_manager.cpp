@@ -271,8 +271,9 @@ void CALifeSwitchManager::furl_object	(CSE_ALifeDynamicObject *I)
 	if (I->m_bOnline)
 		if (0xffff == I->ID_Parent) {
 			CSE_ALifeGroupAbstract *tpALifeGroupAbstract = smart_cast<CSE_ALifeGroupAbstract*>(I);
-			if (tpALifeGroupAbstract)
-				for (u32 i=0, N = (u32)tpALifeGroupAbstract->m_tpMembers.size(); i<N; ++i) {
+			if (tpALifeGroupAbstract) {
+				u32 i, N;
+				for (i=0, N = (u32)tpALifeGroupAbstract->m_tpMembers.size(); i<N; ++i) {
 					CSE_ALifeMonsterAbstract	*l_tpALifeMonsterAbstract = smart_cast<CSE_ALifeMonsterAbstract*>(objects().object(tpALifeGroupAbstract->m_tpMembers[i]));
 					if (l_tpALifeMonsterAbstract && l_tpALifeMonsterAbstract->fHealth <= 0) {
 						l_tpALifeMonsterAbstract->m_bDirectControl	= true;
@@ -284,6 +285,7 @@ void CALifeSwitchManager::furl_object	(CSE_ALifeDynamicObject *I)
 						continue;
 					}
 				}
+			}
 			switch_offline(I);
 		}
 		else
@@ -384,7 +386,8 @@ void CALifeSwitchManager::switch_object	(CSE_ALifeDynamicObject	*I)
 				// therefore check all the group members if they are ready to switch offline
 
 				// iterating on group members
-				for (u32 i=0, N = (u32)tpALifeGroupAbstract->m_tpMembers.size(); i<N; ++i) {
+				u32 i, N;
+				for (i=0, N = (u32)tpALifeGroupAbstract->m_tpMembers.size(); i<N; ++i) {
 					// casting group member to the abstract monster to get access to the Health property
 					CSE_ALifeMonsterAbstract	*tpGroupMember = smart_cast<CSE_ALifeMonsterAbstract*>(objects().object(tpALifeGroupAbstract->m_tpMembers[i]));
 					if (tpGroupMember)

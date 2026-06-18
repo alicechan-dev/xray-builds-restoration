@@ -12,6 +12,10 @@
 #include "alife_space.h"
 #include <boost/type_traits/is_base_and_derived.hpp>
 
+#ifndef ASSERT_TYPELIST
+#	define ASSERT_TYPELIST(type) typedef char assert_typelist[1]
+#endif
+
 template <typename T1, typename T2, typename Head>
 struct CRegistryHelperLoad {
 	template <bool loadable>

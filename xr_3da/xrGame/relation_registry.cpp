@@ -50,9 +50,9 @@ CHARACTER_ATTITUDE	 RELATION_REGISTRY::GetAttitude			(u16 person_id) const
 
 void				 RELATION_REGISTRY::SetRelationType		(u16 person_id, ALife::ERelationType new_relation)
 {
-	static goodwill_enemy	= pSettings->r_s16(GAME_RELATIONS_SECT, "goodwill_enemy");
-	static goodwill_neutral = pSettings->r_s16(GAME_RELATIONS_SECT, "goodwill_neutal");
-	static goodwill_friend	= pSettings->r_s16(GAME_RELATIONS_SECT, "goodwill_friend");
+	static CHARACTER_ATTITUDE goodwill_enemy	= pSettings->r_s16(GAME_RELATIONS_SECT, "goodwill_enemy");
+	static CHARACTER_ATTITUDE goodwill_neutral = pSettings->r_s16(GAME_RELATIONS_SECT, "goodwill_neutal");
+	static CHARACTER_ATTITUDE goodwill_friend	= pSettings->r_s16(GAME_RELATIONS_SECT, "goodwill_friend");
 
 	switch(new_relation)
 	{
@@ -72,8 +72,8 @@ void				 RELATION_REGISTRY::SetRelationType		(u16 person_id, ALife::ERelationTyp
 
 ALife::ERelationType RELATION_REGISTRY::GetRelationType		(u16 person_id) const 
 {
-	static attitude_neutral = pSettings->r_s16(GAME_RELATIONS_SECT, "attitude_neutal_threshold");
-	static attitude_friend = pSettings->r_s16(GAME_RELATIONS_SECT, "attitude_friend_threshold");
+	static CHARACTER_ATTITUDE attitude_neutral = pSettings->r_s16(GAME_RELATIONS_SECT, "attitude_neutal_threshold");
+	static CHARACTER_ATTITUDE attitude_friend = pSettings->r_s16(GAME_RELATIONS_SECT, "attitude_friend_threshold");
 
 	CHARACTER_ATTITUDE attitude = GetAttitude(person_id);
 

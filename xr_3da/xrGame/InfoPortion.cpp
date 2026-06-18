@@ -74,7 +74,8 @@ void CInfoPortion::load_shared	(LPCSTR)
 	//список названий диалогов
 	int dialogs_num = uiXml.GetNodesNum(pNode, "dialog");
 	info_data()->m_DialogNames.clear();
-	for(int i=0; i<dialogs_num; ++i)
+	int i;
+	for(i=0; i<dialogs_num; ++i)
 	{
 		shared_str dialog_name = uiXml.Read(pNode, "dialog", i);
 		info_data()->m_DialogNames.push_back(dialog_name);

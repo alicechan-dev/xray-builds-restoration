@@ -12,6 +12,10 @@
 #include "script_export_space.h"
 #include "script_engine_export.h"
 
+#ifndef ASSERT_TYPELIST
+#	define ASSERT_TYPELIST(type) typedef char assert_typelist[1]
+#endif
+
 template <typename TList> struct Register
 {
 	ASSERT_TYPELIST(TList);
