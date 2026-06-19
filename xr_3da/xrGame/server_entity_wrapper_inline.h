@@ -12,3 +12,15 @@ IC	CServerEntityWrapper::CServerEntityWrapper	(CSE_Abstract *object)
 {
 	m_object	= object;
 }
+
+IC	CSE_Abstract *CServerEntityWrapper::object	() const
+{
+	return		(m_object);
+}
+
+IC	CSE_Abstract *CServerEntityWrapper::detach_object	()
+{
+	CSE_Abstract	*object = m_object;
+	m_object		= 0;
+	return			(object);
+}

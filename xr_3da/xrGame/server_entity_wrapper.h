@@ -18,9 +18,11 @@ private:
 
 public:
 	IC				CServerEntityWrapper	(CSE_Abstract *object = 0);
-	virtual			~CServerEntityWrapper	();	
+	virtual			~CServerEntityWrapper	();
 	virtual	void	save					(IWriter &stream);
 	virtual	void	load					(IReader &stream);
+	IC		CSE_Abstract	*object				() const;
+	IC		CSE_Abstract	*detach_object		();
 };
 
 #include "server_entity_wrapper_inline.h"

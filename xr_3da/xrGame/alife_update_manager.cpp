@@ -179,13 +179,14 @@ void CALifeUpdateManager::update(bool switch_objects)
 
 void CALifeUpdateManager::create_anomalies	()
 {
-	D_OBJECT_P_VECTOR::const_iterator	I = spawns().spawns().begin(), B = I, m, j;
-	D_OBJECT_P_VECTOR::const_iterator	E = spawns().spawns().end();
-	for ( ; I != E; ) {
-		u32								group_id	= (*I)->m_dwSpawnGroup;
-		for (m = I + 1, j = I; (m != E) && ((*m)->m_dwSpawnGroup == group_id); ++m) ;
+	CALifeSpawnRegistry::SPAWN_GROUP_MEMBERS::const_iterator	I = spawns().spawn_groups().begin();
+	CALifeSpawnRegistry::SPAWN_GROUP_MEMBERS::const_iterator	E = spawns().spawn_groups().end();
+	for ( ; I != E; ++I) {
+		const CALifeSpawnRegistry::SPAWN_GROUP_MEMBER_VECTOR	&members = (*I).second;
+		if (members.empty())
+			continue;
 
-		CSE_Abstract					*object = F_entity_Create(*(*I)->s_name);
+		CSE_Abstract					*object = F_entity_Create(*members.front().object->s_name);
 		R_ASSERT2						(object,"Can't create entity.");
 
 		CSE_ALifeDynamicObject			*i = smart_cast<CSE_ALifeDynamicObject*>(object);
@@ -193,14 +194,15 @@ void CALifeUpdateManager::create_anomalies	()
 
 		CSE_ALifeAnomalousZone			*tpALifeAnomalousZone = smart_cast<CSE_ALifeAnomalousZone*>(i);
 		if (tpALifeAnomalousZone) {
-			for ( ; j != m; ++j) {
-				CSE_ALifeAnomalousZone	*anomaly = smart_cast<CSE_ALifeAnomalousZone*>(*j);
+			CALifeSpawnRegistry::SPAWN_GROUP_MEMBER_VECTOR::const_iterator	j = members.begin();
+			CALifeSpawnRegistry::SPAWN_GROUP_MEMBER_VECTOR::const_iterator	e = members.end();
+			for ( ; j != e; ++j) {
+				CSE_ALifeAnomalousZone	*anomaly = smart_cast<CSE_ALifeAnomalousZone*>((*j).object);
 				R_ASSERT2				(anomaly,"Anomalous zones are grouped with incompatible objects!");
-				create					(i,*j,_SPAWN_ID(j - B));
+				create					(i,(*j).object,(*j).id);
 			}
 		}
 		xr_delete						(object);
-		I								= m;
 	}
 }
 

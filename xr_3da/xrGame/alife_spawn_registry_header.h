@@ -17,6 +17,7 @@ protected:
 public:
 	virtual				~CALifeSpawnHeader	();
 	virtual void		load				(IReader &file_stream);
+	virtual void		load				(IReader &file_stream, u32 chunk_id);
 	IC		u32			version				() const;
 	IC		u32			count				() const;
 	IC		u32			level_count			() const;
