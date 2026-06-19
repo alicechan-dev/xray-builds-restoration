@@ -12,10 +12,10 @@
 #include "script_bind_macroses.h"
 #include "script_export_space.h"
 #include "script_callback.h"
+#include "GameTaskDefs.h"
 
 enum EPdaMsg;
 enum ESoundTypes;
-enum ETaskState;
 
 namespace ALife {enum ERelationType;};
 namespace ScriptMonster {enum EActionType;};
