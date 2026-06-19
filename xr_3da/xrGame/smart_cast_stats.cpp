@@ -19,7 +19,7 @@ private:
 	struct CStats {
 		shared_str	m_from;
 		shared_str	m_to;
-		u32			m_count;
+		mutable u32			m_count;
 
 		IC		 CStats		(shared_str from, shared_str to, u32 count) :
 			m_from	(from),

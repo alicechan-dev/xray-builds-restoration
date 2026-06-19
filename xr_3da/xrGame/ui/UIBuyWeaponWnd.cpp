@@ -981,7 +981,7 @@ void CUIBuyWeaponWnd::Update()
 	}
 
 	// Ecли в слоте с костюмом армор показывается, то спрятать его.
-	static flag = true;
+	static bool flag = true;
 	if (UITopList[OUTFIT_SLOT].GetDragDropItemsList().empty() && flag)
 	{
 		UIOutfitIcon.GetUIStaticItem().SetOriginalRect(m_iIconTextureX, m_iIconTextureY, SKIN_TEX_WIDTH, SKIN_TEX_HEIGHT);

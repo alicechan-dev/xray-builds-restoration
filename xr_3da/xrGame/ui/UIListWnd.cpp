@@ -137,7 +137,7 @@ void CUIListWnd::RemoveItem(int index)
 	m_ScrollBar.Refresh();
 
 	//перенумеровать индексы заново
-	i=0;
+	int i=0;
 	for(LIST_ITEM_LIST_it it=m_ItemList.begin();  m_ItemList.end() != it; ++it,i++)
 	{
 		(*it)->SetIndex(i);
@@ -202,10 +202,11 @@ void CUIListWnd::RemoveAll()
 void CUIListWnd::UpdateList()
 {
 	LIST_ITEM_LIST_it it=m_ItemList.begin();
+	int i;
 	
 	//спрятать все элементы до участка 
 	//отображающейся в данный момент
-	for(int i=0; i<_min(m_ItemList.size(),m_iFirstShownIndex);
+	for(i=0; i<_min(m_ItemList.size(),m_iFirstShownIndex);
 					++i, ++it)
 	{
 		(*it)->Show(false);

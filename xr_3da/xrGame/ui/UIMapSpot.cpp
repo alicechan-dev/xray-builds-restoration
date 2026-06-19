@@ -93,7 +93,7 @@ void CUIMapSpot::Draw()
 			}
 			else
 			{
-				arrowHeading = std::atan(static_cast<float>(ourRect2.left - ourRect.left) / (ourRect2.top - ourRect.top));
+				arrowHeading = atan(static_cast<float>(ourRect2.left - ourRect.left) / (ourRect2.top - ourRect.top));
 				if (ourRect2.top < ourRect.top) arrowHeading += PI;
 			}
 

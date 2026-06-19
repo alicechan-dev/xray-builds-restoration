@@ -358,7 +358,7 @@ void CUIZoneMap::UpdateRadar(CActor* pActor)
 				}
 				else
 				{
-					arrowHeading = std::atan(static_cast<float>(P.x - map_center.x) / (P.y - map_center.y));
+					arrowHeading = atan(static_cast<float>(P.x - map_center.x) / (P.y - map_center.y));
 					if (P.y < map_center.y) arrowHeading += PI;
 				}
 
