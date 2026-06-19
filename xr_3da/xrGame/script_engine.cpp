@@ -76,7 +76,7 @@ void lua_cast_failed(CLuaVirtualMachine *L, LUABIND_TYPE_INFO info)
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-#ifdef DEBUG
+#if defined(DEBUG) && defined(XRAY_ENABLE_LEGACY_LUABIND_HELP)
 
 #ifndef BOOST_NO_STRINGSTREAM
 #	include <sstream>
@@ -347,7 +347,7 @@ void print_help							(lua_State *L)
 #else
 void print_help							(lua_State *L)
 {
-	Msg					("! Release build doesn't support lua-help :(");
+	Msg					("! lua-help is not available with this luabind build :(");
 }
 #endif
 
