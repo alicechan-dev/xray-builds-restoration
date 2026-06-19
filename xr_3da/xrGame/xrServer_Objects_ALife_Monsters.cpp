@@ -547,7 +547,8 @@ void CSE_ALifeAnomalousZone::STATE_Read		(NET_Packet	&tNetPacket, u16 size)
 		float					*l_faWeights			= (float*)xr_malloc(l_wItemCount*sizeof(float));
 		string64				*l_cppArtefactSections	= (string64*)xr_malloc(l_wItemCount*sizeof(string64));
 
-		for (u16 i=0; i<l_wItemCount; ++i) {
+		u16 i;
+		for (i=0; i<l_wItemCount; ++i) {
 			tNetPacket.r_stringZ(l_cppArtefactSections[i]);
 			if (m_wVersion > 26)
 				tNetPacket.r_float	(l_faWeights[i]);

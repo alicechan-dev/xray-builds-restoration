@@ -1174,7 +1174,7 @@ void	CActor::CalculateInterpolationParams()
 	if (( lV0 + lV1) > 0.000001 && g_cl_lvInterp == 0)
 	{
 		u32		CulcTime = iCeil(TotalLen*2000/( lV0 + lV1));
-		m_dwIEndTime = m_dwIStartTime + min(CulcTime, ConstTime);
+		m_dwIEndTime = m_dwIStartTime + _min(CulcTime, ConstTime);
 	}
 	else
 		m_dwIEndTime = m_dwIStartTime + ConstTime;
@@ -1282,7 +1282,8 @@ void	CActor::OnRender_Network()
 		}
 
 		float c = 0;
-		for (float i=0; i<1.1f; i+= 0.1f)
+		float i;
+		for (i=0; i<1.1f; i+= 0.1f)
 		{
 			c = i;// * 0.1f;
 			for (u32 k=0; k<3; k++)

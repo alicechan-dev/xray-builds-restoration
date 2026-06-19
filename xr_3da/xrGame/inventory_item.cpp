@@ -626,7 +626,7 @@ void CInventoryItem::CalculateInterpolationParams()
 	if (( lV0 + lV1) > 0.000001 && g_cl_lvInterp == 0)
 	{
 		u32		CulcTime = iCeil(TotalLen*2000/( lV0 + lV1));
-		m_dwIEndTime = m_dwIStartTime + min(CulcTime, ConstTime);
+		m_dwIEndTime = m_dwIStartTime + _min(CulcTime, ConstTime);
 	}
 	else
 		m_dwIEndTime = m_dwIStartTime + ConstTime;

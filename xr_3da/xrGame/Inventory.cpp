@@ -607,7 +607,8 @@ void CInventory::Update()
 	
 	//проверить рюкзак и пояс, есть ли вещи, которые нужно выкинуть
 	u32		drop_count = 0;
-	for		(int i = 0; i < 2; ++i)	{
+	int i;
+	for		(i = 0; i < 2; ++i)	{
 		TIItemList &list = i?m_ruck:m_belt;
 		PPIItem it = list.begin();
 	
@@ -938,7 +939,8 @@ bool CInventory::CanTakeItem(CInventoryItem *inventory_item) const
 	VERIFY			(inventory_item->H_Parent() == NULL);
 
 
-	for(TIItemSet::const_iterator it = m_all.begin(); it != m_all.end(); it++)
+	TIItemSet::const_iterator it;
+	for(it = m_all.begin(); it != m_all.end(); it++)
 		if((*it)->ID() == inventory_item->ID()) break;
 	VERIFY2(it == m_all.end(), "item already exists in inventory");
 

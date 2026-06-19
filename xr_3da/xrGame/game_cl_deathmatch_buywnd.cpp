@@ -33,7 +33,8 @@ void game_cl_Deathmatch::OnBuyMenu_Ok	()
 	//-------------------------------------------------------------------------------
 	pCurPresetItems->clear();
 
-	for (u8 s =0; s<6; s++)
+	u8 s;
+	for (s =0; s<6; s++)
 	{
 		u8 ItemID = pCurBuyMenu->GetWeaponIndex(SlotsToCheck[s]);
 		if (ItemID == 0xff) continue;
