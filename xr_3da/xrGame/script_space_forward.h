@@ -34,7 +34,8 @@ namespace luabind {
 		template <typename... Args>
 		T operator()(const Args &... args)
 		{
-			return object_cast<T>(m_function(args...));
+			object result = m_function(args...);
+			return object_cast<T>(result);
 		}
 	};
 
