@@ -98,7 +98,7 @@ void CArtefactMerger::RemoveAllArtefacts()
 //(вызов скриптованной процедуры)
 bool CArtefactMerger::PerformMerge()
 {
-	R_ASSERT2(g_ArtefactMergeFunctor->is_valid(), "The function that perform artifact merge doesn't set yet");
+	R_ASSERT2(g_ArtefactMergeFunctor, "The function that perform artifact merge doesn't set yet");
 	
 	m_ArtefactDeletedList.clear();
 	m_ArtefactNewList.clear();
