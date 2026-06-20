@@ -29,24 +29,25 @@ namespace luabind
 {
 	class_info get_class_info(const object& o)
 	{
-		lua_State* L = o.lua_state();
-	
-		class_info result(L);
-	
-		o.pushvalue();
+		lua_State* L = xray_luabind_compat::lua_state(o);
+
+		class_info result;
+
+		xray_luabind_compat::pushvalue(o);
 		detail::object_rep* obj = static_cast<detail::object_rep*>(lua_touserdata(L, -1));
 		lua_pop(L, 1);
 
 		result.name = obj->crep()->name();
 		obj->crep()->get_table(L);
-		result.methods.set();
+		xray_luabind_compat::assign_from_stack(result.methods, L);
+		lua_pop(L, 1);
 
 		result.attributes = newtable(L);
 
 		typedef detail::class_rep::property_map map_type;
-		
+
 		std::size_t index = 1;
-		
+
 		for (map_type::const_iterator i = obj->crep()->properties().begin();
 				i != obj->crep()->properties().end(); ++i)
 		{
@@ -64,7 +65,7 @@ namespace luabind
 				.def_readonly("name", &class_info::name)
 				.def_readonly("methods", &class_info::methods)
 				.def_readonly("attributes", &class_info::attributes),
-		
+
 			def("class_info", &get_class_info)
 		];
 	}

@@ -101,10 +101,12 @@ luabind::detail::class_rep::class_rep(LUABIND_TYPE_INFO type
 	assert(m_holder_alignment >= 1 && "internal error");
 
 	lua_newtable(L);
-	m_table_ref.set(L);
+	m_table = handle(L, -1);
+	lua_pop(L, 1);
 
 	lua_newtable(L);
-	m_default_table_ref.set(L);
+	m_default_table = handle(L, -1);
+	lua_pop(L, 1);
 
 	class_registry* r = class_registry::get_registry(L);
 	assert((r->cpp_class() != LUA_NOREF) && "you must call luabind::open()");
@@ -139,10 +141,12 @@ luabind::detail::class_rep::class_rep(lua_State* L, const char* name)
 	, m_operator_cache(0)
 {
 	lua_newtable(L);
-	m_table_ref.set(L);
+	m_table = handle(L, -1);
+	lua_pop(L, 1);
 
 	lua_newtable(L);
-	m_default_table_ref.set(L);
+	m_default_table = handle(L, -1);
+	lua_pop(L, 1);
 
 	class_registry* r = class_registry::get_registry(L);
 	assert((r->cpp_class() != LUA_NOREF) && "you must call luabind::open()");
@@ -538,7 +542,7 @@ int luabind::detail::class_rep::constructor_dispatcher(lua_State* L)
 #ifndef LUABIND_NO_EXCEPTIONS
 
 	}
-    
+
     catch(const error&)
     {
     }
@@ -734,8 +738,8 @@ namespace
 	std::string to_string(luabind::object const& o)
 	{
 		using namespace luabind;
-		if (o.type() == LUA_TSTRING) return object_cast<std::string>(o);
-		lua_State* L = o.lua_state();
+		if (xray_luabind_compat::type(o) == LUA_TSTRING) return object_cast<std::string>(o);
+		lua_State* L = xray_luabind_compat::lua_state(o);
 		LUABIND_CHECK_STACK(L);
 
 #ifdef BOOST_NO_STRINGSTREAM
@@ -744,13 +748,13 @@ namespace
 		std::stringstream s;
 #endif
 
-		if (o.type() == LUA_TNUMBER)
+		if (xray_luabind_compat::type(o) == LUA_TNUMBER)
 		{
 			s << object_cast<float>(o);
 			return s.str();
 		}
 
-		s << "<" << lua_typename(L, o.type()) << ">";
+		s << "<" << lua_typename(L, xray_luabind_compat::type(o)) << ">";
 #ifdef BOOST_NO_STRINGSTREAM
 		s << std::ends;
 #endif
@@ -762,12 +766,12 @@ namespace
 	{
 #if !defined(LUABIND_NO_ERROR_CHECKING)
         using namespace luabind;
-		lua_State* L = e.lua_state();
+		lua_State* L = xray_luabind_compat::lua_state(e);
 		LUABIND_CHECK_STACK(L);
 
-		if (e.type() == LUA_TFUNCTION)
+		if (xray_luabind_compat::type(e) == LUA_TFUNCTION)
 		{
-			e.pushvalue();
+			xray_luabind_compat::pushvalue(e);
 			detail::stack_pop p(L, 1);
 
 			{
@@ -829,9 +833,9 @@ std::string luabind::detail::class_rep::class_info_string(lua_State* L) const
 	ret << "dynamic dispatch functions:\n------------------\n";
 
 	get_table(L);
-	object t(L);
-	t.set();
-	for (object::iterator i = t.begin(); i != t.end(); ++i)
+	object t = xray_luabind_compat::object_from_stack(L);
+	lua_pop(L, 1);
+	for (iterator i(t), end; i != end; ++i)
 	{
 		object e = *i;
 		ret << "  " << to_string(i.key()) << ": " << member_to_string(e) << "\n";
@@ -839,8 +843,9 @@ std::string luabind::detail::class_rep::class_info_string(lua_State* L) const
 
 	ret << "default implementations:\n------------------\n";
 	get_default_table(L);
-	t.set();
-	for (object::iterator i = t.begin(); i != t.end(); ++i)
+	xray_luabind_compat::assign_from_stack(t, L);
+	lua_pop(L, 1);
+	for (iterator i(t), end; i != end; ++i)
 	{
 		object e = *i;
 		ret << "  " << to_string(i.key()) << ": " << member_to_string(e) << "\n";
@@ -923,7 +928,7 @@ void luabind::detail::class_rep::add_base_class(const luabind::detail::class_rep
 int luabind::detail::class_rep::super_callback(lua_State* L)
 {
 	int args = lua_gettop(L);
-		
+
 	object_rep* obj = static_cast<object_rep*>(lua_touserdata(L, lua_upvalueindex(2)));
 	class_rep* crep = static_cast<class_rep*>(lua_touserdata(L, lua_upvalueindex(1)));
 	class_rep* base = crep->bases()[0].base;
@@ -979,7 +984,7 @@ int luabind::detail::class_rep::super_callback(lua_State* L)
 		int match_index = -1;
 		int min_match = std::numeric_limits<int>::max();
 		bool found;
-			
+
 #ifdef LUABIND_NO_ERROR_CHECKING
 
 		if (rep->overloads.size() == 1)
@@ -999,7 +1004,7 @@ int luabind::detail::class_rep::super_callback(lua_State* L)
 		}
 
 #else
-				
+
 		if (!found)
 		{
 			{
@@ -1147,7 +1152,7 @@ int luabind::detail::class_rep::lua_settable_dispatcher(lua_State* L)
 	lua_rawset(L, -3);
 
 	crep->m_operator_cache = 0; // invalidate cache
-	
+
 	return 0;
 }
 
@@ -1164,7 +1169,7 @@ int luabind::detail::class_rep::construct_lua_class_callback(lua_State* L)
 	ref.set(L);
 
 	bool has_bases = !crep->bases().empty();
-		
+
 	if (has_bases)
 	{
 		lua_pushstring(L, "super");
@@ -1287,7 +1292,7 @@ int luabind::detail::class_rep::lua_class_gettable(lua_State* L)
 		lua_pushboolean(L, p != 0);
 		return 1;
 	}
-	
+
 	// first look in the instance's table
 	detail::lua_reference const& tbl = obj->get_lua_table();
 	assert(tbl.is_valid());
@@ -1641,8 +1646,8 @@ void luabind::detail::class_rep::register_methods(lua_State* L)
 	LUABIND_CHECK_STACK(L);
 	// insert the function in the normal member table
 	// and in the default member table
-	m_default_table_ref.get(L);
-	m_table_ref.get(L);
+	get_default_table(L);
+	get_table(L);
 
 	// pops the tables
 	detail::stack_pop pop_tables(L, 2);

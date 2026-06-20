@@ -2488,6 +2488,13 @@ if(NOT XRGAME_SOURCES_RAW)
   message(FATAL_ERROR "No xrGame sources were read from ${XRGAME_VCPROJ}")
 endif()
 set(XRGAME_SOURCES "${XRGAME_SOURCES_RAW}")
+set(XRGAME_LUABIND_OBJECT_SOURCE "${XRGAME_DIR}/luabind/object.cpp")
+# xrGame.vcproj lists this local object/proxy implementation, but the matching
+# GSC-era luabind public headers are missing. The active luabind 0.7 headers
+# provide object/proxy support through their public headers; XR_3DA and
+# xrSE_Factory already omit this obsolete source and compile the remaining
+# local luabind sources with the compatibility overlay.
+list(REMOVE_ITEM XRGAME_SOURCES "${XRGAME_LUABIND_OBJECT_SOURCE}")
 list(LENGTH XRGAME_SOURCES XRGAME_SOURCE_COUNT)
 message(STATUS "xrGame sources imported from xrGame.vcproj: ${XRGAME_SOURCE_COUNT}")
 
