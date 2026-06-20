@@ -67,8 +67,9 @@ void InitConsole()
 void InitInput()
 {
 	BOOL bCaptureInput			= !strstr(Core.Params,"-i");
+	BOOL bMouseCapture			= strstr(Core.Params,"-freecursor") ? FALSE : bCaptureInput; // Restoration/debug helper for windowed runtime testing.
 
-	pInput						= xr_new<CInput>		(bCaptureInput);
+	pInput						= xr_new<CInput>		(bCaptureInput, default_key, bMouseCapture);
 }
 void destroyInput()
 {
