@@ -3,7 +3,7 @@
 
 #include <time.h>
 
-#ifdef BREAK_AT_STRCMP
+#if defined(BREAK_AT_STRCMP) || defined(XRCORE_EXPORTS)
 XRCORE_API int __stdcall		xr_strcmp				( const char* S1, const char* S2 )
 {
 #ifdef DEBUG

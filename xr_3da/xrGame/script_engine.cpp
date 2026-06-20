@@ -517,6 +517,6 @@ bool CScriptEngine::function_object(LPCSTR function_to_call, luabind::object &ob
 		return				(false);
 
 	luabind::object			lua_namespace	= this->name_space(name_space);
-	object					= lua_namespace[function];
+	object					= lua_namespace[LPCSTR(function)];
 	return					(true);
 }

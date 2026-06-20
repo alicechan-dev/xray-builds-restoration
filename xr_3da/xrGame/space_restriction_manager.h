@@ -45,7 +45,7 @@ protected:
 	IC		void				update_restrictions				(ALife::_OBJECT_ID id, shared_str out_restrictions, shared_str in_restrictions);
 	
 	IC		bool				restriction_presented			(shared_str restrictions, shared_str restriction) const;
-	IC		CRestrictionPtr		restriction						(ALife::_OBJECT_ID id);
+			CRestrictionPtr		restriction						(ALife::_OBJECT_ID id);
 			CRestrictionPtr		restriction						(shared_str out_restrictors, shared_str in_restrictors);
 	IC		void				collect_garbage					();
 	virtual void				on_default_restrictions_changed	(const RestrictionSpace::ERestrictorTypes &restrictor_type, shared_str old_restrictions, shared_str new_restrictions);

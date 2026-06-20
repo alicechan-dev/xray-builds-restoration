@@ -746,7 +746,7 @@ IC	u32	CObjectHandler::current_action_object_id	() const
 	return				(action_object_id(current_action_id()));
 }
 
-IC	u32	CObjectHandler::current_action_state_id	() const
+u32	CObjectHandler::current_action_state_id	() const
 {
 	return				(action_state_id(current_action_id()));
 }

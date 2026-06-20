@@ -73,7 +73,11 @@ IC	bool CScriptEngine::functor(LPCSTR function_to_call, luabind::functor<_result
 	if (!function_object(function_to_call,object))
 		return				(false);
 
-	lua_function			= luabind::object_cast<luabind::functor<_result_type> >(object);
+	object.push				(lua());
+	R_ASSERT2				(lua_isfunction(lua(),-1),function_to_call);
+	luabind::detail::lua_reference	reference;
+	reference.set			(lua());
+	lua_function			= luabind::functor<_result_type>(lua(),reference);
 
 	return					(true);
 }

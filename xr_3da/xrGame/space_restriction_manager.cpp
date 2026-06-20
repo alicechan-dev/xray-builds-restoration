@@ -26,7 +26,7 @@ CSpaceRestrictionManager::~CSpaceRestrictionManager			()
 	delete_data						(m_space_restrictions);
 }
 
-IC	CSpaceRestrictionManager::CRestrictionPtr CSpaceRestrictionManager::restriction	(ALife::_OBJECT_ID id)
+CSpaceRestrictionManager::CRestrictionPtr CSpaceRestrictionManager::restriction	(ALife::_OBJECT_ID id)
 {
 	CLIENT_RESTRICTIONS::iterator	I = m_clients->find(id);
 	VERIFY							(m_clients->end() != I);
