@@ -485,8 +485,11 @@ Irect CUIStatic::GetClipRect()
 		r.add(GetUIStaticItem().GetPosX(), GetUIStaticItem().GetPosY());
 	}
 	else
-		r.set(0, 0, max<u32>(UI_BASE_WIDTH, Device.dwWidth),
-					max<u32>(UI_BASE_HEIGHT, Device.dwHeight));
+	{
+		u32 w = _max(u32(UI_BASE_WIDTH), Device.dwWidth);
+		u32 h = _max(u32(UI_BASE_HEIGHT), Device.dwHeight);
+		r.set(0, 0, int(w), int(h));
+	}
 
 	return r;
 }
