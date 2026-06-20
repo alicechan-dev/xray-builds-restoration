@@ -10,7 +10,7 @@
 #include "server_entity_wrapper.h"
 #include "xrServer_Object_Base.h"
 #include "xrmessages.h"
-#include "xrSE_Factory_import_export.h"
+#include "xrServer_Objects.h"
 
 struct ISE_Abstract;
 
