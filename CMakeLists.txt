@@ -507,7 +507,7 @@ if(MSVC)
       /GR
       /EHs-
       /EHa-
-      /Gd
+      /Gz
       /TP
   )
 
@@ -2495,6 +2495,18 @@ set(XRGAME_LUABIND_OBJECT_SOURCE "${XRGAME_DIR}/luabind/object.cpp")
 # xrSE_Factory already omit this obsolete source and compile the remaining
 # local luabind sources with the compatibility overlay.
 list(REMOVE_ITEM XRGAME_SOURCES "${XRGAME_LUABIND_OBJECT_SOURCE}")
+
+# Graph-format spawn loading in xrGame owns CServerEntityWrapper at runtime.
+# The wrapper implementation mirrors xrAI's helper, but lives in xrGame for
+# the restored runtime-side spawn registry and is not part of the old vcproj.
+list(APPEND XRGAME_SOURCES "${XRGAME_DIR}/server_entity_wrapper.cpp")
+
+# Local luabind class_rep.cpp calls luabind::detail::overload_rep::call; use
+# the same luabind 0.7 implementation source already required by XR_3DA and
+# xrSE_Factory, without resurrecting the obsolete local object.cpp.
+if(XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE)
+  list(APPEND XRGAME_SOURCES "${XRSE_FACTORY_LUABIND_OVERLOAD_REP_SOURCE}")
+endif()
 list(LENGTH XRGAME_SOURCES XRGAME_SOURCE_COUNT)
 message(STATUS "xrGame sources imported from xrGame.vcproj: ${XRGAME_SOURCE_COUNT}")
 
