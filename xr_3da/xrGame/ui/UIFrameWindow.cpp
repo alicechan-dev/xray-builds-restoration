@@ -9,6 +9,11 @@
 #include "../HUDManager.h"
 #include "../level.h"
 
+namespace {
+IC int ui_frame_min(int a, int b) { return _min(a, b); }
+IC int ui_frame_max(int a, int b) { return _max(a, b); }
+}
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -144,9 +149,6 @@ void CUIFrameWindow::SetColor(u32 cl)
 
 void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 {
-	using std::min;
-	using std::max;
-
 	// Если нет границ клиппанья, то скипаем
 	if (!GetParent()) return;
 
@@ -166,10 +168,10 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 	m_UIWndFrame.UpdateSize();
 
 	// Проверяем на видимость фрейма
-	if (   max(ourAbsR.right, parentLeft) == parentLeft
-		|| min(ourAbsR.left, parentRight) == parentRight
-		|| min(ourAbsR.top, parentBottom) == parentBottom
-		|| max(ourAbsR.bottom, parentTop) == parentTop)
+	if (   ui_frame_max(ourAbsR.right, parentLeft) == parentLeft
+		|| ui_frame_min(ourAbsR.left, parentRight) == parentRight
+		|| ui_frame_min(ourAbsR.top, parentBottom) == parentBottom
+		|| ui_frame_max(ourAbsR.bottom, parentTop) == parentTop)
 	{
 		m_UIWndFrame.frame[CUIFrameRect::fmRT].SetTile(0, 0, 0, 0);
 		m_UIWndFrame.frame[CUIFrameRect::fmR].SetTile(0, 0, 0, 0);
@@ -197,12 +199,12 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 	// Из-за этого и такой геморой с изменениями размеров у затайленой части FrameRect'a
 
 	// fmRT
-	r.x1 = max(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosX(), parentLeft) - m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosX();
-	r.y1 = max(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosY(), parentTop) - m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosY() ;
-	r.x2 = min(ourAbsR.right, parentRight) -
-		   max(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosX(), parentLeft) + r.x1;
-	r.y2 = min(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosY(), parentBottom) -
-		   max(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosY(), parentTop) + r.y1;
+	r.x1 = ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosX(), parentLeft) - m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosX();
+	r.y1 = ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosY(), parentTop) - m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosY() ;
+	r.x2 = ui_frame_min(ourAbsR.right, parentRight) -
+		   ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosX(), parentLeft) + r.x1;
+	r.y2 = ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosY(), parentBottom) -
+		   ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosY(), parentTop) + r.y1;
 
 	ClampMax_Zero(r);
 	m_UIWndFrame.frame[CUIFrameRect::fmRT].SetRect(r);
@@ -212,10 +214,10 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 	RCache.set_Shader(m_UIWndFrame.frame[CUIFrameRect::fmR].GetShader());
 	T			= RCache.get_ActiveTexture(0);
 	ts.set		((int)T->get_Width(),(int)T->get_Height());
-	size_y		= min(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentBottom) -
-				  max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosY(), parentTop);
-	size_x		= min(ourAbsR.right, parentRight) -
-				  max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosX(), parentLeft);
+	size_y		= ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentBottom) -
+				  ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosY(), parentTop);
+	size_x		= ui_frame_min(ourAbsR.right, parentRight) -
+				  ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosX(), parentLeft);
 	rem_y		= size_y % ts.y;
 	rem_x		= size_x % ts.x;
 	tile_y		= iFloor(float(size_y) / ts.y);
@@ -228,21 +230,21 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 
 	m_UIWndFrame.frame[CUIFrameRect::fmR].SetTile(tile_x, tile_y, rem_x, rem_y);
 
-	if (max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosX(), parentLeft) == parentLeft)
+	if (ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosX(), parentLeft) == parentLeft)
 		m_UIWndFrame.frame[CUIFrameRect::fmR].SetReverseRem(true, false);
 	else
 		m_UIWndFrame.frame[CUIFrameRect::fmR].SetReverseRem(false, false);
 
-	m_UIWndFrame.frame[CUIFrameRect::fmR].SetPos(max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosX(), parentLeft),
-			max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosY(), parentTop));
+	m_UIWndFrame.frame[CUIFrameRect::fmR].SetPos(ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosX(), parentLeft),
+			ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosY(), parentTop));
 
 	// fmRB
-	r.x1 = max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosX(), parentLeft) - m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosX();
-	r.y1 = max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentTop) - m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY();
-	r.x2 = min(ourAbsR.right, parentRight) -
-		   max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosX(), parentLeft) + r.x1;
-	r.y2 = min(ourAbsR.bottom, parentBottom) -
-		   max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentTop) + r.y1;
+	r.x1 = ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosX(), parentLeft) - m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosX();
+	r.y1 = ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentTop) - m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY();
+	r.x2 = ui_frame_min(ourAbsR.right, parentRight) -
+		   ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosX(), parentLeft) + r.x1;
+	r.y2 = ui_frame_min(ourAbsR.bottom, parentBottom) -
+		   ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentTop) + r.y1;
 
 	ClampMax_Zero(r);
 	m_UIWndFrame.frame[CUIFrameRect::fmRB].SetRect(r);
@@ -252,10 +254,10 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 	RCache.set_Shader(m_UIWndFrame.frame[CUIFrameRect::fmB].GetShader());
 	T			= RCache.get_ActiveTexture(0);
 	ts.set		((int)T->get_Width(),(int)T->get_Height());
-	size_x		= min(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosX(), parentRight) -
-				  max(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosX(), parentLeft);
-	size_y		= min(ourAbsR.bottom, parentBottom) -
-				  max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentTop);
+	size_x		= ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosX(), parentRight) -
+				  ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosX(), parentLeft);
+	size_y		= ui_frame_min(ourAbsR.bottom, parentBottom) -
+				  ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentTop);
 	rem_x		= size_x % ts.x;
 	rem_y		= size_y % ts.y;
 	tile_x		= iFloor(float(size_x) / ts.x);
@@ -269,21 +271,21 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 
 	m_UIWndFrame.frame[CUIFrameRect::fmB].SetTile	(tile_x, tile_y, rem_x, rem_y);
 
-	if (max(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosY(), parentTop) == parentTop)
+	if (ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosY(), parentTop) == parentTop)
 		m_UIWndFrame.frame[CUIFrameRect::fmB].SetReverseRem(false, true);
 	else
 		m_UIWndFrame.frame[CUIFrameRect::fmB].SetReverseRem(false, false);
 
-	m_UIWndFrame.frame[CUIFrameRect::fmB].SetPos(max(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosX(), parentLeft),
-		max(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosY(), parentTop));
+	m_UIWndFrame.frame[CUIFrameRect::fmB].SetPos(ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosX(), parentLeft),
+		ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosY(), parentTop));
 
 	// fmLB
-	r.x1 = max(m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosX(), parentLeft) - m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosX();
-	r.y1 = max(m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosY(), parentTop) - m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosY();
-	r.x2 = min(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosX(), parentRight) -
-		   max(m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosX(), parentLeft) + r.x1;
-	r.y2 = min(ourAbsR.bottom, parentBottom) -
-		   max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentTop) + r.y1;
+	r.x1 = ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosX(), parentLeft) - m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosX();
+	r.y1 = ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosY(), parentTop) - m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosY();
+	r.x2 = ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosX(), parentRight) -
+		   ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosX(), parentLeft) + r.x1;
+	r.y2 = ui_frame_min(ourAbsR.bottom, parentBottom) -
+		   ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmRB].GetPosY(), parentTop) + r.y1;
 
 	ClampMax_Zero(r);
 	m_UIWndFrame.frame[CUIFrameRect::fmLB].SetRect(r);
@@ -293,10 +295,10 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 	RCache.set_Shader(m_UIWndFrame.frame[CUIFrameRect::fmL].GetShader());
 	T			= RCache.get_ActiveTexture(0);
 	ts.set		((int)T->get_Width(),(int)T->get_Height());
-	size_y		= min(m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosY(), parentBottom) -
-				  max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosY(), parentTop);
-	size_x		= min(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosX(), parentRight) -
-				  max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosX(), parentLeft);
+	size_y		= ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmLB].GetPosY(), parentBottom) -
+				  ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosY(), parentTop);
+	size_x		= ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosX(), parentRight) -
+				  ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosX(), parentLeft);
 	rem_x		= size_x % ts.x;
 	rem_y		= size_y % ts.y;
 	tile_y		= iFloor(float(size_y) / ts.y);
@@ -309,21 +311,21 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 
 	m_UIWndFrame.frame[CUIFrameRect::fmL].SetTile	(tile_x, tile_y, rem_x, rem_y);
 
-	if (max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosX(), parentLeft) == parentLeft)
+	if (ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosX(), parentLeft) == parentLeft)
 		m_UIWndFrame.frame[CUIFrameRect::fmL].SetReverseRem(true, false);
 	else
 		m_UIWndFrame.frame[CUIFrameRect::fmL].SetReverseRem(false, false);
 
-	m_UIWndFrame.frame[CUIFrameRect::fmL].SetPos(max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosX(), parentLeft),
-		max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosY(), parentTop));
+	m_UIWndFrame.frame[CUIFrameRect::fmL].SetPos(ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosX(), parentLeft),
+		ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosY(), parentTop));
 
 	// fmLT
-	r.x1 = max(m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosX(), parentLeft) - m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosX();
-	r.y1 = max(m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosY(), parentTop) - m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosY();
-	r.x2 = min(m_UIWndFrame.back.GetPosX(), parentRight) -
-		   max(ourAbsR.left, parentLeft) + r.x1;
-	r.y2 = min(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosY(), parentBottom) -
-		   max(m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosY(), parentTop) + r.y1;
+	r.x1 = ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosX(), parentLeft) - m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosX();
+	r.y1 = ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosY(), parentTop) - m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosY();
+	r.x2 = ui_frame_min(m_UIWndFrame.back.GetPosX(), parentRight) -
+		   ui_frame_max(ourAbsR.left, parentLeft) + r.x1;
+	r.y2 = ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmL].GetPosY(), parentBottom) -
+		   ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmLT].GetPosY(), parentTop) + r.y1;
 
 	ClampMax_Zero(r);
 	m_UIWndFrame.frame[CUIFrameRect::fmLT].SetRect(r);
@@ -333,10 +335,10 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 	RCache.set_Shader(m_UIWndFrame.frame[CUIFrameRect::fmT].GetShader());
 	T			= RCache.get_ActiveTexture(0);
 	ts.set		((int)T->get_Width(),(int)T->get_Height());
-	size_x		= min(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosX(), parentRight) -
-				  max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosX(), parentLeft);
-	size_y		= min(m_UIWndFrame.back.GetPosY(), parentBottom) -
-				  max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosY(), parentTop);
+	size_x		= ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmRT].GetPosX(), parentRight) -
+				  ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosX(), parentLeft);
+	size_y		= ui_frame_min(m_UIWndFrame.back.GetPosY(), parentBottom) -
+				  ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosY(), parentTop);
 	rem_x		= size_x % ts.x;
 	rem_y		= size_y % ts.y;
 	tile_x		= iFloor(float(size_x) / ts.x);
@@ -349,22 +351,22 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 
 	m_UIWndFrame.frame[CUIFrameRect::fmT].SetTile	(tile_x, tile_y, rem_x, rem_y);
 
-	if (max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosY(), parentTop) == parentTop)
+	if (ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosY(), parentTop) == parentTop)
 		m_UIWndFrame.frame[CUIFrameRect::fmT].SetReverseRem(false, true);
 	else
 		m_UIWndFrame.frame[CUIFrameRect::fmT].SetReverseRem(false, false);
 
-	m_UIWndFrame.frame[CUIFrameRect::fmT].SetPos(max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosX(), parentLeft),
-		max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosY(), parentTop));
+	m_UIWndFrame.frame[CUIFrameRect::fmT].SetPos(ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosX(), parentLeft),
+		ui_frame_max(m_UIWndFrame.frame[CUIFrameRect::fmT].GetPosY(), parentTop));
 
 	// back
 	RCache.set_Shader(m_UIWndFrame.back.GetShader());
 	T			= RCache.get_ActiveTexture(0);
 	ts.set		((int)T->get_Width(),(int)T->get_Height());
-	size_x		= min(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosX(), parentRight) -
-				  max(m_UIWndFrame.back.GetPosX(), parentLeft);
-	size_y		= min(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosY(), parentBottom) -
-				  max(m_UIWndFrame.back.GetPosY(), parentTop);
+	size_x		= ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmR].GetPosX(), parentRight) -
+				  ui_frame_max(m_UIWndFrame.back.GetPosX(), parentLeft);
+	size_y		= ui_frame_min(m_UIWndFrame.frame[CUIFrameRect::fmB].GetPosY(), parentBottom) -
+				  ui_frame_max(m_UIWndFrame.back.GetPosY(), parentTop);
 	rem_x		= size_x % ts.x;
 	rem_y		= size_y % ts.y;
 	tile_x		= iFloor(float(size_x) / ts.x);
@@ -381,8 +383,8 @@ void CUIFrameWindow::FrameClip(const RECT parentAbsR)
 		m_UIWndFrame.back.SetRect(0, 0, ts.x, ts.y);
 		m_UIWndFrame.back.SetTile(tile_x,tile_y,rem_x,rem_y);
 
-		m_UIWndFrame.back.SetPos(max(m_UIWndFrame.back.GetPosX(), parentLeft),
-			max(m_UIWndFrame.back.GetPosY(), parentTop));
+		m_UIWndFrame.back.SetPos(ui_frame_max(m_UIWndFrame.back.GetPosX(), parentLeft),
+			ui_frame_max(m_UIWndFrame.back.GetPosY(), parentTop));
 	}
 }
 
