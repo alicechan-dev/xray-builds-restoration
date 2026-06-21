@@ -317,7 +317,19 @@ void CSE_ALifeTrader::STATE_Write			(NET_Packet &tNetPacket)
 		for ( ; I != E; ++I) {
 			tNetPacket.w_stringZ	((*I).second->m_caSection);
 			tNetPacket.w_u32	((*I).second->m_dwTotalCount);
-			save_data			((*I).second->m_tpOrders,tNetPacket);
+			tNetPacket.w_u32		((*I).second->m_tpOrders.size());
+			ALife::ARTEFACT_ORDER_IT	i = (*I).second->m_tpOrders.begin();
+			ALife::ARTEFACT_ORDER_IT	e = (*I).second->m_tpOrders.end();
+			for ( ; i != e; ++i) {
+				string64		section;
+				ZeroMemory		(section,sizeof(section));
+				LPCSTR			section_name = *(*i).m_section;
+				if (section_name)
+					strncpy			(section,section_name,sizeof(section) - 1);
+				tNetPacket.w		(section,sizeof(section));
+				tNetPacket.w_u32	((*i).m_count);
+				tNetPacket.w_u32	((*i).m_price);
+			}
 		}
 	}
 	{
@@ -347,7 +359,17 @@ void CSE_ALifeTrader::STATE_Read			(NET_Packet &tNetPacket, u16 size)
 			ALife::SArtefactTraderOrder	*l_tpArtefactOrder = xr_new<ALife::SArtefactTraderOrder>();
 			tNetPacket.r_stringZ(l_tpArtefactOrder->m_caSection);
 			tNetPacket.r_u32	(l_tpArtefactOrder->m_dwTotalCount);
-			load_data			(l_tpArtefactOrder->m_tpOrders,tNetPacket);
+			u32					order_count = tNetPacket.r_u32();
+			for (u32 j=0; j<order_count; ++j) {
+				ALife::SArtefactOrder	order;
+				string64				section;
+				tNetPacket.r		(section,sizeof(section));
+				section[sizeof(section) - 1] = 0;
+				order.m_section		= section;
+				tNetPacket.r_u32	(order.m_count);
+				tNetPacket.r_u32	(order.m_price);
+				l_tpArtefactOrder->m_tpOrders.push_back(order);
+			}
 			m_tpOrderedArtefacts.insert(mk_pair(*l_tpArtefactOrder->m_caSection,l_tpArtefactOrder));
 		}
 	}
