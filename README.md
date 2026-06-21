@@ -1,3 +1,15 @@
+## Languages
+
+- English: this file
+- Русский: [README.ru.md](README.ru.md)
+- Українська: [README.uk.md](README.uk.md)
+- Polski: [README.pl.md](README.pl.md)
+- Deutsch: [README.de.md](README.de.md)
+- Français: [README.fr.md](README.fr.md)
+- Español: [README.es.md](README.es.md)
+- Čeština: [README.cs.md](README.cs.md)
+- 日本語: [README.ja.md](README.ja.md)
+
 # X-Ray Historical Restoration
 
 Unofficial restoration workspace for historical **X-Ray / S.T.A.L.K.E.R.: Shadow of Chernobyl** source snapshots.
