@@ -29,8 +29,9 @@ IC	bool	cmp_normal_items		(const _NormalItem& N1, const _NormalItem& N2)
 void __fastcall mapNormal_Render	(mapNormalItems& N)
 {
 	// *** DIRECT ***
+	if (N.empty())			return;
 	std::sort				(N.begin(),N.end(),cmp_normal_items);
-	_NormalItem				*I=&*N.begin(), *E = &*N.end();
+	_NormalItem				*I=&*N.begin(), *E = I + N.size();
 	for (; I!=E; I++)		{
 		_NormalItem&		Ni	= *I;
 		Ni.pVisual->Render	(calcLOD(Ni.ssa,Ni.pVisual->vis.sphere.R));
@@ -44,8 +45,9 @@ IC	bool	cmp_matrix_items		(const _MatrixItem& N1, const _MatrixItem& N2)
 void __fastcall mapMatrix_Render	(mapMatrixItems& N)
 {
 	// *** DIRECT ***
+	if (N.empty())			return;
 	std::sort				(N.begin(),N.end(),cmp_matrix_items);
-	_MatrixItem				*I=&*N.begin(), *E = &*N.end();
+	_MatrixItem				*I=&*N.begin(), *E = I + N.size();
 	for (; I!=E; I++)		{
 		_MatrixItem&	Ni			= *I;
 		RCache.set_xform_world		(Ni.Matrix);
