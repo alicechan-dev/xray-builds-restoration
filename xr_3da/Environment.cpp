@@ -107,6 +107,26 @@ CEnvDescriptor::CEnvDescriptor()
 {
 }
 
+static BOOL env_sky_texture_exists(LPCSTR texture_name)
+{
+	string_path fn;
+	return FS.exist(fn,"$level$",texture_name,".dds") || FS.exist(fn,"$game_textures$",texture_name,".dds");
+}
+
+static LPCSTR env_sky_texture_env_name(LPCSTR base_name, LPSTR small_name)
+{
+	if (env_sky_texture_exists(small_name))
+		return small_name;
+
+	if (env_sky_texture_exists(base_name)) {
+		Msg("! missing generated env sky cubemap '%s', using base '%s'",small_name,base_name);
+		return base_name;
+	}
+
+	Msg("! missing generated env sky cubemap '%s' and source '%s'",small_name,base_name);
+	return small_name;
+}
+
 void CEnvDescriptor::load	(LPCSTR exec_tm, LPCSTR S, CEnvironment* parent)
 {
 	Ivector3 tm				={0,0,0};
@@ -117,7 +137,7 @@ void CEnvDescriptor::load	(LPCSTR exec_tm, LPCSTR S, CEnvironment* parent)
 	strcpy					(st,pSettings->r_string	(S,"sky_texture"));
 	strconcat				(st_env,st,"#small"		);
 	sky_texture.create		(st);
-	sky_texture_env.create	(st_env);
+	sky_texture_env.create	(env_sky_texture_env_name(st,st_env));
 	sky_color				= pSettings->r_fvector3	(S,"sky_color");		sky_color.mul(.5f);
 	far_plane				= pSettings->r_float	(S,"far_plane");
 	fog_color				= pSettings->r_fvector3	(S,"fog_color");
