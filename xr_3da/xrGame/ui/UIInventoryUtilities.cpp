@@ -107,7 +107,7 @@ bool InventoryUtilities::GreaterRoomInRuck(PIItem item1, PIItem item2)
 		return true;
 	else if (item1_room == item2_room)
 	{
-		if(item1->GetGridWidth() >= item2->GetGridWidth())
+		if(item1->GetGridWidth() > item2->GetGridWidth())
 			return true;
 	}
    	return false;
