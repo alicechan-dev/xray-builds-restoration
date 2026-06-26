@@ -20,6 +20,7 @@ IC	CFixedVertexAllocator::CDataStorage					()
 	u32						memory_usage = 0;
 	u32						byte_count;
 
+	m_vertex_count			= 0;
 	byte_count				= (reserved_vertex_count)*sizeof(CGraphVertex);
 	m_vertices				= (CGraphVertex*)xr_malloc(byte_count);
 	ZeroMemory				(m_vertices,byte_count);
@@ -29,12 +30,16 @@ IC	CFixedVertexAllocator::CDataStorage					()
 TEMPLATE_SPECIALIZATION
 CFixedVertexAllocator::~CDataStorage					()
 {
+	for (u32 i=0; i<m_vertex_count; ++i)
+		(m_vertices + i)->~CGraphVertex();
 	xr_free					(m_vertices);
 }
 
 TEMPLATE_SPECIALIZATION
 IC	void CFixedVertexAllocator::init					()
 {
+	for (u32 i=0; i<m_vertex_count; ++i)
+		(m_vertices + i)->~CGraphVertex();
 	m_vertex_count			= 0;
 }
 
@@ -48,7 +53,8 @@ TEMPLATE_SPECIALIZATION
 IC	typename CFixedVertexAllocator::CGraphVertex &CFixedVertexAllocator::create_vertex		()
 {
 	VERIFY					(m_vertex_count < reserved_vertex_count - 1);
-	return					(*(m_vertices + m_vertex_count++));
+	CGraphVertex			*vertex = m_vertices + m_vertex_count++;
+	return					(*new (vertex) CGraphVertex());
 }
 
 #undef TEMPLATE_SPECIALIZATION
