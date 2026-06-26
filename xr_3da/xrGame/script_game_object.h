@@ -249,15 +249,18 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 
 			void				SetCallback			(const luabind::functor<void> &tpZoneCallback, bool bOnEnter);
+			void				SetCallback			(const luabind::object &lua_function, bool bOnEnter);
 			void				SetCallback			(const luabind::object &object, LPCSTR method, bool bOnEnter);
 			void				ClearCallback		(bool bOnEnter);
 
 			void				SetTradeCallback	(const luabind::functor<void> &tpTradeCallback);	
+			void				SetTradeCallback	(const luabind::object &lua_function);
 			void				SetTradeCallback	(const luabind::object &object, LPCSTR method);
 			void				ClearTradeCallback	();
 	//////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////use calback///////////////////////////////////////////////
 			void				SetUseCallback		(const luabind::functor<void> &tpUseCallback);
+			void				SetUseCallback		(const luabind::object &lua_function);
 			void				SetUseCallback		(const luabind::object &object, LPCSTR method);
 			void				ClearUseCallback	();
 			void				SetTipText			(LPCSTR tip_text);
@@ -269,6 +272,7 @@ public:
 			LPCSTR				GetPatrolPathName	();
 			void				SetCallback			(const luabind::object &lua_object, LPCSTR method, const ScriptMonster::EActionType tActionType);
 			void				SetCallback			(const luabind::functor<void> &lua_function, const ScriptMonster::EActionType tActionType);
+			void				SetCallback			(const luabind::object &lua_function, const ScriptMonster::EActionType tActionType);
 			void				ClearCallback		(const ScriptMonster::EActionType tActionType);
 			u32					GetAmmoElapsed		();
 			void				SetAmmoElapsed		(int ammo_elapsed);
@@ -284,17 +288,21 @@ public:
 			const				CScriptEntityAction	*GetActionByIndex(u32 action_index = 0);
 			void				SetSoundCallback	(const luabind::object &lua_object, LPCSTR method);
 			void				SetSoundCallback	(const luabind::functor<void> &lua_function);
+			void				SetSoundCallback	(const luabind::object &lua_function);
 			void				ClearSoundCallback	(bool member_callback);
 			void				SetHitCallback		(const luabind::object &lua_object, LPCSTR method);
 			void				SetHitCallback		(const luabind::functor<void> &lua_function);
+			void				SetHitCallback		(const luabind::object &lua_function);
 			void				ClearHitCallback	(bool member_callback);
 //////////////////////////////////////////////////////////////////////////
 // Inventory Owner
 //////////////////////////////////////////////////////////////////////////
 			void				SetPdaCallback		(const luabind::functor<void> &lua_function);
+			void				SetPdaCallback		(const luabind::object &lua_function);
 			void				SetPdaCallback		(const luabind::object &instance, LPCSTR method);
 			void				ClearPdaCallback	();
 			void				SetInfoCallback		(const luabind::functor<void> &lua_function);
+			void				SetInfoCallback		(const luabind::object &lua_function);
 			void				SetInfoCallback		(const luabind::object &instance, LPCSTR method);
 			void				ClearInfoCallback	();
 			MemorySpace::CMemoryInfo *memory		(const CScriptGameObject &lua_game_object);

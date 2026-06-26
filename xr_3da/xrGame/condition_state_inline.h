@@ -58,7 +58,9 @@ IC	void CConditionStateAbstract::remove_condition	(const typename COperatorCondi
 TEMPLATE_SPECIALIZATION
 IC	void CConditionStateAbstract::add_condition	(typename xr_vector<COperatorCondition>::const_iterator &J, const COperatorCondition &condition)
 {
-	m_conditions.insert		(m_conditions.begin() + (J - m_conditions.begin()),condition);
+	size_t					index = J - m_conditions.begin();
+	m_conditions.insert		(m_conditions.begin() + index,condition);
+	J						= m_conditions.begin() + index;
 	m_hash					^= condition.hash_value();
 }
 

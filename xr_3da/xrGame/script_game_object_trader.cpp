@@ -31,6 +31,11 @@ void CScriptGameObject::SetCallback(const luabind::functor<void> &tpZoneCallback
 	else l_tpTrader->set_callback(tpZoneCallback,bOnEnter);
 }
 
+void CScriptGameObject::SetCallback(const luabind::object &lua_function, bool bOnEnter)
+{
+	SetCallback(luabind::functor<void>(lua_function),bOnEnter);
+}
+
 void CScriptGameObject::SetCallback(const luabind::object &object, LPCSTR method, bool bOnEnter)
 {
 	CScriptZone	*l_tpScriptZone = smart_cast<CScriptZone*>(m_tpGameObject);
@@ -61,6 +66,10 @@ void CScriptGameObject::SetTradeCallback(const luabind::functor<void> &tpTradeCa
 	if (!l_tpTrader) 
 		ai().script_engine().script_log			(ScriptStorage::eLuaMessageTypeError,"CAI_Trader : cannot access class member set_trade_callback!");
 	else l_tpTrader->set_trade_callback(tpTradeCallback);
+}
+
+void CScriptGameObject::SetTradeCallback(const luabind::object &lua_function) {
+	SetTradeCallback(luabind::functor<void>(lua_function));
 }
 
 void CScriptGameObject::SetTradeCallback(const luabind::object &object, LPCSTR method) {

@@ -14,6 +14,13 @@
 
 using namespace luabind;
 
+static Fvector script_fvector_sub(const Fvector &self, const Fvector &value)
+{
+	Fvector result = self;
+	result.sub(value);
+	return result;
+}
+
 void CScriptFvector::script_register(lua_State *L)
 {
 	module(L)
@@ -30,6 +37,7 @@ void CScriptFvector::script_register(lua_State *L)
 			.def("add",							(Fvector & (Fvector::*)(const Fvector &, const Fvector &))(&Fvector::add),												return_reference_to(_1))
 			.def("add",							(Fvector & (Fvector::*)(const Fvector &, float))(&Fvector::add),															return_reference_to(_1))
 			.def("sub",							(Fvector & (Fvector::*)(float))(&Fvector::sub),																			return_reference_to(_1))
+			.def("sub",							&script_fvector_sub)
 			.def("sub",							(Fvector & (Fvector::*)(const Fvector &))(&Fvector::sub),																return_reference_to(_1))
 			.def("sub",							(Fvector & (Fvector::*)(const Fvector &, const Fvector &))(&Fvector::sub),												return_reference_to(_1))
 			.def("sub",							(Fvector & (Fvector::*)(const Fvector &, float))(&Fvector::sub),															return_reference_to(_1))

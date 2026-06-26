@@ -38,6 +38,11 @@ void CScriptGameObject::SetUseCallback(const luabind::functor<void> &tpUseCallba
 	
 }
 
+void CScriptGameObject::SetUseCallback(const luabind::object &lua_function)
+{
+	SetUseCallback(luabind::functor<void>(lua_function));
+}
+
 void CScriptGameObject::SetUseCallback(const luabind::object &object, LPCSTR method)
 {
 	CUsableScriptObject	*l_tpUseableScriptObject = smart_cast<CUsableScriptObject*>(m_tpGameObject);

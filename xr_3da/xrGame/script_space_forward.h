@@ -21,6 +21,11 @@ namespace luabind {
 		{
 		}
 
+		functor(const object &function)
+		{
+			m_function = function;
+		}
+
 		functor(lua_State *L, const detail::lua_reference &reference)
 		{
 			if (!reference.is_valid())
@@ -46,6 +51,11 @@ namespace luabind {
 	public:
 		functor()
 		{
+		}
+
+		functor(const object &function)
+		{
+			m_function = function;
 		}
 
 		functor(lua_State *L, const detail::lua_reference &reference)
