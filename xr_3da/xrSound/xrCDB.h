@@ -141,8 +141,8 @@ namespace CDB
 		IC void			frustum_options	(u32 f)	{	frustum_mode = f;	}
 		void			frustum_query	(const MODEL *m_def, const CFrustum& F);
 
-		IC RESULT*		r_begin			()	{	return &*rd.begin();		};
-		IC RESULT*		r_end			()	{	return &*rd.end();			};
+		IC RESULT*		r_begin			()	{	return rd.empty() ? 0 : &rd.front();	};
+		IC RESULT*		r_end			()	{	return rd.empty() ? 0 : (&rd.front() + rd.size());	};
 		RESULT&			r_add			();
 		void			r_free			();
 		IC int			r_count			()	{	return rd.size();			};
