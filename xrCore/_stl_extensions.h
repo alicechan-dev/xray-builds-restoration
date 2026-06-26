@@ -37,7 +37,7 @@ public:
 	explicit xr_vector			(size_t _count)					: std::vector<T> 	(_count)		{}
 	void	clear				()								{ erase(begin(),end());				} 
 	void	clear_and_free		()								{ std::vector<T>::clear();			}
-	void	clear_not_free()									{ erase(begin(),end());	}
+	void	clear_not_free()									{ std::vector<T>::clear();	}
 	const_reference operator[]	(size_type _Pos) const			{ {VERIFY(_Pos<size());} return (*(begin() + _Pos)); }
 	reference operator[]		(size_type _Pos)				{ {VERIFY(_Pos<size());} return (*(begin() + _Pos)); }
 };
@@ -100,7 +100,7 @@ template	<typename T>									class	xr_vector		: public std::vector<T,xr_allocat
 	u32		size() const									{ return (u32)__super::size(); } 
 
 	void	clear_and_free()								{ __super::clear();		}
-	void	clear_not_free()								{ erase(begin(),end());	}
+	void	clear_not_free()								{ __super::clear();	}
 
 #ifdef M_DONTDEFERCLEAR_EXT
 	void	clear()											{ clear_and_free	();	} 

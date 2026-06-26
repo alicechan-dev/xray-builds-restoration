@@ -24,6 +24,42 @@ private:
 	IC u32	Size(u32 Count)
 	{	return Count*sizeof(TNode);	}
 
+	void		CopyFrom(const FixedMAP& other)
+	{
+		pool	= other.pool;
+		limit	= other.limit;
+		nodes	= 0;
+		if (!limit) return;
+
+		nodes	= (TNode*) xr_malloc(Size(limit));
+		VERIFY	(nodes);
+		ZeroMemory(nodes,Size(limit));
+
+		for (u32 I=0; I<pool; ++I)
+			new (nodes + I) TNode(other.nodes[I]);
+
+		for (u32 I=0; I<pool; ++I)
+		{
+			TNode*	Nold	= other.nodes + I;
+			TNode*	Nnew	= nodes + I;
+
+			if (Nold->left) {
+				size_t	Lid		= Nold->left  - other.nodes;
+				Nnew->left		= nodes + Lid;
+			}
+			if (Nold->right) {
+				size_t	Rid		= Nold->right - other.nodes;
+				Nnew->right		= nodes + Rid;
+			}
+		}
+	}
+
+	void		DestroyActive()
+	{
+		for (u32 I=0; I<pool; ++I)
+			(nodes + I)->~TNode();
+	}
+
 	void		Realloc()
 	{
 		u32	newLimit = limit + SG_REALLOC_ADVANCE;
@@ -32,7 +68,8 @@ private:
 		VERIFY(newNodes);
 
 		ZeroMemory(newNodes, Size(newLimit));
-		if (limit) PSGP.memCopy(newNodes, nodes, Size(limit));
+		for (u32 I=0; I<pool; ++I)
+			new (newNodes + I) TNode(nodes[I]);
 
 		for (u32 I=0; I<pool; I++)
 		{
@@ -49,7 +86,10 @@ private:
 				Nnew->right		= newNodes + Rid;
 			}
 		}
-		if (nodes) xr_free(nodes);
+		if (nodes) {
+			DestroyActive();
+			xr_free(nodes);
+		}
 
 		nodes = newNodes;
 		limit = newLimit;
@@ -59,6 +99,7 @@ private:
 	{
 		if (pool==limit) Realloc();
 		TNode *node = nodes + pool;
+		new (node) TNode();
 		node->key	= key;
 		node->right = node->left = 0;
 		pool++;
@@ -112,13 +153,20 @@ public:
 	FixedMAP() {
 		pool	= 0;
 		limit	= 0;
-		nodes	= 0; 
+		nodes	= 0;
+	}
+	FixedMAP(const FixedMAP& other) {
+		CopyFrom(other);
 	}
 	~FixedMAP() {
-		if (nodes) {
-			xr_free(nodes);
-			nodes	= 0;
+		discard	();
+	}
+	FixedMAP& operator= (const FixedMAP& other) {
+		if (this != &other) {
+			discard		();
+			CopyFrom	(other);
 		}
+		return			(*this);
 	}
 	IC TNode*	insert(const K& k) {
 		if (pool) {
@@ -189,9 +237,9 @@ public:
 		N->val		= v;
 		return	N;
 	}
-	IC void		discard()	{ if (nodes) xr_free(nodes); nodes = 0; pool=0; limit=0;	}
+	IC void		discard()	{ if (nodes) { DestroyActive(); xr_free(nodes); } nodes = 0; pool=0; limit=0;	}
 	IC u32		allocated()	{ return this->limit;				}
-	IC void		clear()		{ pool=0;				}
+	IC void		clear()		{ DestroyActive(); pool=0;				}
 	IC TNode*	begin()		{ return nodes;			}
 	IC TNode*	end()		{ return nodes+pool;	}
 	IC TNode*	last()		{ return nodes+limit;	}	// for setup only
@@ -224,6 +272,7 @@ public:
 	IC void		getANY_P	(xr_vector<TNode*>&	D)
 	{
 		D.resize			(size());
+		if (D.empty())		return;
 		TNode** _it			= &*D.begin();
 		TNode*	_end		= end();
 		for (TNode* cur = begin(); cur!=_end; cur++,_it++) *_it = cur;
@@ -231,6 +280,7 @@ public:
 	IC void		getANY_P	(xr_vector<void*>&	D)
 	{
 		D.resize			(size());
+		if (D.empty())		return;
 		void** _it			= &*D.begin();
 		TNode*	_end		= end();
 		for (TNode* cur = begin(); cur!=_end; cur++,_it++) *_it = cur;
