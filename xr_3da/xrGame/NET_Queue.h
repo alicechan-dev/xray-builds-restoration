@@ -41,7 +41,7 @@ public:
 	}
 	void				implication	(NET_Packet& P) const
 	{
-		Memory.mem_copy	(P.B.data,&*data.begin(),(u32)data.size());
+		if (data.size())	Memory.mem_copy	(P.B.data,&*data.begin(),(u32)data.size());
 		P.B.count		= (u32)data.size();
 		P.r_pos			= 0;
 	}
