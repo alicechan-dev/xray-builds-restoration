@@ -67,9 +67,11 @@ void InitConsole()
 void InitInput()
 {
 	BOOL bCaptureInput			= !strstr(Core.Params,"-i");
-	BOOL bMouseCapture			= strstr(Core.Params,"-freecursor") ? FALSE : bCaptureInput; // Restoration/debug helper for windowed runtime testing.
+	BOOL bFreeInput				= strstr(Core.Params,"-freeinput") ? TRUE : FALSE;
+	BOOL bMouseCapture			= (bFreeInput || strstr(Core.Params,"-freecursor")) ? FALSE : bCaptureInput; // Restoration/debug helper for windowed runtime testing.
+	BOOL bKeyboardCapture		= (bFreeInput || strstr(Core.Params,"-freekeyboard")) ? FALSE : bCaptureInput;
 
-	pInput						= xr_new<CInput>		(bCaptureInput, default_key, bMouseCapture);
+	pInput						= xr_new<CInput>		(bCaptureInput, default_key, bMouseCapture, bKeyboardCapture);
 }
 void destroyInput()
 {

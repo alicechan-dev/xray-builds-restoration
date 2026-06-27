@@ -15,10 +15,11 @@ ENGINE_API Flags32	psMouseInvert		= {TRUE};
 #define KEYBOARDBUFFERSIZE		64
 #define _KEYDOWN(name,key)		( name[key] & 0x80 )
 
-CInput::CInput						( BOOL bExclusive, int deviceForInit, BOOL bMouseExclusive)
+CInput::CInput						( BOOL bExclusive, int deviceForInit, BOOL bMouseExclusive, BOOL bKeyboardExclusive)
 {
 	Log("Starting INPUT device...");
 	if (-1==bMouseExclusive) bMouseExclusive = bExclusive;
+	if (-1==bKeyboardExclusive) bKeyboardExclusive = bExclusive;
 
 	pDI 								=	NULL;
 	pMouse								=	NULL;
@@ -42,7 +43,7 @@ CInput::CInput						( BOOL bExclusive, int deviceForInit, BOOL bMouseExclusive)
 	if (deviceForInit & keyboard_device_key)
 		CHK_DX(CreateInputDevice(
 		&pKeyboard, 	GUID_SysKeyboard, 	&c_dfDIKeyboard,
-		((bExclusive)?DISCL_EXCLUSIVE:DISCL_NONEXCLUSIVE) | DISCL_FOREGROUND,
+		((bKeyboardExclusive)?DISCL_EXCLUSIVE:DISCL_NONEXCLUSIVE) | DISCL_FOREGROUND,
 		KEYBOARDBUFFERSIZE ));
 
 	// MOUSE
