@@ -1,12 +1,13 @@
 ## Languages
 
 * English: [README.md](README.md)
+* Русский: этот файл
 * Українська: [README.uk.md](README.uk.md)
 * Polski: [README.pl.md](README.pl.md)
 * Deutsch: [README.de.md](README.de.md)
 * Français: [README.fr.md](README.fr.md)
-* Čeština: [README.cs.md](README.cs.md)
 * Español: [README.es.md](README.es.md)
+* Čeština: [README.cs.md](README.cs.md)
 * 日本語: [README.ja.md](README.ja.md)
 
 # Историческая реставрация X-Ray
@@ -153,7 +154,7 @@ D:/Projects/Toolchains/
 
 ```bat
 cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 ^
-  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX" ^
+  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX/" ^
   -DBOOST_ROOT="D:/Projects/Toolchains/boost_1_33_1" ^
   -DLUABIND_ROOT="D:/Projects/Toolchains/luabind-0.7/luabind" ^
   -DLOKI_ROOT="D:/Projects/Toolchains/loki-legacy" ^
@@ -211,21 +212,27 @@ user_koan.ltx
 gamedata.xp0 or unpacked gamedata/
 ```
 
-Оригинальные runtime assets не предоставляются этим репозиторием.
+Оригинальные runtime assets не предоставляются этим репозиторием. Runtime data должны поступать из вашей собственной законной копии, архива или исследовательских материалов.
 
 ## Пример runtime launch
 
 Пример команды, использованной во время реставрационного тестирования:
 
 ```bat
-XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
 
 Пример запуска через Visual Studio debugger:
 
 ```bat
-devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
+
+Runtime testing flags:
+
+* `-freecursor` делает только DirectInput mouse device non-exclusive.
+* `-freeinput` делает mouse и keyboard DirectInput devices non-exclusive для windowed debugging.
+
 
 ## Archive inspection helper
 
@@ -334,7 +341,7 @@ Codex использовался как AI coding assistant для:
 
 Оригинальные игровые ассеты, proprietary data packages и runtime content не включены.
 
-Используйте это только с legally obtained compatible runtime data package.
+Используйте это только с legally obtained compatible runtime data package из вашей собственной законной копии, архива или исследовательских материалов.
 
 ## Keywords
 

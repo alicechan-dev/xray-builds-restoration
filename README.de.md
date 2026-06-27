@@ -4,9 +4,10 @@
 * Русский: [README.ru.md](README.ru.md)
 * Українська: [README.uk.md](README.uk.md)
 * Polski: [README.pl.md](README.pl.md)
+* Deutsch: diese Datei
 * Français: [README.fr.md](README.fr.md)
-* Čeština: [README.cs.md](README.cs.md)
 * Español: [README.es.md](README.es.md)
+* Čeština: [README.cs.md](README.cs.md)
 * 日本語: [README.ja.md](README.ja.md)
 
 # Historische X-Ray-Restaurierung
@@ -155,7 +156,7 @@ Beispiel für den Configure-Befehl:
 
 ```bat
 cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 ^
-  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX" ^
+  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX/" ^
   -DBOOST_ROOT="D:/Projects/Toolchains/boost_1_33_1" ^
   -DLUABIND_ROOT="D:/Projects/Toolchains/luabind-0.7/luabind" ^
   -DLOKI_ROOT="D:/Projects/Toolchains/loki-legacy" ^
@@ -213,21 +214,27 @@ user_koan.ltx
 gamedata.xp0 or unpacked gamedata/
 ```
 
-Originale Runtime Assets werden von diesem Repository nicht bereitgestellt.
+Originale Runtime Assets werden von diesem Repository nicht bereitgestellt. Runtime data müssen aus deiner eigenen rechtmäßigen Kopie, einem Archiv oder Forschungsmaterial stammen.
 
 ## Beispiel für Runtime-Start
 
 Beispielbefehl, der während der Restaurierungstests verwendet wurde:
 
 ```bat
-XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
 
 Beispiel für den Start über den Visual-Studio-Debugger:
 
 ```bat
-devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
+
+Runtime testing flags:
+
+* `-freecursor` macht nur das DirectInput mouse device non-exclusive.
+* `-freeinput` macht mouse und keyboard DirectInput devices für windowed debugging non-exclusive.
+
 
 ## Archive inspection helper
 
@@ -336,7 +343,7 @@ Dieses Repository ist für source restoration, build scripts, documentation und 
 
 Originale Game Assets, proprietary data packages und runtime content sind nicht enthalten.
 
-Verwende dies nur mit einem legally obtained compatible runtime data package.
+Verwende dies nur mit einem legally obtained compatible runtime data package aus deiner eigenen rechtmäßigen Kopie, einem Archiv oder Forschungsmaterial.
 
 ## Keywords
 

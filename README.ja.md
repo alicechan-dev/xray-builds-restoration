@@ -6,8 +6,9 @@
 * Polski: [README.pl.md](README.pl.md)
 * Deutsch: [README.de.md](README.de.md)
 * Français: [README.fr.md](README.fr.md)
-* Čeština: [README.cs.md](README.cs.md)
 * Español: [README.es.md](README.es.md)
+* Čeština: [README.cs.md](README.cs.md)
+* 日本語: このファイル
 
 # X-Ray 歴史的修復
 
@@ -155,7 +156,7 @@ Configure command の例:
 
 ```bat
 cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 ^
-  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX" ^
+  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX/" ^
   -DBOOST_ROOT="D:/Projects/Toolchains/boost_1_33_1" ^
   -DLUABIND_ROOT="D:/Projects/Toolchains/luabind-0.7/luabind" ^
   -DLOKI_ROOT="D:/Projects/Toolchains/loki-legacy" ^
@@ -213,21 +214,27 @@ user_koan.ltx
 gamedata.xp0 or unpacked gamedata/
 ```
 
-オリジナルの runtime assets は、この repository では提供されません。
+オリジナルの runtime assets は、この repository では提供されません。Runtime data は、自分が lawful に所有するコピー、アーカイブ、または研究資料から用意する必要があります。
 
 ## Runtime launch の例
 
 修復テスト中に使用された command の例:
 
 ```bat
-XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
 
 Visual Studio debugger launch の例:
 
 ```bat
-devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
+
+Runtime testing flags:
+
+* `-freecursor` は DirectInput mouse device のみを non-exclusive にします。
+* `-freeinput` は windowed debugging 用に mouse と keyboard の DirectInput devices を non-exclusive にします。
+
 
 ## Archive inspection helper
 
@@ -336,7 +343,7 @@ Codex は AI coding assistant として、以下の用途に使用されまし�
 
 オリジナルの game assets、proprietary data packages、runtime content は含まれていません。
 
-legally obtained compatible runtime data package と一緒にのみ使用してください。
+自分が lawful に所有するコピー、アーカイブ、または研究資料に由来する legally obtained compatible runtime data package と一緒にのみ使用してください。
 
 ## Keywords
 

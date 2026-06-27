@@ -123,6 +123,7 @@ Example local dependency layout used during restoration:
 
 ```text
 D:/Projects/Toolchains/
+  DirectX/
   boost_1_33_1/
   luabind-0.7/
     luabind/
@@ -130,9 +131,6 @@ D:/Projects/Toolchains/
   OpenAL/
   EAX/
   Xiph-msvc/
-
-D:/Projects/Others/
-  DXGarbage/
 ```
 
 Known dependency set:
@@ -156,7 +154,7 @@ Example configure command:
 
 ```bat
 cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 ^
-  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX" ^
+  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX/" ^
   -DBOOST_ROOT="D:/Projects/Toolchains/boost_1_33_1" ^
   -DLUABIND_ROOT="D:/Projects/Toolchains/luabind-0.7/luabind" ^
   -DLOKI_ROOT="D:/Projects/Toolchains/loki-legacy" ^
@@ -214,21 +212,26 @@ user_koan.ltx
 gamedata.xp0 or unpacked gamedata/
 ```
 
-Original runtime assets are not provided by this repository.
+Original runtime assets are not provided by this repository. Runtime data must come from your own lawful copy, archive, or research materials.
 
 ## Example runtime launch
 
 Example command used during restoration testing:
 
 ```bat
-XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
 
 Example Visual Studio debugger launch:
 
 ```bat
-devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
+
+Runtime testing flags:
+
+* `-freecursor` makes only the mouse DirectInput device non-exclusive.
+* `-freeinput` makes both mouse and keyboard DirectInput devices non-exclusive for windowed debugging.
 
 ## Archive inspection helper
 
@@ -337,7 +340,7 @@ This repository is for source restoration, build scripts, documentation, and com
 
 Original game assets, proprietary data packages, and runtime content are not included.
 
-Use this only with a legally obtained compatible runtime data package.
+Use this only with a legally obtained compatible runtime data package from your own lawful copy, archive, or research materials.
 
 ## Keywords
 

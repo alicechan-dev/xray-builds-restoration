@@ -6,6 +6,9 @@
 * Polski: [README.pl.md](README.pl.md)
 * Deutsch: [README.de.md](README.de.md)
 * Français: [README.fr.md](README.fr.md)
+* Español: [README.es.md](README.es.md)
+* Čeština: tento soubor
+* 日本語: [README.ja.md](README.ja.md)
 
 # Historická restaurace X-Ray
 
@@ -153,7 +156,7 @@ Příklad konfiguračního příkazu:
 
 ```bat
 cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 ^
-  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX" ^
+  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX/" ^
   -DBOOST_ROOT="D:/Projects/Toolchains/boost_1_33_1" ^
   -DLUABIND_ROOT="D:/Projects/Toolchains/luabind-0.7/luabind" ^
   -DLOKI_ROOT="D:/Projects/Toolchains/loki-legacy" ^
@@ -211,21 +214,27 @@ user_koan.ltx
 gamedata.xp0 or unpacked gamedata/
 ```
 
-Původní runtime assets nejsou tímto repozitářem poskytovány.
+Původní runtime assets nejsou tímto repozitářem poskytovány. Runtime data musí pocházet z vaší vlastní zákonné kopie, archivu nebo výzkumných materiálů.
 
 ## Příklad runtime spuštění
 
 Příklad příkazu použitého během restauračního testování:
 
 ```bat
-XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
 
 Příklad spuštění přes Visual Studio debugger:
 
 ```bat
-devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
+
+Runtime testing flags:
+
+* `-freecursor` nastaví non-exclusive pouze DirectInput mouse device.
+* `-freeinput` nastaví mouse i keyboard DirectInput devices jako non-exclusive pro windowed debugging.
+
 
 ## Archive inspection helper
 
@@ -334,7 +343,7 @@ Tento repozitář je určen pro source restoration, build scripts, documentation
 
 Původní herní assety, proprietary data packages a runtime content nejsou zahrnuty.
 
-Používejte to pouze s legally obtained compatible runtime data package.
+Používejte to pouze s legally obtained compatible runtime data package z vaší vlastní zákonné kopie, archivu nebo výzkumných materiálů.
 
 ## Keywords
 

@@ -5,8 +5,9 @@
 * Українська: [README.uk.md](README.uk.md)
 * Polski: [README.pl.md](README.pl.md)
 * Deutsch: [README.de.md](README.de.md)
-* Čeština: [README.cs.md](README.cs.md)
+* Français: ce fichier
 * Español: [README.es.md](README.es.md)
+* Čeština: [README.cs.md](README.cs.md)
 * 日本語: [README.ja.md](README.ja.md)
 
 # Restauration historique de X-Ray
@@ -155,7 +156,7 @@ Exemple de commande de configuration :
 
 ```bat
 cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 ^
-  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX" ^
+  -DDIRECTX_ROOT="D:/Projects/Toolchains/DirectX/" ^
   -DBOOST_ROOT="D:/Projects/Toolchains/boost_1_33_1" ^
   -DLUABIND_ROOT="D:/Projects/Toolchains/luabind-0.7/luabind" ^
   -DLOKI_ROOT="D:/Projects/Toolchains/loki-legacy" ^
@@ -213,21 +214,27 @@ user_koan.ltx
 gamedata.xp0 or unpacked gamedata/
 ```
 
-Les runtime assets originaux ne sont pas fournis par ce dépôt.
+Les runtime assets originaux ne sont pas fournis par ce dépôt. Les runtime data doivent provenir de votre propre copie légale, archive ou matériel de recherche.
 
 ## Exemple de lancement runtime
 
 Exemple de commande utilisée pendant les tests de restauration :
 
 ```bat
-XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
 
 Exemple de lancement via le debugger Visual Studio :
 
 ```bat
-devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freecursor -start "server(all/single/alife) client(localhost)"
+devenv /debugexe .\XR_3DA.exe -nocache -ltx user_koan.ltx -external -windowed -freeinput -start "server(all/single/alife) client(localhost)"
 ```
+
+Runtime testing flags:
+
+* `-freecursor` rend uniquement le DirectInput mouse device non-exclusive.
+* `-freeinput` rend les DirectInput devices mouse et keyboard non-exclusive pour le windowed debugging.
+
 
 ## Archive inspection helper
 
@@ -336,7 +343,7 @@ Ce dépôt est destiné à la source restoration, aux build scripts, à la docum
 
 Les assets originaux du jeu, les proprietary data packages et le runtime content ne sont pas inclus.
 
-Utilisez ceci uniquement avec un legally obtained compatible runtime data package.
+Utilisez ceci uniquement avec un legally obtained compatible runtime data package provenant de votre propre copie légale, archive ou matériel de recherche.
 
 ## Keywords
 
