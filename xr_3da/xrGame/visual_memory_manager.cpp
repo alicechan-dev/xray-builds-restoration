@@ -25,6 +25,13 @@ struct CNotYetVisibleObjectPredicate{
 	}
 };
 
+struct CNotYetVisibleObjectValuePredicate {
+	IC		bool	operator()	(const CNotYetVisibleObject &object0, const CNotYetVisibleObject &object1) const
+	{
+		return		(object0.m_value < object1.m_value);
+	}
+};
+
 CVisualMemoryManager::CVisualMemoryManager		()
 {
 	init				();
@@ -45,6 +52,7 @@ void CVisualMemoryManager::Load					(LPCSTR section)
 	CGameObject::Load			(section);
 	
 	m_max_object_count			= pSettings->r_s32(section,"DynamicObjectsCount");
+	m_not_yet_visible_objects.reserve(m_max_object_count);
 	m_transparency_threshold	= pSettings->r_float(section,"transparency_threshold");
 	m_monster					= smart_cast<CCustomMonster*>(this);
 	m_stalker					= smart_cast<CAI_Stalker*>(this);
@@ -167,6 +175,27 @@ CNotYetVisibleObject *CVisualMemoryManager::not_yet_visible_object(const CGameOb
 
 void CVisualMemoryManager::add_not_yet_visible_object	(const CNotYetVisibleObject &not_yet_visible_object)
 {
+	VERIFY							(not_yet_visible_object.m_object);
+	CNotYetVisibleObject				*object = this->not_yet_visible_object(not_yet_visible_object.m_object);
+	if (object) {
+		*object						= not_yet_visible_object;
+		return;
+	}
+
+	if (m_not_yet_visible_objects.capacity() < m_max_object_count)
+		m_not_yet_visible_objects.reserve(m_max_object_count);
+
+	if (m_not_yet_visible_objects.size() >= m_max_object_count) {
+		xr_vector<CNotYetVisibleObject>::iterator	I = std::min_element(
+			m_not_yet_visible_objects.begin(),
+			m_not_yet_visible_objects.end(),
+			CNotYetVisibleObjectValuePredicate()
+		);
+		if ((I != m_not_yet_visible_objects.end()) && ((*I).m_value < not_yet_visible_object.m_value))
+			*I						= not_yet_visible_object;
+		return;
+	}
+
 	m_not_yet_visible_objects.push_back	(not_yet_visible_object);
 }
 
@@ -293,6 +322,8 @@ void CVisualMemoryManager::update				(float time_delta)
 	{
 		xr_vector<CObject*>::const_iterator	I = m_visible_objects.begin();
 		xr_vector<CObject*>::const_iterator	E = m_visible_objects.end();
+		if (m_not_yet_visible_objects.capacity() < m_max_object_count)
+			m_not_yet_visible_objects.reserve(m_max_object_count);
 		for ( ; I != E; ++I)
 			add_visible_object			(*I,time_delta);
 	}
