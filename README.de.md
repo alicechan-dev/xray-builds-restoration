@@ -49,29 +49,23 @@ Die Runtime kann die Engine starten, Scripts laden, den Server/Client-Startup in
 
 Dies ist weiterhin eine experimentelle Restaurierung. Der Build kann erfolgreich kompilieren, aber die Runtime-Ausführung kann weiterhin auf fehlende Daten, alte Serialisierungsannahmen, Renderer-Probleme oder Debug Assertions stoßen.
 
-## Aktuelles bekanntes Runtime-Problem
+## Kompatibilitätsnotiz zu Environment-Sky-Cubemaps
 
-Der aktuelle Stand der Runtime-Tests erreicht das Laden von Texturen und kann wegen fehlender generierter Sky-Cubemap-Daten fehlschlagen:
+Historische Runtime data können generierte `#small` Environment-Sky-Cubemaps vermissen, zum Beispiel:
 
 ```text
-Can't find texture 'sky\sky_11_cube#small'
+sky\sky_11_cube#small
 ```
 
-Untersuchungsnotizen:
+Editor-seitiges Tooling generierte diese kleineren DDS-Cubemaps ursprünglich aus den Basis-Sky-Cubemap-Texturen.
 
-* `#small` ist kein allgemeiner Suffix des Texture Loaders.
-* Es ist der erwartete Name einer generierten DDS-Textur.
-* `Environment.cpp` hängt `#small` für die Environment-Sky-Cubemap an.
-* Editor-seitiger Code scheint diese kleineren Sky-Cubemaps aus den Basis-Sky-Cubemap-Texturen zu generieren.
-* Einige Runtime Data Packages enthalten die Basis-Sky-Cubemap, zum Beispiel `sky_11_cube.dds`, aber nicht die generierte `sky_11_cube#small.dds`.
+Die restaurierte Runtime besitzt jetzt einen eng begrenzten Compatibility Fallback: Wenn eine generierte `#small` Environment-Sky-Cubemap fehlt, verwendet sie die passende Basis-Sky-Cubemap und schreibt den Fallback ins Log, zum Beispiel:
 
-Mögliche Restaurierungspfade:
+```text
+missing generated env sky cubemap 'sky\sky_11_cube#small', using base 'sky\sky_11_cube'
+```
 
-1. die fehlenden `#small`-Cubemap-Daten über die originale/editorseitige Pipeline wiederherstellen oder neu generieren;
-2. einen eng begrenzten Runtime-Generator für fehlende Environment-Sky-Cubemaps hinzufügen;
-3. einen temporären env-sky-only-Fallback von `sky_11_cube#small` auf `sky_11_cube` für weiteres Runtime Debugging verwenden.
-
-Der bevorzugte langfristige Ansatz besteht darin, das ursprüngliche Verhalten zu erhalten und fehlende generated data zu dokumentieren, statt breite Texture-Loading-Fehler zu verstecken.
+Dieser Fallback gilt nur für Environment-Sky-Cubemaps. Er ist kein allgemeiner Workaround für fehlende Texturen.
 
 ## Was bisher restauriert wurde
 

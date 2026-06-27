@@ -49,29 +49,23 @@ El runtime puede iniciar el motor, cargar scripts, inicializar el server/client 
 
 Esto sigue siendo una restauración experimental. El build puede compilar correctamente, pero la ejecución runtime todavía puede encontrar datos faltantes, antiguas suposiciones de serialización, problemas del renderer o debug assertions.
 
-## Problema runtime actual conocido
+## Nota de compatibilidad de environment sky cubemap
 
-El estado actual de las pruebas runtime llega a la carga de texturas y puede fallar por datos sky cubemap generados que faltan:
+Los runtime data históricos pueden carecer de environment sky cubemaps generadas con `#small`, por ejemplo:
 
 ```text
-Can't find texture 'sky\sky_11_cube#small'
+sky\sky_11_cube#small
 ```
 
-Notas de investigación:
+El tooling editor-side generaba originalmente estas DDS cubemaps más pequeñas a partir de las texturas sky cubemap base.
 
-* `#small` no es un sufijo genérico del texture loader.
-* Es el nombre esperado de una textura DDS generada.
-* `Environment.cpp` añade `#small` para la environment sky cubemap.
-* El código editor-side parece generar estas sky cubemaps más pequeñas a partir de las texturas sky cubemap base.
-* Algunos runtime data packages contienen la sky cubemap base, por ejemplo `sky_11_cube.dds`, pero no contienen la generada `sky_11_cube#small.dds`.
+El runtime restaurado ahora tiene un compatibility fallback estrecho: si falta una environment sky cubemap generada con `#small`, usa la sky cubemap base correspondiente y registra el fallback en el log, por ejemplo:
 
-Posibles rutas de restauración:
+```text
+missing generated env sky cubemap 'sky\sky_11_cube#small', using base 'sky\sky_11_cube'
+```
 
-1. recuperar o regenerar los datos cubemap `#small` faltantes usando el pipeline original/editor;
-2. añadir un generador runtime limitado para las environment sky cubemaps faltantes;
-3. usar un fallback temporal env-sky-only de `sky_11_cube#small` a `sky_11_cube` para continuar el runtime debugging.
-
-El enfoque preferido a largo plazo es preservar el comportamiento original y documentar los generated data faltantes, en lugar de ocultar de forma amplia los errores de carga de texturas.
+Este fallback solo se aplica a environment sky cubemaps. No es un workaround general para texturas faltantes.
 
 ## Qué se ha restaurado hasta ahora
 

@@ -49,29 +49,23 @@ Runtime は engine を起動し、scripts を読み込み、server/client startu
 
 これはまだ実験的な修復です。Build は正常に compile できる場合がありますが、runtime execution では missing data、古い serialization assumptions、renderer issues、debug assertions によってまだエラーが発生する可能性があります。
 
-## 現在判明している runtime issue
+## environment sky cubemap 互換性メモ
 
-現在の runtime testing state は texture loading まで到達し、生成済み sky cubemap data が不足しているために失敗する場合があります。
+歴史的な runtime data には、`#small` 付きの生成済み environment sky cubemaps が存在しない場合があります。例:
 
 ```text
-Can't find texture 'sky\sky_11_cube#small'
+sky\sky_11_cube#small
 ```
 
-調査メモ:
+Editor-side tooling は本来、base sky cubemap textures からこれらの小さい DDS cubemaps を生成していました。
 
-* `#small` は texture loader の一般的な suffix ではありません。
-* これは生成された DDS texture の名前として期待されているものです。
-* `Environment.cpp` は environment sky cubemap 用に `#small` を付加します。
-* Editor-side code は、base sky cubemap textures から小さい sky cubemaps を生成しているようです。
-* 一部の runtime data packages には、たとえば `sky_11_cube.dds` のような base sky cubemap は含まれていますが、生成済みの `sky_11_cube#small.dds` は含まれていません。
+修復された runtime には、現在、範囲を限定した compatibility fallback があります。生成済みの `#small` environment sky cubemap が見つからない場合、対応する base sky cubemap を使用し、次のように log に記録します。
 
-考えられる修復方針:
+```text
+missing generated env sky cubemap 'sky\sky_11_cube#small', using base 'sky\sky_11_cube'
+```
 
-1. original/editor pipeline を使って、不足している `#small` cubemap data を復元または再生成する。
-2. 不足している environment sky cubemaps のために、範囲を限定した runtime generator を追加する。
-3. さらなる runtime debugging のために、`sky_11_cube#small` から `sky_11_cube` への一時的な env-sky-only fallback を使用する。
-
-長期的に望ましい方針は、広範な texture loading errors を隠すのではなく、original behavior を保ち、不足している generated data を明確に document することです。
+この fallback は environment sky cubemaps 専用です。一般的な missing texture workaround ではありません。
 
 ## これまでに修復されたもの
 

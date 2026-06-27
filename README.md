@@ -47,29 +47,23 @@ The runtime can start the engine, load scripts, initialize server/client startup
 
 This is still an experimental restoration. The build may compile successfully, but runtime execution can still hit missing data, old serialization assumptions, renderer issues, or debug assertions.
 
-## Known current runtime issue
+## Environment sky cubemap compatibility note
 
-The current runtime testing state reaches texture loading and may fail on missing generated sky cubemap data:
+Historical runtime data can miss generated `#small` environment sky cubemaps, for example:
 
 ```text
-Can't find texture 'sky\sky_11_cube#small'
+sky\sky_11_cube#small
 ```
 
-Investigation notes:
+Editor-side tooling originally generated these smaller DDS cubemaps from the base sky cubemap textures.
 
-* `#small` is not a generic texture loader suffix.
-* It is an expected generated DDS texture name.
-* `Environment.cpp` appends `#small` for the environment sky cubemap.
-* Editor-side code appears to generate these smaller sky cubemaps from base sky cubemap textures.
-* Some runtime data packages contain the base sky cubemap, for example `sky_11_cube.dds`, but not the generated `sky_11_cube#small.dds`.
+The restored runtime now has a narrow compatibility fallback: if a generated `#small` environment sky cubemap is missing, it uses the matching base sky cubemap and logs the fallback, for example:
 
-Possible restoration paths:
+```text
+missing generated env sky cubemap 'sky\sky_11_cube#small', using base 'sky\sky_11_cube'
+```
 
-1. recover or regenerate the missing `#small` cubemap data using the original/editor pipeline;
-2. add a narrow runtime generator for missing environment sky cubemaps;
-3. use a temporary env-sky-only fallback from `sky_11_cube#small` to `sky_11_cube` for further runtime debugging.
-
-The preferred long-term approach is to preserve the original behavior and document missing generated data instead of hiding broad texture loading errors.
+This fallback is only for environment sky cubemaps. It is not a general missing-texture workaround.
 
 ## What has been restored so far
 

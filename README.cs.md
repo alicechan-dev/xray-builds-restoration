@@ -49,29 +49,23 @@ Runtime dokáže spustit engine, načíst skripty, inicializovat server/client s
 
 Stále jde o experimentální restauraci. Build se může úspěšně zkompilovat, ale při runtime spuštění se mohou stále objevit chyby kvůli chybějícím datům, starým předpokladům serializace, problémům rendereru nebo debug assertions.
 
-## Aktuální známý runtime problém
+## Poznámka ke kompatibilitě environment sky cubemap
 
-Aktuální stav runtime testování dojde k načítání textur a může selhat kvůli chybějícím vygenerovaným sky cubemap datům:
+Historická runtime data mohou postrádat vygenerované environment sky cubemaps s `#small`, například:
 
 ```text
-Can't find texture 'sky\sky_11_cube#small'
+sky\sky_11_cube#small
 ```
 
-Poznámky z vyšetřování:
+Editor-side tooling původně generoval tyto menší DDS cubemapy ze základních sky cubemap textures.
 
-* `#small` není obecný suffix texture loaderu.
-* Je to očekávaný název vygenerované DDS textury.
-* `Environment.cpp` přidává `#small` pro environment sky cubemap.
-* Editor-side kód podle všeho generuje tyto menší sky cubemapy ze základních sky cubemap textur.
-* Některé runtime data packages obsahují základní sky cubemap, například `sky_11_cube.dds`, ale neobsahují vygenerovanou `sky_11_cube#small.dds`.
+Obnovený runtime má nyní úzce zaměřený compatibility fallback: pokud vygenerovaná environment sky cubemap s `#small` chybí, použije odpovídající základní sky cubemap a zapíše fallback do logu, například:
 
-Možné cesty restaurace:
+```text
+missing generated env sky cubemap 'sky\sky_11_cube#small', using base 'sky\sky_11_cube'
+```
 
-1. obnovit nebo znovu vygenerovat chybějící `#small` cubemap data pomocí původního/editor pipeline;
-2. přidat úzce zaměřený runtime generátor pro chybějící environment sky cubemapy;
-3. použít dočasný env-sky-only fallback z `sky_11_cube#small` na `sky_11_cube` pro další runtime debugging.
-
-Preferovaný dlouhodobý přístup je zachovat původní chování a dokumentovat chybějící generated data, místo aby se široce skrývaly chyby načítání textur.
+Tento fallback platí pouze pro environment sky cubemaps. Není to obecný workaround pro chybějící textures.
 
 ## Co už bylo obnoveno
 
