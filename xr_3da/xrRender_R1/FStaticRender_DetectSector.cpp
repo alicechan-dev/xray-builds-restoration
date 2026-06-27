@@ -2,6 +2,9 @@
  
 IRender_Sector* CRender::detectSector(const Fvector& P)
 {
+	if (!_valid(P))
+		return 0;
+
 	Sectors_xrc.ray_options	(CDB::OPT_ONLYNEAREST);
 	Fvector dir; dir.set(0,-1,0);
 
@@ -22,14 +25,16 @@ IRender_Sector* CRender::detectSector(const Fvector& P)
 	// Geometry model
 	int		id2		= -1;
 	float	range2	= range1;
-	Sectors_xrc.ray_query	(g_pGameLevel->ObjectSpace.GetStaticModel(),P,dir,range2);
-	if (Sectors_xrc.r_count()) {
-		CDB::RESULT *RP2 = Sectors_xrc.r_begin();
-		if (RP2) {
-			id2 = RP2->id; range2 = RP2->range;
+	CDB::MODEL*	static_model = g_pGameLevel->ObjectSpace.GetStaticModel();
+	if (static_model && (range2 > EPS)) {
+		Sectors_xrc.ray_query	(static_model,P,dir,range2);
+		if (Sectors_xrc.r_count()) {
+			CDB::RESULT *RP2 = Sectors_xrc.r_begin();
+			if (RP2) {
+				id2 = RP2->id; range2 = RP2->range;
+			}
 		}
 	}
-
 	// Select ID
 	int ID;
 	if (id1>=0) {
@@ -45,7 +50,7 @@ IRender_Sector* CRender::detectSector(const Fvector& P)
 		return pPortal->getSectorFacing(P);
 	} else {
 		// Take triangle at ID and use it's Sector
-		CDB::TRI*	pTri	= g_pGameLevel->ObjectSpace.GetStaticTris()+ID;
+		CDB::TRI*	pTri	= static_model->get_tris()+ID;
 		return getSector(pTri->sector);
 	}
 }

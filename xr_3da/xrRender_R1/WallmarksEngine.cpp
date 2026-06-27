@@ -96,7 +96,7 @@ void		CWallmarksEngine::wm_render			(wallmark*	W, FVF::LIT* &V)
 	u32			C		= color_rgba(128,128,128,aC);
 
 	FVF::LIT*	S		= &*W->verts.begin	();
-	FVF::LIT*	E		= &*W->verts.end	();
+	FVF::LIT*	E		= S + W->verts.size	();
 	for (; S!=E; S++, V++)
 	{
 		V->p.set		(S->p);
@@ -227,7 +227,7 @@ void CWallmarksEngine::AddWallmark_internal	(CDB::TRI* pTri, const Fvector* pVer
 		Fbox bb;	bb.invalidate();
 
 		FVF::LIT* I=&*W->verts.begin	();
-		FVF::LIT* E=&*W->verts.end		();
+		FVF::LIT* E=I + W->verts.size	();
 		for (; I!=E; I++)	bb.modify	(I->p);
 		bb.getsphere					(W->bounds.P,W->bounds.R);
 	}
