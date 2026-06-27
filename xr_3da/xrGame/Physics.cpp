@@ -102,6 +102,32 @@ IC void add_contact_body_effector(dBodyID body,const dContact& c,SGameMtl* mater
 
 IC static int CollideIntoGroup(dGeomID o1, dGeomID o2,dJointGroupID jointGroup,CPHIsland* world,const int &MAX_CONTACTS)
 {
+	VERIFY	(o1 && o2);
+	if (MAX_CONTACTS <= 0)
+		return 0;
+
+	if (dGeomIsSpace(o1) || dGeomIsSpace(o2)) {
+		int collided_contacts = 0;
+
+		if (dGeomIsSpace(o1)) {
+			int count = dSpaceGetNumGeoms((dSpaceID)o1);
+			for (int i = 0; (i < count) && (collided_contacts < MAX_CONTACTS); ++i) {
+				int remaining = MAX_CONTACTS - collided_contacts;
+				collided_contacts += CollideIntoGroup(dSpaceGetGeom((dSpaceID)o1,i),o2,jointGroup,world,remaining);
+			}
+
+			return collided_contacts;
+		}
+
+		int count = dSpaceGetNumGeoms((dSpaceID)o2);
+		for (int i = 0; (i < count) && (collided_contacts < MAX_CONTACTS); ++i) {
+			int remaining = MAX_CONTACTS - collided_contacts;
+			collided_contacts += CollideIntoGroup(o1,dSpaceGetGeom((dSpaceID)o2,i),jointGroup,world,remaining);
+		}
+
+		return collided_contacts;
+	}
+
 	const int RS= 800;
 	const int N = RS;
 	
