@@ -859,9 +859,10 @@ void CWeaponMagazined::PlayAnimShoot()
 
 void CWeaponMagazined::OnZoomIn			()
 {
+	bool was_zoomed = IsZoomed();
 	inherited::OnZoomIn();
 
-	if(STATE == eIdle)
+	if(!was_zoomed && STATE == eIdle)
 		PlayAnimIdle();
 
 
