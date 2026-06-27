@@ -249,6 +249,20 @@ rg -i "sky_11|sky_11_cube|#small" xp0_entries.txt
 
 This tool is intended for diagnostics only. It does not extract, modify, or repack archives.
 
+## Modding and tools documentation
+
+Initial documentation for future modding and tool work is available under `docs/`:
+
+* [Modding overview](docs/modding/overview.md)
+* [Runtime layout](docs/modding/runtime-layout.md)
+* [Assets policy](docs/modding/assets-policy.md)
+* [Tools status](docs/tools/status.md)
+* [Archive unpacker plan](docs/tools/unpacker-plan.md)
+* [SDK restoration plan](docs/tools/sdk-restoration-plan.md)
+* [Archive formats](docs/formats/archives.md)
+
+The project currently focuses on source restoration. Future work may include SDK/tool restoration, unpackers, converters, and format documentation.
+
 ## Development notes
 
 This restoration tries to preserve original behavior where possible.
@@ -339,4 +353,3 @@ Use this only with a legally obtained compatible runtime data package from your 
 ## Keywords
 
 X-Ray Engine, X-Ray 1935, STALKER 1935, S.T.A.L.K.E.R. build 1935, Shadow of Chernobyl, SoC, OpenXRay, Visual Studio 2022, VS2022, CMake, DirectX 9, Win32, legacy game engine restoration, source restoration.
-
