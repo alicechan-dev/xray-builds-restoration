@@ -31,6 +31,12 @@
 #endif
 
 XRCORE_API	xrDebug		Debug;
+static xrDebugDialogPrepareCallback g_dialog_prepare_callback = NULL;
+
+XRCORE_API void xrDebug_SetDialogPrepareCallback(xrDebugDialogPrepareCallback callback)
+{
+	g_dialog_prepare_callback = callback;
+}
 
 // Dialog support
 static const char * dlgExpr		= NULL;
@@ -84,9 +90,11 @@ void xrDebug::backend(const char* reason, const char *file, int line)
 	FlushLog			();
 
 	// Call the dialog
-	dlgExpr		= reason;	
+	dlgExpr		= reason;
 	dlgFile		= file;
 	sprintf		(dlgLine,"%d",line);
+	if (g_dialog_prepare_callback)
+		g_dialog_prepare_callback();
 	INT_PTR res	= DialogBox
 		(
 		GetModuleHandle(MODULE_NAME),

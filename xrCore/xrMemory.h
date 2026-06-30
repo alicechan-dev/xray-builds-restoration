@@ -53,9 +53,11 @@ extern XRCORE_API	xrMemory	Memory;
 #undef	ZeroMemory
 #undef	CopyMemory
 #undef	FillMemory
-#define ZeroMemory(a,b)		Memory.mem_fill(a,0,b)
-#define CopyMemory(a,b,c)	Memory.mem_copy(a,b,c)
-#define FillMemory(a,b,c)	Memory.mem_fill(a,c,b)
+// Keep Win32-style memory macros independent of the xrMemory dispatch table.
+// They are used during early startup before every module can safely rely on Memory.
+#define ZeroMemory(a,b)		::memset(a,0,b)
+#define CopyMemory(a,b,c)	::memcpy(a,b,c)
+#define FillMemory(a,b,c)	::memset(a,c,b)
 
 // delete
 #ifdef __BORLANDC__

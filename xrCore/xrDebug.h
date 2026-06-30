@@ -2,6 +2,9 @@
 #define xrDebugH
 #pragma once
 
+typedef void (__cdecl *xrDebugDialogPrepareCallback)();
+XRCORE_API void xrDebug_SetDialogPrepareCallback(xrDebugDialogPrepareCallback callback);
+
 class XRCORE_API	xrDebug
 {
 public:
