@@ -27,7 +27,8 @@ IC	CBinaryHeapList::CDataStorage			(const u32 vertex_count, const _dist_type _ma
 	byte_count				= (vertex_count/heap_count + 1)*sizeof(CGraphVertex*);
 	for (u32 i=0; i<heap_count; ++i) {
 		heaps[i].m_heap		= (CGraphVertex**)xr_malloc(byte_count);
-		ZeroMemory			(heaps[i].m_heap,byte_count);
+		VERIFY					(heaps[i].m_heap);
+		::memset				(heaps[i].m_heap,0,byte_count);
 		memory_usage		+= byte_count;
 	}
 }

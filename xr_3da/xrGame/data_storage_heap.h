@@ -107,7 +107,8 @@ public:
 		
 		byte_count				= (node_count)*sizeof(CGraphNode*);
 		heap					= (CGraphNode**)xr_malloc(byte_count);
-		ZeroMemory				(heap,byte_count);
+		VERIFY					(heap);
+		::memset				(heap,0,byte_count);
 		memory_usage			+= byte_count;
 
 //		Msg						("* Data storage allocated %d bytes of memory",memory_usage);
@@ -258,7 +259,8 @@ public:
 		byte_count				= (node_count/heap_count + 1)*sizeof(CGraphNode*);
 		for (u32 i=0; i<heap_count; ++i) {
 			heaps[i].heap		= (CGraphNode**)xr_malloc(byte_count);
-			ZeroMemory			(heaps[i].heap,byte_count);
+			VERIFY					(heaps[i].heap);
+			::memset				(heaps[i].heap,0,byte_count);
 			memory_usage		+= byte_count;
 		}
 
@@ -448,7 +450,8 @@ public:
 		byte_count				= (node_count/heap_count + 1)*sizeof(CGraphNode*);
 		for (u32 i=0; i<heap_count; ++i) {
 			heaps[i].heap		= (CGraphNode**)xr_malloc(byte_count);
-			ZeroMemory			(heaps[i].heap,byte_count);
+			VERIFY					(heaps[i].heap);
+			::memset				(heaps[i].heap,0,byte_count);
 			memory_usage		+= byte_count;
 		}
 
@@ -466,7 +469,7 @@ public:
 		inherited::init			();
 		for (u32 i=0; i<heap_count; ++i)
 			heaps[i].heap_head	= heaps[i].heap_tail = heaps[i].heap;
-		ZeroMemory				(nodes,2*sizeof(CGraphNode));
+		::memset				(nodes,0,2*sizeof(CGraphNode));
 		list_head				= nodes + node_count++;
 		list_tail				= nodes + node_count++;
 		list_head->next			= list_tail;

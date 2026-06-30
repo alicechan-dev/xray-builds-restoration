@@ -34,7 +34,8 @@ IC	CDataStorageVertexManager::CDataStorage		(const u32 vertex_count) :
 
 	byte_count				= (vertex_count)*sizeof(CGraphIndexVertex);
 	m_indexes				= (CGraphIndexVertex*)xr_malloc(byte_count);
-	ZeroMemory				(m_indexes,byte_count);
+	VERIFY					(m_indexes);
+	::memset				(m_indexes,0,byte_count);
 	memory_usage			+= byte_count;
 }
 
@@ -50,7 +51,7 @@ IC	void CDataStorageVertexManager::init		()
 	inherited::init			();
 	++m_current_path_id;
 	if (!m_current_path_id) {
-		ZeroMemory			(m_indexes,(m_max_node_count)*sizeof(CGraphIndexVertex));
+		::memset				(m_indexes,0,(m_max_node_count)*sizeof(CGraphIndexVertex));
 		++m_current_path_id;
 	}
 }

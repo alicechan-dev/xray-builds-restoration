@@ -109,7 +109,7 @@ public:
 	IC		void		init			()
 	{
 		inherited::init			();
-		ZeroMemory				(nodes,2*sizeof(CGraphNode));
+		::memset				(nodes,0,2*sizeof(CGraphNode));
 		list_head				= nodes + node_count++;
 		list_tail				= nodes + node_count++;
 		list_head->next			= list_tail;
@@ -259,7 +259,7 @@ public:
 	IC		void		init			()
 	{
 		inherited::init			();
-		ZeroMemory				(nodes,2*sizeof(CGraphNode));
+		::memset				(nodes,0,2*sizeof(CGraphNode));
 		list_head				= nodes + node_count++;
 		list_tail				= nodes + node_count++;
 		list_head->next			= list_tail;
@@ -428,7 +428,7 @@ public:
 	IC		void		init			()
 	{
 		inherited::init			();
-		ZeroMemory				(nodes,2*sizeof(CGraphNode));
+		::memset				(nodes,0,2*sizeof(CGraphNode));
 		list_head				= nodes + node_count++;
 		list_tail				= nodes + node_count++;
 		list_head->next			= list_tail;
@@ -592,7 +592,7 @@ public:
 	IC		void		init			()
 	{
 		inherited::init			();
-		ZeroMemory				(nodes,2*sizeof(CGraphNode));
+		::memset				(nodes,0,2*sizeof(CGraphNode));
 		list_head				= nodes + node_count++;
 		list_tail				= nodes + node_count++;
 		list_head->next			= list_tail;
@@ -740,7 +740,7 @@ public:
 	IC		void		init			()
 	{
 		inherited::init			();
-		ZeroMemory				(nodes,2*sizeof(CGraphNode));
+		::memset				(nodes,0,2*sizeof(CGraphNode));
 		list_head				= nodes + node_count++;
 		list_tail				= nodes + node_count++;
 		list_head->next			= list_tail;
@@ -1145,7 +1145,7 @@ public:
 	{
 		min_bucket_value		= _min_bucket_value;
 		max_bucket_value		= _max_bucket_value;
-		ZeroMemory				(buckets,bucket_count*sizeof(CGraphNode*));
+		::memset				(buckets,0,bucket_count*sizeof(CGraphNode*));
 	}
 
 	virtual				~CDataStorageBucketList()
@@ -1158,7 +1158,7 @@ public:
 		inherited::init			();
 		min_bucket_id			= bucket_count;
 		if (clear_buckets)
-			ZeroMemory			(buckets,bucket_count*sizeof(CGraphNode*));
+			::memset				(buckets,0,bucket_count*sizeof(CGraphNode*));
 	}
 
 	IC		void		add_best_closed		()

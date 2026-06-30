@@ -60,7 +60,7 @@ IC	void CScriptEngine::parse_script_namespace(LPCSTR function_to_call, LPSTR nam
 	if (!J)
 		strcpy				(function,function_to_call);
 	else {
-		Memory.mem_copy		(name_space,function_to_call, u32(J - function_to_call)*sizeof(char));
+		::memcpy			(name_space,function_to_call, u32(J - function_to_call)*sizeof(char));
 		name_space[u32(J - function_to_call)] = 0;
 		strcpy				(function,J + 1);
 	}

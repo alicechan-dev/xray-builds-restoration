@@ -166,7 +166,8 @@ public:
 		
 		byte_count				= (node_count)*sizeof(SGraphIndexNode);
 		indexes					= (SGraphIndexNode*)xr_malloc(byte_count);
-		ZeroMemory				(indexes,byte_count);
+		VERIFY					(indexes);
+		::memset				(indexes,0,byte_count);
 		memory_usage			+= byte_count;
 
 //		Msg						("* Data storage allocated %d bytes of memory",memory_usage);
@@ -228,7 +229,8 @@ public:
 
 		byte_count				= (node_count)*sizeof(_GraphNode);
 		nodes					= (_GraphNode*)xr_malloc(byte_count);
-		ZeroMemory				(nodes,byte_count);
+		VERIFY					(nodes);
+		::memset				(nodes,0,byte_count);
 		memory_usage			+= byte_count;
 
 //		Msg						("* Data storage allocated %d bytes of memory",memory_usage);

@@ -63,6 +63,10 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName, CEF_Storage *tpAI_DDD)
 	}
 	
 	IReader			*F = FS.r_open(caPath);
+	if (!F) {
+		Msg			("! Evaluation function : Cannot open \"%s\"",caPath);
+		return;
+	}
 	F->r			(&m_tEFHeader,sizeof(SEFHeader));
 
 	if (EFC_VERSION != m_tEFHeader.dwBuilderVersion) {
@@ -73,10 +77,15 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName, CEF_Storage *tpAI_DDD)
 	}
 
 	F->r			(&m_dwVariableCount,sizeof(m_dwVariableCount));
+	if (!m_dwVariableCount || (F->elapsed() < int(m_dwVariableCount*sizeof(u32)))) {
+		FS.r_close	(F);
+		Msg			("! Evaluation function (%s) : Invalid variable count %d",caPath,m_dwVariableCount);
+		return;
+	}
 	m_dwaAtomicFeatureRange = (u32 *)xr_malloc(m_dwVariableCount*sizeof(u32));
-	ZeroMemory		(m_dwaAtomicFeatureRange,m_dwVariableCount*sizeof(u32));
+	::memset		(m_dwaAtomicFeatureRange,0,m_dwVariableCount*sizeof(u32));
 	u32				*m_dwaAtomicIndexes = (u32 *)xr_malloc(m_dwVariableCount*sizeof(u32));
-	ZeroMemory		(m_dwaAtomicIndexes,m_dwVariableCount*sizeof(u32));
+	::memset		(m_dwaAtomicIndexes,0,m_dwVariableCount*sizeof(u32));
 
 	u32 i;
 	for (i=0; i<m_dwVariableCount; ++i) {
@@ -94,9 +103,15 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName, CEF_Storage *tpAI_DDD)
 	F->r			(&m_fMaxResultValue,sizeof(float));
 
 	F->r			(&m_dwPatternCount,sizeof(m_dwPatternCount));
+	if (F->elapsed() < int(m_dwPatternCount*sizeof(u32))) {
+		FS.r_close	(F);
+		xr_free		(m_dwaAtomicIndexes);
+		Msg			("! Evaluation function (%s) : Invalid pattern count %d",caPath,m_dwPatternCount);
+		return;
+	}
 	m_tpPatterns	= (SPattern *)xr_malloc(m_dwPatternCount*sizeof(SPattern));
 	m_dwaPatternIndexes = (u32 *)xr_malloc(m_dwPatternCount*sizeof(u32));
-	ZeroMemory		(m_dwaPatternIndexes,m_dwPatternCount*sizeof(u32));
+	::memset		(m_dwaPatternIndexes,0,m_dwPatternCount*sizeof(u32));
 	m_dwParameterCount = 0;
 	for ( i=0; i<m_dwPatternCount; ++i) {
 		if (i)

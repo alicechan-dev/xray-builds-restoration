@@ -23,7 +23,8 @@ IC	CFixedVertexAllocator::CDataStorage					()
 	m_vertex_count			= 0;
 	byte_count				= (reserved_vertex_count)*sizeof(CGraphVertex);
 	m_vertices				= (CGraphVertex*)xr_malloc(byte_count);
-	ZeroMemory				(m_vertices,byte_count);
+	VERIFY					(m_vertices);
+	::memset				(m_vertices,0,byte_count);
 	memory_usage			+= byte_count;
 }
 
