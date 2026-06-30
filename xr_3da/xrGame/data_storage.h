@@ -83,17 +83,20 @@ public:
 		
 		byte_count				= (node_count)*sizeof(CGraphNode);
 		nodes					= (CGraphNode*)xr_malloc(byte_count);
-		ZeroMemory				(nodes,byte_count);
+		VERIFY					(nodes);
+		::memset				(nodes,0,byte_count);
 		memory_usage			+= byte_count;
 
 		byte_count				= (node_count)*sizeof(SGraphIndexNode);
 		indexes					= (SGraphIndexNode*)xr_malloc(byte_count);
-		ZeroMemory				(indexes,byte_count);
+		VERIFY					(indexes);
+		::memset				(indexes,0,byte_count);
 		memory_usage			+= byte_count;
 
 		byte_count				= (node_count)*sizeof(CGraphNode*);
 		heap					= (CGraphNode**)xr_malloc(byte_count);
-		ZeroMemory				(heap,byte_count);
+		VERIFY					(heap);
+		::memset				(heap,0,byte_count);
 		memory_usage			+= byte_count;
 
 		Msg						("* Data storage allocated %d bytes of memory",memory_usage);
@@ -289,12 +292,14 @@ public:
 		
 		byte_count				= (node_count + 2)*sizeof(CGraphNode);
 		nodes					= (CGraphNode*)xr_malloc(byte_count);
-		ZeroMemory				(nodes,byte_count);
+		VERIFY					(nodes);
+		::memset				(nodes,0,byte_count);
 		memory_usage			+= byte_count;
 
 		byte_count				= (node_count)*sizeof(SGraphIndexNode);
 		indexes					= (SGraphIndexNode*)xr_malloc(byte_count);
-		ZeroMemory				(indexes,byte_count);
+		VERIFY					(indexes);
+		::memset				(indexes,0,byte_count);
 		memory_usage			+= byte_count;
 
 		Msg						("* Data storage allocated %d bytes of memory",memory_usage);
@@ -310,7 +315,7 @@ public:
 	{
 		cur_path_id++;
 		node_count				= _index_type(0);
-		ZeroMemory				(nodes,2*sizeof(CGraphNode));
+		::memset				(nodes,0,2*sizeof(CGraphNode));
 		list_head				= nodes + node_count++;
 		list_tail				= nodes + node_count++;
 		list_head->next			= list_tail;
