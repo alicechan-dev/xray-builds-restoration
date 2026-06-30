@@ -32,10 +32,12 @@ void CSE_ALifeAStar::Init				()
 {
 	u32 S1								= (getAI().GraphHeader().dwVertexCount + 2)*sizeof(SNode);
 	m_tpHeap							= (SNode *)xr_malloc(S1);
-	ZeroMemory							(m_tpHeap,S1);
+	VERIFY					(m_tpHeap);
+	::memset				(m_tpHeap,0,S1);
 	u32 S2								= getAI().GraphHeader().dwVertexCount*sizeof(SIndexNode);
 	m_tpIndexes							= (SIndexNode *)xr_malloc(S2);
-	ZeroMemory							(m_tpIndexes,S2);
+	VERIFY					(m_tpIndexes);
+	::memset				(m_tpIndexes,0,S2);
 	Msg									("* ALife path-finding structures: %d K",(S1 + S2)/(1024));
 	m_tpGraphPath						= (void*)xr_new<CAStarSearch<CAIGraphShortestPathNode,SAIMapDataG> >   (getAI().GraphHeader().dwVertexCount + 2);
 	m_tpAIGraphData						= xr_new<SAIMapDataG>();

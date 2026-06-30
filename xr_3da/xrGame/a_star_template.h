@@ -68,7 +68,7 @@ public:
 				*tpTemp2,
 				*tpBestNode;
 		
-		ZeroMemory		(tpOpenedList,3*sizeof(SNode));
+		::memset				(tpOpenedList,0,3*sizeof(SNode));
 		tpOpenedEnd->f	= MAX_VALUE;
 		
 		tpIndexes[dwStartNode].dwTime = dwAStarStaticCounter;

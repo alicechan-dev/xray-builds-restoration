@@ -17,10 +17,12 @@ CAStar::CAStar(CAI_Space *tpAI_Space, u32 dwCount1, u32 dwCount2, u32 dwMaxNodes
 	m_tpaNodes.clear			();
 	u32 S1						= (_min(dwMaxNodes,_max(dwCount1,dwCount2)) + 2)*sizeof(SNode);
 	m_tpHeap					= (SNode *)xr_malloc(S1);
-	Memory.mem_fill				(m_tpHeap,0,S1);
+	VERIFY					(m_tpHeap);
+	::memset				(m_tpHeap,0,S1);
 	u32 S2						= _max(dwCount1,dwCount2)*sizeof(SIndexNode);
 	m_tpIndexes					= (SIndexNode *)xr_malloc(S2);
-	Memory.mem_fill				(m_tpIndexes,0,S2);
+	VERIFY					(m_tpIndexes);
+	::memset				(m_tpIndexes,0,S2);
 	Msg							("* AI path-finding structures: %d K",(S1 + S2)/(1024));
 	m_tpMapPath					= xr_new<CAStarSearch<CAIMapShortestPathNode,SAIMapData> >		(_min(dwMaxNodes,dwCount1) + 2);
 	m_tpLCDPath					= xr_new<CAStarSearch<CAIMapLCDPathNode,SAIMapDataL> >			(_min(dwMaxNodes,dwCount1) + 2);

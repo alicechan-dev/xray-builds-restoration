@@ -140,10 +140,12 @@ void CAI_Space::vfLoadSearch()
 //	u32 M1	= Engine.mem_Usage();
 	u32 S1	= (MAX_NODES + 1)*sizeof(SNode);
 	taHeap		= (SNode *)xr_malloc(S1);
-	ZeroMemory(taHeap,S1);
+	VERIFY					(taHeap);
+	::memset				(taHeap,0,S1);
 	u32 S2	= (this->m_header.count)*sizeof(SIndexNode);
 	tpaIndexes	= (SIndexNode *)xr_malloc(S2);
-	ZeroMemory(tpaIndexes,S2);
+	VERIFY					(tpaIndexes);
+	::memset				(tpaIndexes,0,S2);
 //	u32 M2	= Engine.mem_Usage();
 	Msg("* AI path-finding structures: %d K",(S1 + S2)/(1024));
 }

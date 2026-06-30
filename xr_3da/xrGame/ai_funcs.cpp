@@ -73,9 +73,11 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName, CAI_DDD *tpAI_DDD)
 
 	F->r			(&m_dwVariableCount,sizeof(m_dwVariableCount));
 	m_dwaAtomicFeatureRange = (u32 *)xr_malloc(m_dwVariableCount*sizeof(u32));
-	ZeroMemory		(m_dwaAtomicFeatureRange,m_dwVariableCount*sizeof(u32));
+	VERIFY			(m_dwaAtomicFeatureRange);
+	::memset		(m_dwaAtomicFeatureRange,0,m_dwVariableCount*sizeof(u32));
 	u32				*m_dwaAtomicIndexes = (u32 *)xr_malloc(m_dwVariableCount*sizeof(u32));
-	ZeroMemory		(m_dwaAtomicIndexes,m_dwVariableCount*sizeof(u32));
+	VERIFY			(m_dwaAtomicIndexes);
+	::memset		(m_dwaAtomicIndexes,0,m_dwVariableCount*sizeof(u32));
 
 	for (u32 i=0; i<m_dwVariableCount; i++) {
 		F->r(m_dwaAtomicFeatureRange + i,sizeof(u32));
@@ -94,7 +96,9 @@ void CPatternFunction::vfLoadEF(LPCSTR caFileName, CAI_DDD *tpAI_DDD)
 	F->r			(&m_dwPatternCount,sizeof(m_dwPatternCount));
 	m_tpPatterns	= (SPattern *)xr_malloc(m_dwPatternCount*sizeof(SPattern));
 	m_dwaPatternIndexes = (u32 *)xr_malloc(m_dwPatternCount*sizeof(u32));
-	ZeroMemory		(m_dwaPatternIndexes,m_dwPatternCount*sizeof(u32));
+	VERIFY			(m_tpPatterns);
+	VERIFY			(m_dwaPatternIndexes);
+	::memset		(m_dwaPatternIndexes,0,m_dwPatternCount*sizeof(u32));
 	m_dwParameterCount = 0;
 	for ( i=0; i<m_dwPatternCount; i++) {
 		if (i)
@@ -166,7 +170,7 @@ CAI_DDD::CAI_DDD()
 	m_tpCurrentALifeEnemy				= 0;
 	m_tpALife							= 0;
 
-	Memory.mem_fill						(m_fpaBaseFunctions,0,sizeof(CBaseFunction*)*AI_MAX_EVALUATION_FUNCTION_COUNT);
+	::memset							(m_fpaBaseFunctions,0,sizeof(m_fpaBaseFunctions));
 	
 	m_fpaBaseFunctions[0]				= m_pfDistance				= xr_new<CDistanceFunction>				();
 	m_fpaBaseFunctions[1]				= m_pfGraphPointType0		= xr_new<CGraphPointType0>				();

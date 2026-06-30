@@ -226,8 +226,9 @@ bool Script::bfLoadBuffer(CLuaVirtualMachine *tpLuaVM, LPCSTR caBuffer, size_t t
 		sprintf			(insert,"local this = %s\n",caNameSpaceName);
 		size_t			str_len = xr_strlen(insert);
 		LPSTR			script = (LPSTR)xr_malloc((str_len + tSize)*sizeof(char));
+		VERIFY			(script);
 		strcpy			(script,insert);
-		Memory.mem_copy	(script + str_len,caBuffer,u32(tSize));
+		::memcpy		(script + str_len,caBuffer,u32(tSize));
 		l_iErrorCode	= luaL_loadbuffer(tpLuaVM,script,tSize + str_len,caScriptName);
 		xr_free			(script);
 	}

@@ -56,7 +56,7 @@ public: // methods
 		m_pFirstFree	= m_pMemory;	// Set the free list first pointer
 
 		// Clear the memory
-		ZeroMemory( m_pMemory, sizeof( FSA_ELEMENT ) * m_MaxElements );
+		::memset				(m_pMemory,0,sizeof( FSA_ELEMENT ) * m_MaxElements);
 
 		// Point at first element
 		FSA_ELEMENT *pElement = m_pFirstFree;
