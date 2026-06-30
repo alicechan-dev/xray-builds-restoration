@@ -242,7 +242,7 @@ public:
 	{ bEmptyArgsHandled=TRUE; };
 
 	virtual void Execute(LPCSTR args) {
-		ZeroMemory(key_binding,sizeof(key_binding));
+		::memset(key_binding,0,sizeof(key_binding));
 		Console->Execute("cfg_load default_controls.ltx");
 	}
 };

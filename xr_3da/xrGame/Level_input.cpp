@@ -185,11 +185,9 @@ void CLevel::IR_OnKeyboardPress(int key)
 	case kCONSOLE:
 		Console->Show				();
 		break;
-#ifdef DEBUG
 	case kQUIT:	
 		Console->Execute			("quit");
 		break;
-#endif
 	default:
 		if (CurrentEntity())		{
 			IInputReceiver*		IR	= smart_cast<IInputReceiver*>	(CurrentEntity());
