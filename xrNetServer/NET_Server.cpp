@@ -50,6 +50,7 @@ IPureServer::IPureServer	(CTimer* timer)
 	stats.clear				();
 	stats.dwSendTime		= TimeGlobal(device_timer);
 	psNET_Port				= 5445;
+	net_Disconnecting		= FALSE;
 }
 
 IPureServer::~IPureServer	()
@@ -132,6 +133,8 @@ void IPureServer::Reparse	()
 
 BOOL IPureServer::Connect(LPCSTR options)
 {
+	net_Disconnecting	= FALSE;
+
 	// Parse options
 	string4096				session_name;
 	string4096				session_options = "";
@@ -235,12 +238,27 @@ BOOL IPureServer::Connect(LPCSTR options)
 	return	TRUE;
 }
 
+void IPureServer::BeginDisconnect	()
+{
+	net_Disconnecting	= TRUE;
+}
+
 void IPureServer::Disconnect	()
 {
 	config_Save		();
 
+	BeginDisconnect	();
+
     if( NET )	NET->Close(0);
-	
+
+	// NET->Close can deliver destroy-player callbacks after game objects have
+	// already been unloaded. During whole-server shutdown, discard stale client
+	// slots here; live disconnects still destroy clients in net_Handler.
+	csPlayers.Enter		();
+	net_Players.clear	();
+	SV_Client			= NULL;
+	csPlayers.Leave		();
+
 	// Release interfaces
     _RELEASE	(net_Address_device);
     _RELEASE	(NET);
@@ -317,13 +335,17 @@ HRESULT	IPureServer::net_Handler(u32 dwMessageType, PVOID pMessage)
 //				if (net_Players[I]->ID==msg->dpnidPlayer)
 				if (net_Players[I]->ID.compare(msg->dpnidPlayer) )
 				{
-					// gen message
 					net_Players[I]->flags.bConnected	= FALSE;
-					OnCL_Disconnected	(net_Players[I]);
 
-					// real destroy
-					client_Destroy		(net_Players[I]);
-					net_Players.erase	(net_Players.begin()+I);
+					if (!net_Disconnecting)
+					{
+						// gen message
+						OnCL_Disconnected	(net_Players[I]);
+
+						// real destroy
+						client_Destroy		(net_Players[I]);
+						net_Players.erase	(net_Players.begin()+I);
+					}
 					break;
 				}
 			csPlayers.Leave			();

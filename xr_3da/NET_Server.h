@@ -57,8 +57,9 @@ protected:
 	xrCriticalSection		csPlayers;
 	xr_vector<IClient*>		net_Players;
 	IClient*				SV_Client;
+	BOOL					net_Disconnecting;
 
-	int						psNET_Port;	
+	int						psNET_Port;
 
 	// Compressor configuration
 	MSYS_CONFIG				msgConfig;
@@ -86,6 +87,7 @@ public:
 	HRESULT					net_Handler			(u32 dwMessageType, PVOID pMessage);
 	
 	virtual BOOL			Connect				(LPCSTR session_name);
+	void					BeginDisconnect		();
 	virtual void			Disconnect			();
 	virtual void			Reparse				();									// Reparse configuration and freq data
 

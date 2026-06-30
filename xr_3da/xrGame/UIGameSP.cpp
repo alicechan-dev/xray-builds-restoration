@@ -6,6 +6,7 @@
 #include "game_cl_Single.h"
 #include "ui/UIPdaAux.h"
 #include "xr_level_controller.h"
+#include "../xr_ioconsole.h"
 
 CUIGameSP::CUIGameSP()
 {
@@ -60,11 +61,8 @@ bool CUIGameSP::IR_OnKeyboardPress(int dik)
 		break;
 */
 	case kQUIT:
-		if(m_pMainInputReceiver)//m_pUserMenu)
-		{
-			m_game->StartStopMenu(m_pMainInputReceiver,true);//m_pUserMenu);
-			return true;
-		}
+		Console->Execute("quit");
+		return true;
 		break;
 	}
 	

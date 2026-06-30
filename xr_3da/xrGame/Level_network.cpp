@@ -9,6 +9,7 @@ void CLevel::net_Stop		()
 {
 	Msg							("- Disconnect");
 	IGame_Level::net_Stop		();
+	if (Server)					Server->BeginDisconnect();
 	IPureClient::Disconnect		();
 
 	BulletManager().Clear		();
