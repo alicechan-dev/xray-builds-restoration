@@ -70,6 +70,7 @@ public:
 	void						SetAllAcquire				( BOOL bAcquire = TRUE );
 	void						SetMouseAcquire				( BOOL bAcquire );
 	void						SetKBDAcquire				( BOOL bAcquire );
+	void						ReleaseCaptureForDialog		();
 
 	void						iCapture					( IInputReceiver *pc );
 	void						iRelease					( IInputReceiver *pc );

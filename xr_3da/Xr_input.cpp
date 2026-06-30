@@ -133,6 +133,13 @@ void CInput::SetKBDAcquire( BOOL bAcquire )
 {
 	if (pKeyboard)	bAcquire ? pKeyboard->Acquire()	: pKeyboard->Unacquire();
 }
+
+void CInput::ReleaseCaptureForDialog()
+{
+	OnAppDeactivate	();
+	ClipCursor		(NULL);
+	while (ShowCursor(TRUE) < 0) {}
+}
 //-----------------------------------------------------------------------
 void CInput::KeyUpdate	( )
 {

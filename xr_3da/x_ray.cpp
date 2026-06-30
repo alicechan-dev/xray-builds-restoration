@@ -44,6 +44,16 @@ ENGINE_API	bool			g_bBenchmark	= false;
 // -------------------------------------------
 // startup point
 
+static void __cdecl ReleaseInputForBlockingDialog()
+{
+	if (pInput)
+		pInput->ReleaseCaptureForDialog();
+	else {
+		ClipCursor(NULL);
+		while (ShowCursor(TRUE) < 0) {}
+	}
+}
+
 void InitEngine()
 {
 	Engine.Initialize			( );
@@ -289,6 +299,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		0, logDlgProc );
 
 	Core._initialize		("xray",NULL);
+	xrDebug_SetDialogPrepareCallback(ReleaseInputForBlockingDialog);
 	FPU::m24r				();
 
 
