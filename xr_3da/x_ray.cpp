@@ -122,6 +122,8 @@ void execUserScript()
 	if (!FS.exist(Console->ConfigFile))
 		strcpy					(Console->ConfigFile,"user.ltx");
 	Console->ExecuteScript		(Console->ConfigFile);
+	if (strstr(Core.Params,"-windowed"))
+		psDeviceFlags.set		(rsFullscreen,FALSE);
 }
 
 void Startup				( )

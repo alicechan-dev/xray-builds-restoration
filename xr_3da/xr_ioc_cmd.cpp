@@ -25,18 +25,39 @@ xr_token							snd_model_token							[ ]={
 	{ "High",						3											},
 	{ 0,							0											}
 };
-xr_token							vid_mode_token							[ ]={
-#ifdef DEBUG
-	{ "320x240",					320											},
-	{ "512x384",					512											},
-#endif
-	{ "640x480",					640											},
-	{ "800x600",					800											},
-	{ "1024x768",					1024										},
-	{ "1280x1024",					1280										},
-	{ "1600x1200",					1600										},
-	{ 0,							0											}
+class CCC_VidMode : public IConsole_Command
+{
+public:
+	CCC_VidMode(LPCSTR N) : IConsole_Command(N) {};
+	virtual void Execute(LPCSTR args)
+	{
+		u32 width = 0;
+		u32 height = 0;
+		if (2 != sscanf(args, "%ux%u", &width, &height)) {
+			InvalidSyntax();
+			return;
+		}
+
+		if (!width || !height) {
+			InvalidSyntax();
+			return;
+		}
+
+		psCurrentMode = width;
+		psCurrentModeHeight = height;
+	}
+
+	virtual void Status(TStatus& S)
+	{
+		sprintf(S, "%ux%u", psCurrentMode, psCurrentModeHeight);
+	}
+
+	virtual void Info(TInfo& I)
+	{
+		strcpy(I, "WIDTHxHEIGHT");
+	}
 };
+
 xr_token							vid_bpp_token							[ ]={
 	{ "16",							16											},
 	{ "32",							32											},
@@ -344,8 +365,9 @@ void CCC_Register()
 	CMD4(CCC_Integer,	"net_dedicated_sleep",	&psNET_DedicatedSleep,		0,	64	);
 
 	// General video control
-	CMD3(CCC_Token,		"vid_mode",				&psCurrentMode, vid_mode_token);
+	CMD1(CCC_VidMode,	"vid_mode"				);
 	CMD3(CCC_Token,		"vid_bpp",				&psCurrentBPP,	vid_bpp_token);
+	CMD4(CCC_Float,		"ui_scale",			&psUIScale,		0.0f,	4.0f);
 	CMD1(CCC_VID_Reset, "vid_restart"			);
 	
 	// Sound
@@ -370,4 +392,3 @@ void CCC_Register()
 	psSoundRolloff			= pSettings->r_float	("sound","rolloff");		clamp(psSoundRolloff,			EPS_S,	2.f);
 	psSoundOcclusionScale	= pSettings->r_float	("sound","occlusion_scale");clamp(psSoundOcclusionScale,	0.1f,	.5f);
 };
- 

@@ -31,8 +31,10 @@ enum {
 	// 20-32 bit - defined in Editor
 };
 ENGINE_API extern	u32			psCurrentMode		;
+ENGINE_API extern	u32			psCurrentModeHeight	;
 ENGINE_API extern	u32			psCurrentBPP		;
 ENGINE_API extern	Flags32		psDeviceFlags		;
+ENGINE_API extern	float		psUIScale			;
 
 // game path definition
 #define _game_data_				"$game_data$"

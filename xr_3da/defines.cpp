@@ -6,9 +6,11 @@
 
 // Video
 u32			psCurrentMode		= 1024;
+u32			psCurrentModeHeight	= 768;
 u32			psCurrentBPP		= 32;
 // release version always has "mt_*" enabled
 Flags32		psDeviceFlags		= {rsFullscreen|rsNoVSync|rsDetails|mtPhysics|mtSound|mtNetwork};
+float		psUIScale			= 0.f;
 
 // textures
 int			psTextureLOD		= 0;
