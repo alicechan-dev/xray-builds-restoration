@@ -677,44 +677,32 @@ bool CUIXmlInit::InitTexture(CUIXml &xml_doc, const char *path, int index, CUISt
 
 int CUIXmlInit::ApplyAlignX(int coord, u32 align)
 {
-	// Применить выравнивание, только при увеличенном разрешения
-	if (UI_BASE_WIDTH >= Device.dwWidth) return coord;
+	const float scale = HUD().GetScale();
+	if (scale <= EPS_S) return coord;
 
-	int retVal = coord;
-	
-	if (align & alRight)
-	{
-		retVal = UI_BASE_WIDTH - coord;
-		retVal = Device.dwWidth - retVal;
-	}
-	else if (align & alCenter)
-	{
-		retVal += (Device.dwWidth - UI_BASE_WIDTH) / 2;
-	}
+	const float screen_width = float(Device.dwWidth)/scale;
+	const float margin = screen_width - UI_BASE_WIDTH;
 
-	return retVal;
+	if (margin <= 0.f) return coord;
+	if (align & alRight)	return iFloor(margin + coord);
+	if (align & alCenter)	return iFloor(margin*.5f + coord);
+	return coord;
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 int CUIXmlInit::ApplyAlignY(int coord, u32 align)
 {
-	// Применить выравнивание, только при увеличенном разрешения
-	if (UI_BASE_HEIGHT >= Device.dwHeight) return coord;
+	const float scale = HUD().GetScale();
+	if (scale <= EPS_S) return coord;
 
-	int retVal = coord;
+	const float screen_height = float(Device.dwHeight)/scale;
+	const float margin = screen_height - UI_BASE_HEIGHT;
 
-	if (align & alBottom)
-	{
-		retVal = UI_BASE_HEIGHT - coord;
-		retVal = Device.dwHeight - retVal;
-	}
-	else if (align & alCenter)
-	{
-		retVal += (Device.dwHeight - UI_BASE_HEIGHT) / 2;
-	}
-
-	return retVal;
+	if (margin <= 0.f) return coord;
+	if (align & alBottom)	return iFloor(margin + coord);
+	if (align & alCenter)	return iFloor(margin*.5f + coord);
+	return coord;
 }
 
 //////////////////////////////////////////////////////////////////////////

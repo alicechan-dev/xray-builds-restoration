@@ -43,9 +43,9 @@ void CUIFrameRect::UpdateSize()
 	int rem_x, rem_y, tile_x, tile_y;
 
 	float fScale	= HUD().GetScale();
-	// center align
+	// center in the virtual UI canvas; static item rendering applies HUD scale later
 	if (GetAlign()&alCenter)
-		iPos.set	(iFloor((Device.dwWidth-fScale*iSize.x)*.5f),iFloor((Device.dwHeight-fScale*iSize.y)*.5f));
+		iPos.set	(iFloor((float(Device.dwWidth)/fScale-iSize.x)*.5f),iFloor((float(Device.dwHeight)/fScale-iSize.y)*.5f));
 
 	list_rect.set	(iPos.x,iPos.y,iFloor(iPos.x+fScale*iSize.x),iFloor(iPos.y+fScale*iSize.y));
 	list_rect.shrink(32,32);
