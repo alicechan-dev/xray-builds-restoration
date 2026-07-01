@@ -11,7 +11,7 @@ No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks
 | Archive listing helper | `tools/xrArchiveList/` | Lists virtual entries from X-Ray `.xp*` archives. | Modern CMake target exists; read-only diagnostic. | `xrCore`, local `LzHuf.cpp`. | High | Current helper does not extract, modify, or repack archives. |
 | Runtime compressor / packer | `xrCompress/` | Historical archive/data compression executable. | Root CMake target exists; historical `.vcproj` also present. | `xrCore`, bundled LZO code, Win32 console runtime. | High | Treat as source for archive format research before adding any extraction support. |
 | Filesystem/archive library | `xrFS/` | Historical filesystem, locator, LZHUF, LZO, and archive support code. | Source and `.vcproj` present; not in root CMake. | Win32, old X-Ray filesystem code, compression helpers. | High | Likely reference point for unpacker behavior and path normalization. |
-| Archive unpacker | `docs/tools/unpacker-plan.md` | Future command-line unpacker design. | Planned only; no implementation. | Archive format research, path-safety layer, synthetic tests. | High | Must not distribute archives or extracted proprietary data. |
+| Archive unpacker | `tools/xr_unpack/`, `docs/tools/unpacker-plan.md` | Future command-line unpacker design. | Initial opt-in CMake/CLI scaffold exists; archive parsing is not implemented. | Archive format research, path-safety layer, synthetic tests. | High | Must not distribute archives or extracted proprietary data. |
 | Level compiler | `xrLC/` | Builds level geometry, collision, lightmaps, sectors, visibility, and game/export data. | Legacy `.sln`/`.vcproj` present; not restored in root CMake. | DirectX 9-era headers/libs, FreeImage, QSlim/OpenMesh/NV/RAPID-style geometry code, `xrDXTC`, `xrCore`-style helpers. | High | Important for runtime-compatible modding workflows, but high dependency and data-format risk. |
 | Level compiler helper tools | `xrLC/close/`, `xrLC/xrDO_Light/`, `xrLC/xrHemisphere/` | Auxiliary level/light/hemisphere compilation helpers. | Legacy `.vcproj` projects present. | Same family as `xrLC`; likely DirectX/Win32 and geometry helpers. | Medium | Inventory source ownership and command-line contracts before migration. |
 | AI / game graph compiler | `xrAI/` | AI-map, level graph, game graph, spawn, and ALife graph construction tooling. | Legacy `.vcproj` present; not restored in root CMake. | `xrCore`-style helpers, `xrSE_Factory` concepts, Lua/Luabind/Boost-era code, MagicFM binary lib appears present. | High | Important for spawn/game graph workflows; must be aligned with restored runtime serialization. |
@@ -49,6 +49,19 @@ No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks
 * Document archive formats.
 * Build minimal archive list/extract tool.
 * Write modding tutorials.
+
+## CMake Modularization Track
+
+The root `CMakeLists.txt` still owns most restored runtime targets while compatibility work is active. New and restored tools should move toward local per-directory `CMakeLists.txt` files first, with the root file acting as orchestration over time.
+
+Current phases:
+
+* `tools/CMakeLists.txt` owns tool build options and delegates tool subdirectories.
+* `tools/xrArchiveList/CMakeLists.txt` owns the `xrArchiveList` target.
+* `tools/xr_unpack/CMakeLists.txt` owns the `xr_unpack` target.
+* `xrXMLParser/CMakeLists.txt` owns the `xrXMLParser` runtime target as the first low-risk runtime extraction.
+
+Future phases should move runtime components one target at a time, preserving target names, output paths, dependency discovery, and historical compatibility settings.
 
 ## Related Plans
 
