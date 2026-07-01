@@ -79,13 +79,17 @@ void CHUDManager::ClientToScreenScaled(Ivector2& dest, int left, int top, u32 al
 
 int CHUDManager::ClientToScreenScaledX(int left, u32 align)
 {
-	if (align&alRight)	return iFloor(Device.dwWidth-UI_BASE_WIDTH*fScale + left*fScale);
+	const float scaled_width = UI_BASE_WIDTH*fScale;
+	if (align&alRight)	return iFloor(Device.dwWidth-scaled_width + left*fScale);
+	if (align&alCenter)	return iFloor((Device.dwWidth-scaled_width)*.5f + left*fScale);
 	else				return iFloor(left*fScale);
 }
 
 int CHUDManager::ClientToScreenScaledY(int top, u32 align)
 {
-	if (align&alBottom)	return iFloor(Device.dwHeight-UI_BASE_HEIGHT*fScale + top*fScale);
+	const float scaled_height = UI_BASE_HEIGHT*fScale;
+	if (align&alBottom)	return iFloor(Device.dwHeight-scaled_height + top*fScale);
+	if (align&alCenter)	return iFloor((Device.dwHeight-scaled_height)*.5f + top*fScale);
 	else				return iFloor(top*fScale);
 }
 
@@ -104,14 +108,12 @@ void CHUDManager::ClientToScreen(Irect& r, u32 align)
 
 int CHUDManager::ClientToScreenX(int left, u32 align)
 {
-	if (align&alRight)	return iFloor(Device.dwWidth-UI_BASE_WIDTH*fScale + left);
-	else				return left;
+	return ClientToScreenScaledX(left,align);
 }
 
 int CHUDManager::ClientToScreenY(int top, u32 align)
 {
-	if (align&alBottom)	return iFloor(Device.dwHeight-UI_BASE_HEIGHT*fScale + top);
-	else				return top;
+	return ClientToScreenScaledY(top,align);
 }
 
 void CHUDManager::Load()
@@ -169,7 +171,7 @@ void CHUDManager::Render_Last()
 void CHUDManager::Render_Direct	()
 {
 }
-//отрисовка элементов интерфейса
+// Render UI elements.
 void  CHUDManager::RenderUI()
 {
 	BOOL bAlready					= FALSE;
@@ -218,8 +220,14 @@ void CHUDManager::SetScale(float s){
 }
 void CHUDManager::OnDeviceCreate()
 {
-	if (Device.dwWidth<UI_BASE_WIDTH)	SetScale(float(Device.dwWidth)/float(UI_BASE_WIDTH));
-	else								SetScale(1.f);
+	if (psUIScale>0.f) {
+		SetScale(psUIScale);
+		return;
+	}
+
+	const float scale_x = float(Device.dwWidth)/float(UI_BASE_WIDTH);
+	const float scale_y = float(Device.dwHeight)/float(UI_BASE_HEIGHT);
+	SetScale(_min(scale_x,scale_y));
 }
 //--------------------------------------------------------------------
 void __cdecl CHUDManager::outMessage(u32 C, LPCSTR from, LPCSTR msg, ...)

@@ -166,6 +166,11 @@ namespace luabind { namespace detail
 
 		int t = LUA_REGISTRYINDEX;
 		if (ref >= 0) {
+			// During legacy script object GC, references can outlive the Lua
+			// thread that created them. Avoid crashing in lua_rawgeti if the
+			// registry is no longer available for that state.
+			if (lua_type(L, t) != LUA_TTABLE)
+				return;
 			lua_rawgeti(L, t, FREELIST_REF);
 			lua_rawseti(L, t, ref);  /* t[ref] = t[FREELIST_REF] */
 			lua_pushnumber(L, (lua_Number)ref);
