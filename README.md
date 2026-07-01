@@ -227,6 +227,13 @@ Runtime testing flags:
 * `-freecursor` makes only the mouse DirectInput device non-exclusive.
 * `-freeinput` makes both mouse and keyboard DirectInput devices non-exclusive for windowed debugging.
 
+Video and UI notes:
+
+* Use `vid_mode WIDTHxHEIGHT`, for example `vid_mode 1920x1080`.
+* The restored UI uses the historical 1024x768 virtual HUD canvas and scales it proportionally to fit the current resolution.
+* At widescreen resolutions such as 1280x720 and 1920x1080, UI roots are centered in the scaled safe area while HUD elements keep their historical anchors.
+* `ui_scale 0` enables automatic proportional scaling. A positive `ui_scale` value overrides the automatic scale for testing.
+
 ## Archive inspection helper
 
 This branch includes a read-only helper tool for listing X-Ray `.xp*` archive entries:
