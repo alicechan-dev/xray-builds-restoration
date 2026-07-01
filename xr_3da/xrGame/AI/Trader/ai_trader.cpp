@@ -379,7 +379,7 @@ void CAI_Trader::net_Destroy()
 
 void TraderScriptCallBack(CBlend* B)
 {
-	CScriptMonster	*l_tpScriptMonster = smart_cast<CScriptMonster*> (static_cast<CObject*>(B->CallbackParam));
+	CScriptMonster	*l_tpScriptMonster = static_cast<CScriptMonster*>(B->CallbackParam);
 	R_ASSERT		(l_tpScriptMonster);
 	if (l_tpScriptMonster->GetCurrentAction()) 
 		l_tpScriptMonster->GetCurrentAction()->m_tAnimationAction.m_bCompleted = true;

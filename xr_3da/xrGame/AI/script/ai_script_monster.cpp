@@ -191,8 +191,11 @@ CScriptEntityAction *CScriptMonster::GetCurrentAction()
 void __stdcall ActionCallback(CKinematics *tpKinematics)
 {
 	// sounds
-	CScriptMonster	*l_tpScriptMonster = smart_cast<CScriptMonster*>(static_cast<CObject*>(tpKinematics->Update_Callback_Param));
+	CGameObject		*l_tpGameObject = static_cast<CGameObject*>(static_cast<CObject*>(tpKinematics->Update_Callback_Param));
+	CScriptMonster	*l_tpScriptMonster = smart_cast<CScriptMonster*>(l_tpGameObject);
 	VERIFY			(l_tpScriptMonster);
+	if (!l_tpScriptMonster)
+		return;
 	if (!l_tpScriptMonster->GetCurrentAction())
 		return;
 	l_tpScriptMonster->vfUpdateSounds();
@@ -607,7 +610,7 @@ void CScriptMonster::shedule_Update	(u32 DT)
 
 void ScriptCallBack(CBlend* B)
 {
-	CScriptMonster	*l_tpScriptMonster = smart_cast<CScriptMonster*> (static_cast<CObject*>(B->CallbackParam));
+	CScriptMonster	*l_tpScriptMonster = static_cast<CScriptMonster*>(B->CallbackParam);
 	R_ASSERT		(l_tpScriptMonster);
 	if (l_tpScriptMonster->GetCurrentAction() && !B->bone_or_part) {
 		if (!l_tpScriptMonster->GetCurrentAction()->m_tAnimationAction.m_bCompleted)
