@@ -1,11 +1,14 @@
 # Archive Unpacker Plan
 
-This document outlines a future technical plan for an X-Ray archive unpacker. It is planning documentation only; no unpacker implementation is included here.
+This document outlines the technical plan for the `xr_unpack` X-Ray archive unpacker scaffold in `tools/xr_unpack/`.
+
+The current implementation is intentionally a safe CLI skeleton only. Archive parsing and extraction are not implemented yet; format research is required before the tool may read payloads or write extracted files.
 
 ## Goals
 
 The unpacker should support:
 
+* reporting help and clear unsupported-format errors;
 * listing archive contents;
 * extracting selected files;
 * extracting all files;
@@ -27,6 +30,8 @@ The unpacker is intended for lawful research, compatibility testing, and use wit
 
 Synthetic test inputs may be committed when they are created specifically for this repository and contain no proprietary content.
 
+No proprietary samples belong in `tools/xr_unpack/`, `docs/`, tests, or any other repository path.
+
 ## Supported Archive Families To Investigate
 
 Initial research should focus on historical X-Ray archives referenced by the build 1935 runtime and tools:
@@ -44,18 +49,19 @@ Support should be added only after the format is documented well enough to extra
 Proposed command examples:
 
 ```bat
+xr_unpack help
+xr_unpack info <archive>
 xr_unpack list <archive>
 xr_unpack extract <archive> <out_dir>
-xr_unpack extract <archive> <out_dir> --filter "*.ltx"
 xr_unpack verify <archive>
-xr_unpack info <archive>
 ```
 
 Suggested command behavior:
 
+* `help` prints usage and current limitations.
+* `info`, `list`, `extract`, and `verify` currently fail with `archive parsing is not implemented yet; format research is required`.
 * `list` prints archive entry names and optional metadata without writing files.
 * `extract` writes files under `<out_dir>` after safety validation.
-* `--filter` limits extraction to matching archive paths.
 * `verify` checks structure, directory entries, sizes, compression metadata, and hashes/checksums when known.
 * `info` reports archive family, header fields, directory chunk status, compression flags, and known limitations.
 
@@ -77,9 +83,12 @@ Before implementation, document:
 
 The implementation must:
 
-* reject path traversal;
-* use a safe overwrite policy;
-* provide a dry-run mode;
+* reject absolute paths from archive entries;
+* reject `..` path traversal;
+* reject drive-letter paths such as `C:\...`;
+* normalize `/` and `\` separators;
+* ensure composed output paths remain under the selected output directory;
+* avoid overwriting files unless a future explicit flag allows it;
 * preserve directory structure for accepted entries;
 * handle path encoding carefully;
 * never write outside the output directory;
@@ -124,9 +133,10 @@ The unpacker should produce predictable paths that match the runtime's virtual f
 ## Milestones
 
 1. Document archive structures from `xrFS`, `xrCompress`, and the existing archive listing helper.
-2. Create synthetic archive fixtures with no proprietary content.
-3. Extend the read-only listing behavior into a standalone `xr_unpack list` design.
-4. Add `info` and `verify` behavior for structural validation.
-5. Add safe selected-file extraction with filters and dry-run support.
-6. Add full extraction only after path safety, overwrite policy, and integrity tests are stable.
-7. Document modding workflow examples using only lawful local data and synthetic repository fixtures.
+2. Keep the `tools/xr_unpack/` CLI skeleton buildable behind `BUILD_XR_UNPACK`.
+3. Create synthetic archive fixtures with no proprietary content.
+4. Extend the read-only listing behavior into `xr_unpack list`.
+5. Add `info` and `verify` behavior for structural validation.
+6. Add safe selected-file extraction with filters and dry-run support.
+7. Add full extraction only after path safety, overwrite policy, and integrity tests are stable.
+8. Document modding workflow examples using only lawful local data and synthetic repository fixtures.

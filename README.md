@@ -79,7 +79,8 @@ This branch includes compatibility work for:
 * old STL / iterator / loop-scope issues;
 * old X-Ray server object and ALife serialization/runtime startup issues;
 * debug runtime startup through server/client level loading;
-* a read-only archive listing helper tool for X-Ray `.xp*` archives.
+* a read-only archive listing helper tool for X-Ray `.xp*` archives;
+* an opt-in `xr_unpack` CLI scaffold for future archive research and safe extraction tooling.
 
 ## Repository layout
 
@@ -181,6 +182,15 @@ cmake --build build --config Debug --target xrRender_R1 -- //m:1 //v:normal //cl
 cmake --build build --config Debug --target xrRender_R2 -- //m:1 //v:normal //clp:ErrorsOnly
 cmake --build build --config Debug --target xrArchiveList -- //m:1 //v:minimal //clp:ErrorsOnly
 ```
+
+The experimental archive unpacker scaffold is disabled by default. Enable it at configure time:
+
+```bat
+cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 -DBUILD_XR_UNPACK=ON
+cmake --build build --config Debug --target xr_unpack -- //m:1 //v:minimal //clp:ErrorsOnly
+```
+
+`xr_unpack` currently provides CLI and path-safety infrastructure only. Archive parsing and extraction are intentionally not implemented until the format is documented from reliable source code and synthetic tests.
 
 ## Runtime setup
 

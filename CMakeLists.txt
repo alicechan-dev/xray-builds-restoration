@@ -185,6 +185,7 @@ if(MSVC)
 endif()
 
 option(XRAY_BUILD_ARCHIVE_LIST "Build the read-only X-Ray archive listing diagnostic tool" ON)
+option(BUILD_XR_UNPACK "Build the experimental xr_unpack archive unpacker scaffold" OFF)
 
 if(XRAY_BUILD_ARCHIVE_LIST)
   add_executable(xrArchiveList
@@ -244,6 +245,10 @@ if(XRAY_BUILD_ARCHIVE_LIST)
   target_link_libraries(xrArchiveList PRIVATE
     xrCore
   )
+endif()
+
+if(BUILD_XR_UNPACK)
+  add_subdirectory(tools/xr_unpack)
 endif()
 
 set(XRCDB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/xr_3da/xrCDB")

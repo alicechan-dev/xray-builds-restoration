@@ -4,6 +4,8 @@ This page is a research-oriented note for X-Ray archive formats relevant to the 
 
 The project currently focuses on source restoration. Archive research should support lawful compatibility testing, local modding workflows, and future safe tooling.
 
+`tools/xr_unpack/` now contains an opt-in CLI scaffold for this future work. It must not parse, extract, or write archive contents until the format notes below are backed by reliable source-code evidence and synthetic tests.
+
 ## Known / Expected Archive Extensions
 
 Known or expected archive families to investigate:
@@ -30,13 +32,50 @@ Research tasks:
 
 ## Header / Directory / Compression Questions
 
+### Header Layout
+
 The existing archive listing helper treats archive content as typed chunks and looks for a directory chunk. Research should confirm:
 
 * whether all supported archive variants use the same chunk framing;
+* whether there are magic values, version fields, or archive-level flags;
+* how chunk type and size fields are encoded and aligned;
+* how malformed or truncated top-level chunks should be rejected.
+
+### Directory Table
+
+Research should confirm:
+
 * whether the directory chunk can be compressed;
-* whether file payloads are individually compressed or stored through chunk-level compression;
 * whether entry records contain flags beyond name, offset, size, and compressed-size style fields;
+* how file offsets relate to chunk boundaries;
+* how duplicate virtual paths are resolved;
 * how the runtime handles malformed or truncated records.
+
+### Compression
+
+Research should confirm:
+
+* whether file payloads are individually compressed or stored through chunk-level compression;
+* which entries use LZHUF, LZO, raw storage, or other algorithms;
+* how compressed and uncompressed sizes are encoded;
+* how decompression failures should be reported.
+
+### Checksums / Hashes
+
+Unknowns:
+
+* whether archive-level or per-entry checksums exist;
+* whether hashes are used for lookup, validation, or priority;
+* whether verification can be implemented without extracting payloads.
+
+### File Path Encoding
+
+Unknowns:
+
+* whether paths are ASCII, current ANSI codepage, UTF-8, or another historical encoding;
+* whether archive paths are case-sensitive;
+* whether `/` and `\` are equivalent in all historical archive families;
+* how reserved device names and invalid Windows path characters should be handled.
 
 ## Historical Version Comparison
 
@@ -56,6 +95,17 @@ Useful comparison points include:
 Repository tests must use synthetic archives created specifically for this project. Synthetic fixtures should be small, documented, and free of proprietary content.
 
 Do not commit real proprietary archives, extracted game assets, repacks, cracks, leaked runtime packages, leaked data, or gamedata dumps. Manual compatibility checks may use the user's legally obtained local data outside version control.
+
+Synthetic tests should cover:
+
+* empty archives;
+* one-file archives;
+* nested virtual paths;
+* path traversal attempts;
+* absolute and drive-qualified entry names;
+* duplicate entries;
+* truncated chunks;
+* compressed and uncompressed directory data when the format is proven.
 
 ## Related Plans
 
