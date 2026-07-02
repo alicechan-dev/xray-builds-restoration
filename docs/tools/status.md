@@ -1,74 +1,115 @@
 # Tools and SDK Status
 
-This page inventories modding, SDK, archive, and asset-tooling components found in the build 1935 restoration tree. The current repository focus remains source restoration for the engine/runtime; tool restoration is a future planning track.
+This page inventories modding, SDK, archive, and asset-tooling components found in the build 1935 restoration tree. The repository focus remains engine/runtime restoration first; SDK and tool restoration is a separate planning track.
 
-No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks, leaked data, or gamedata dumps should be added to this repository. Tools are intended for lawful research, compatibility testing, and use with the user's own legally obtained game data.
+No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks, leaked data, or gamedata dumps should be added to this repository. Tools are intended for lawful research, compatibility testing, and use with the user's own legally obtained game data outside version control.
 
-## Known Components Found In Tree
+## A. Existing / Restored Tools
 
-| Component | Path | Purpose | Current state | Dependencies | Restoration priority | Notes |
-|---|---|---|---|---|---|---|
-| Archive listing helper | `tools/xrArchiveList/` | Lists virtual entries from X-Ray `.xp*` archives. | Modern CMake target exists; read-only diagnostic. | `xrCore`, local `LzHuf.cpp`. | High | Current helper does not extract, modify, or repack archives. |
-| Runtime compressor / packer | `xrCompress/` | Historical archive/data compression executable. | Root CMake target exists; historical `.vcproj` also present. | `xrCore`, bundled LZO code, Win32 console runtime. | High | Treat as source for archive format research before adding any extraction support. |
-| Filesystem/archive library | `xrFS/` | Historical filesystem, locator, LZHUF, LZO, and archive support code. | Source and `.vcproj` present; not in root CMake. | Win32, old X-Ray filesystem code, compression helpers. | High | Likely reference point for unpacker behavior and path normalization. |
-| Archive unpacker | `tools/xr_unpack/`, `docs/tools/unpacker-plan.md` | Future command-line unpacker design. | Initial opt-in CMake/CLI scaffold exists; archive parsing is not implemented. | Archive format research, path-safety layer, synthetic tests. | High | Must not distribute archives or extracted proprietary data. |
-| Level compiler | `xrLC/` | Builds level geometry, collision, lightmaps, sectors, visibility, and game/export data. | Legacy `.sln`/`.vcproj` present; not restored in root CMake. | DirectX 9-era headers/libs, FreeImage, QSlim/OpenMesh/NV/RAPID-style geometry code, `xrDXTC`, `xrCore`-style helpers. | High | Important for runtime-compatible modding workflows, but high dependency and data-format risk. |
-| Level compiler helper tools | `xrLC/close/`, `xrLC/xrDO_Light/`, `xrLC/xrHemisphere/` | Auxiliary level/light/hemisphere compilation helpers. | Legacy `.vcproj` projects present. | Same family as `xrLC`; likely DirectX/Win32 and geometry helpers. | Medium | Inventory source ownership and command-line contracts before migration. |
-| AI / game graph compiler | `xrAI/` | AI-map, level graph, game graph, spawn, and ALife graph construction tooling. | Legacy `.vcproj` present; not restored in root CMake. | `xrCore`-style helpers, `xrSE_Factory` concepts, Lua/Luabind/Boost-era code, MagicFM binary lib appears present. | High | Important for spawn/game graph workflows; must be aligned with restored runtime serialization. |
-| Level editor | `Editor/LevelEditor/`, `Editors/LevelEditor/`, `Editors/!old/LevelEditor/` | Historical world/level editing UI and scene workflow. | Source trees present; no modern CMake target. | Borland/VCL-era editor stack, DirectX, editor core, image/geometry libraries. | Medium | Multiple generations exist; decide canonical tree before porting. |
-| Actor/model editor | `Editor/ActorEditor/`, `Editors/ActorEditor/`, `Editors/!old/ActorEditor/` | Edits models, skeletons, motions, materials, and export metadata. | Source trees present; no modern CMake target. | Borland/VCL-era UI, DirectX/editor core, image and mesh helpers. | Medium | Key modding workflow component, but likely harder than command-line tools. |
-| Particle editor | `Editor/ParticleEditor/`, `Editors/ParticleEditor/`, `Editors/!old/ParticleEditor/` | Edits particle effects and related runtime data. | Source trees present; no modern CMake target. | Editor core, DirectX/editor rendering, Borland/VCL-era UI. | Medium | Coordinate with `xrParticles` runtime format support. |
-| Shader editor | `Editor/ShaderEditor/`, `Editors/ShaderEditor/`, `Editors/!old/ShaderEditor/` | Edits engine/compiler shader and material descriptions. | Source trees present; no modern CMake target. | DirectX shader compiler era, editor rendering code, legacy DX libraries. | Medium | Important for materials but may require careful DirectX SDK versioning. |
-| Editor core | `Editors/ECore/` | Shared editor engine, rendering, thumbnails, object IO, properties, and shader helpers. | Source present; no modern CMake target. | DirectX 9-era rendering, image libraries, shared editor components. | Medium | Likely dependency for restored editor applications. |
-| Level options tool | `Editor/LevelOptions/`, `Editors/LevelOptions/` | Level option/configuration editor support. | Source present; no modern CMake target. | Editor components, DirectX/editor runtime assumptions. | Low | Inventory after core editor build strategy is known. |
-| Texture/DXT tool | `Editors/Tools/DXT/`, `Editor/Tools/DXT/`, `xrDXTC/` | Texture compression and DXT/DDS-related conversion support. | Legacy `.vcproj`/`.dsp` and source present; not in root CMake. | NVIDIA DXT libraries, DirectX/image code, Win32 console or DLL runtime. | Medium | Useful for asset conversion; external binary library provenance must be documented. |
-| Editor tools library | `Editors/Tools/ETools/` | Mesh optimization and shared asset-tool routines. | Legacy solution/project present. | DirectX wrapper, mesh/geometry code, Win32 toolchain. | Medium | Likely dependency or reference for editor/export pipeline. |
-| Gauss tool | `Editors/Tools/gauss/` | Legacy utility with filesystem/math/log scaffolding. | Legacy `.vcproj` present. | Win32, editor-style filesystem and math helpers. | Low | Purpose needs source-level confirmation before prioritizing. |
-| LWO tool | `Editors/Tools/LWO/` | LightWave object/envelope handling utility. | Legacy `.vcproj` present. | LightWave object parsing code, Win32 toolchain. | Medium | Relevant to import/export pipeline. |
-| 3ds Max / LightWave plugin sources | `Plugins/`, `samples/xskinexp/` | Exporters/import helpers for models, skins, keys, shaders, and editor formats. | Legacy `.dsp`/`.vcproj` sources present. | Host SDKs such as 3ds Max or LightWave, Win32/MFC-era toolchains. | Low | Restore only after core formats and clean-room workflows are documented. |
-| QSlim / mesh simplification SDK | `SDK/QSlim/`, `xrQSlim/`, `xrProgressive/` | Mesh simplification, progressive mesh, and viewer utilities. | Legacy projects/source present; not root CMake for SDK tools. | QSlim/MixKit/libgfx, OpenGL for viewers. | Medium | Useful for model/LOD pipelines and `xrLC` geometry optimization. |
-| Launcher | `xrLauncher/` | Historical launcher/configuration UI. | Legacy managed C++ `.vcproj` present; not root CMake. | .NET/Managed C++ era, WinForms/resources. | Low | Runtime can be tested without this; treat as separate UI restoration. |
-| Script debug IDE | `xr_3da/xrScriptDebugIde/` | Script debugging/editor IDE support. | Legacy `.vcproj` present; not root CMake. | MFC, CJ60Lib, SciLexer/Scintilla. | Low | Useful for tool developers after scripting runtime stabilizes. |
-| Lua compiler utility | `Dima/xrLuaCompiler/` | Lua/script compiler or validation utility. | Legacy `.vcproj` present. | Lua, Luabind-era code, Boost-compatible headers. | Medium | Candidate for early script/config tooling after inventory. |
-| Gamedata/script project files | `xrStalker/` | Historical project wrappers for gamedata/scripts. | Legacy `.vcproj`/`.sln` present. | Proprietary data not included; local lawful runtime data only. | Low | Do not commit generated or extracted gamedata. |
+| Component | Path | Type | Purpose | Current state | Dependencies | Build status | Runtime/modding value | Restoration priority | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| Archive listing helper | `tools/xrArchiveList/` | CLI diagnostic | List virtual paths from `.xp*` archives. | Restored read-only helper. | `xrCore`, local LZHUF path. | Local CMake target `xrArchiveList`. | Confirms archive mounting contents without extraction. | High | Keep read-only and diagnostic. |
+| Archive unpacker | `tools/xr_unpack/` | CLI tool | Inspect, verify, plan, and extract local archives with explicit safety gates. | Scaffold plus proven `.xp*` directory parser, verify, dry-run planning, and explicit `--write` extraction support. | Local parser code, path-safety helpers, LZHUF-compatible directory decode. | Local CMake target `xr_unpack`, opt-in through `BUILD_XR_UNPACK`. | Primary safe archive workflow for local lawful data. | High | Never commit extracted output or archive samples. |
+| Runtime compressor / packer | `xrCompress/` | CLI tool | Historical archive/data compression executable. | Source and legacy project present; restored behavior only partially documented. | `xrCore`, compression helpers, Win32 console runtime. | Root CMake target exists. | Format reference for archive research. | High | Treat as reference before changing writer behavior. |
+| Runtime XML parser | `xrXMLParser/` | Library | XML parsing support used by runtime/UI tooling. | Runtime target modularized into local CMake. | Expat-style parser code, runtime include paths. | Local CMake target `xrXMLParser`. | Useful for XML/UI validators later. | Medium | Already part of runtime build. |
+| Runtime Lua library | `xrLUA/` | Library | Lua runtime support. | Runtime target modularized into local CMake. | Lua sources and runtime include paths. | Local CMake target `xrLUA`. | Basis for future script validation. | Medium | Keep runtime ABI stable. |
+| Runtime particles library | `xrParticles/` | Library | Runtime particle format and playback support. | Runtime target modularized into local CMake. | `xrCore`-style runtime headers. | Local CMake target `xrParticles`. | Reference for particle editor restoration. | Medium | Restore editor later, not now. |
+| Runtime collision library | `xr_3da/xrCDB/` | Library | Runtime collision database and ray query support. | Runtime target modularized into local CMake. | Runtime include paths, math/collision code. | Local CMake target `xrCDB`. | Reference for level compiler and CFORM validation. | Medium | Keep runtime behavior unchanged. |
+| Runtime network server library | `xrNetServer/` | Library | Runtime network/server support. | Runtime target modularized into local CMake. | WinSock/runtime headers. | Local CMake target `xrNetServer`. | Runtime dependency, not a modding tool by itself. | Low | Useful CMake modularization precedent. |
 
-## Planned / Not Found Yet
+## B. Existing But Not Restored Tools
 
-| Component | Path | Purpose | Current state | Dependencies | Restoration priority | Notes |
-|---|---|---|---|---|---|---|
-| General archive extractor | Planned | Extract selected or all files from supported archives. | Not implemented. | Archive format research, `xrFS`/`xrCompress` behavior, safety layer. | High | See [Archive Unpacker Plan](unpacker-plan.md). |
-| General archive verifier | Planned | Validate archive structure, directory table, sizes, and hashes/checksums when known. | Not implemented. | Format documentation and synthetic fixtures. | High | Should be read-only and safe for local lawful archives. |
-| Archive packer | Planned / not found as standalone safe target | Create archives for mod workflows, if legally and technically appropriate. | Not planned for initial implementation. | Full format documentation, deterministic tests, clear legal review. | Low | No repack or crack support. |
-| Config/script validator | Planned | Validate `.ltx`, XML, Lua scripts, and common runtime references. | Not found as standalone modern tool. | `xrLUA`, `xrXMLParser`, config parser behavior. | Medium | Prefer clean-room tests and user-supplied local data. |
-| Clean-room sample runtime data tools | Planned | Generate tiny non-proprietary sample fixtures for tests and tutorials. | Not implemented. | Synthetic formats and minimal runtime compatibility fixtures. | Medium | Must avoid proprietary assets and gamedata dumps. |
+| Component | Path | Type | Purpose | Current state | Dependencies | Build status | Runtime/modding value | Restoration priority | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| Filesystem/archive library | `xrFS/` | Library/tooling code | Historical filesystem, locator, archive, LZHUF, and LZO support. | Source and `.vcproj` present; not restored to modern CMake. | Win32, archive/compression helpers. | Unknown. | High-value archive format reference. | High | Inventory before moving into tools. |
+| Level compiler | `xrLC/` | Compiler tool | Builds geometry, collision, lightmaps, sectors, portals, and visibility data. | Legacy projects/source present; not restored. | DirectX 9-era SDK, FreeImage, QSlim/OpenMesh/NVIDIA geometry code, `xrDXTC`, `xrCore`. | Unknown. | Required for full level modding workflow. | High | Large dependency surface; inventory first. |
+| Level compiler helper tools | `xrLC/close/`, `xrLC/xrDO_Light/`, `xrLC/xrHemisphere/` | Helper CLIs | Auxiliary level/light/hemisphere compilation support. | Legacy project files present. | Same family as `xrLC`. | Unknown. | Supports compiler workflow. | Medium | Restore after main compiler map is understood. |
+| AI / game graph compiler | `xrAI/` | Compiler tool | Builds AI maps, level graphs, game graphs, spawn/ALife graph data. | Legacy `.vcproj` present; not restored. | Runtime graph code, `xrSE_Factory` concepts, Lua/Luabind/Boost-era code, MagicFM-style library. | Unknown. | Required for spawn and AI-compatible mods. | High | Must match restored serialization formats. |
+| Level editor | `Editor/LevelEditor/`, `Editors/LevelEditor/`, `Editors/!old/LevelEditor/` | GUI editor | Historical level/world editing workflow. | Multiple source generations present. | Editor core, DirectX, Borland/VCL-era UI assumptions. | Unknown. | Important but not first safe target. | Medium | Choose canonical generation before porting. |
+| Actor/model editor | `Editor/ActorEditor/`, `Editors/ActorEditor/`, `Editors/!old/ActorEditor/` | GUI editor | Edits models, skeletons, motions, materials, and export metadata. | Multiple source generations present. | Editor core, DirectX, image/mesh helpers. | Unknown. | Important for model modding. | Medium | Defer until formats and editor core are mapped. |
+| Particle editor | `Editor/ParticleEditor/`, `Editors/ParticleEditor/`, `Editors/!old/ParticleEditor/` | GUI editor | Edits particle effects and related runtime data. | Source present. | Editor core, DirectX/editor rendering. | Unknown. | Useful once particle formats are documented. | Medium | Coordinate with `xrParticles`. |
+| Shader editor | `Editor/ShaderEditor/`, `Editors/ShaderEditor/`, `Editors/!old/ShaderEditor/` | GUI editor | Edits shader/material descriptions. | Source present. | DirectX shader compiler era, editor rendering. | Unknown. | Useful for material workflows. | Medium | Sensitive to SDK versioning. |
+| Editor core | `Editors/ECore/` | Shared editor library | Shared editor engine, thumbnails, object IO, properties, image helpers, and shader helpers. | Source present. | DirectX 9-era rendering, image libraries, shared editor components. | Unknown. | Foundation for restored editors. | Medium | Inventory dependency tree before building. |
+| Editor properties library | `Editors/xrEProps/` | Shared editor library | Property-grid/editor UI support. | Source and projects present. | Editor UI framework, Win32/VCL-era code. | Unknown. | Needed by editor apps. | Medium | Port after editor core plan. |
+| Level options tool | `Editor/LevelOptions/`, `Editors/LevelOptions/` | GUI tool | Level option/configuration editor support. | Source present. | Editor components. | Unknown. | Optional helper. | Low | Defer. |
+| Texture/DXT tools | `Editors/Tools/DXT/`, `Editor/Tools/DXT/`, `xrDXTC/` | Converter/tool library | Texture compression and DDS/DXT conversion support. | Legacy source/project files present. | NVIDIA DXT libraries, DirectX/image code. | Unknown. | Useful for asset conversion. | Medium | Document binary library provenance first. |
+| Editor tools library | `Editors/Tools/ETools/` | Shared tool library | Mesh optimization and asset-tool routines. | Legacy solution/project present. | DirectX wrapper, mesh/geometry code. | Unknown. | Likely dependency for editor/export pipeline. | Medium | Inventory with editors. |
+| LWO tool | `Editors/Tools/LWO/` | Converter/helper | LightWave object/envelope handling utility. | Legacy project present. | LightWave object parsing code. | Unknown. | Import/export pipeline support. | Medium | Host-format research needed. |
+| Gauss tool | `Editors/Tools/gauss/` | Utility | Legacy utility with filesystem/math/log scaffolding. | Legacy project present. | Win32/editor-style helpers. | Unknown. | Unclear. | Low | Purpose needs source-level confirmation. |
+| 3ds Max / LightWave plugins | `Plugins/`, `samples/xskinexp/` | Host plugins | Exporters/import helpers for models, skins, keys, shaders, and editor formats. | Source/project files present. | Host SDKs such as 3ds Max or LightWave. | Unknown. | Valuable but legally/toolchain-sensitive. | Low | Restore only after clean format docs. |
+| Lua compiler utility | `Dima/xrLuaCompiler/` | CLI/helper | Lua/script compiler or validation utility. | Legacy project present. | Lua, Luabind-era code, Boost-compatible headers. | Unknown. | Candidate for script tooling. | Medium | Compare with runtime Lua version first. |
+| Script debug IDE | `xr_3da/xrScriptDebugIde/` | GUI tool | Script debugging/editor support. | Legacy project present. | MFC, CJ60Lib, SciLexer/Scintilla. | Unknown. | Developer-only helper. | Low | Defer until script runtime stabilizes. |
+| Launcher | `xrLauncher/` | GUI app | Historical launcher/configuration UI. | Managed C++ legacy project present. | .NET/Managed C++ era, WinForms/resources. | Unknown. | Optional runtime convenience. | Low | Runtime can be tested without it. |
 
-## Near-Term Documentation Tasks
+## C. Source Present But Build Unknown
 
-* Document runtime layout.
-* Inventory SDK/tools.
-* Document archive formats.
-* Build minimal archive list/extract tool.
-* Write modding tutorials.
+| Component | Path | Type | Purpose | Current state | Dependencies | Build status | Runtime/modding value | Restoration priority | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| AlexRR map editor | `AlexRR_Editor/` | GUI/editor experiment | Map editor/export code, including builder/export references. | Source and `.dsp` present. | Legacy UI/toolchain unknown. | Unknown. | Possible historical reference. | Low | Compare with `Editors/LevelEditor` before investing. |
+| QSlim / mesh simplification SDK | `SDK/QSlim/`, `xrQSlim/`, `xrProgressive/` | SDK/library/tools | Mesh simplification, progressive mesh, and viewers. | Many legacy projects present. | QSlim/MixKit/libgfx, OpenGL for viewers. | Unknown. | Useful for LOD/model/compiler pipeline. | Medium | Prefer library inventory before viewer restoration. |
+| STRIPS / NvTriStrip tools | `xrLC/NvTriStrip/`, related geometry folders | Library/tooling code | Triangle strip/geometry optimization. | Source/project fragments present. | NVIDIA-era geometry code. | Unknown. | Compiler/model optimization support. | Medium | Dependency for `xrLC` likely. |
+| Range coder samples | `xrRangeCoder/` | Compression research code | Compression/range coding experiments. | Source present. | Unknown. | Unknown. | Low | Reference only unless archive format needs it. |
+| Occlusion/culling experiments | `AABB_Cull/`, `Dima/bge.root/` | Research/utility | Culling, geometry, and graph experiments. | Source/project files present. | Legacy toolchains. | Unknown. | Low direct value. | Low | Keep as historical reference. |
+| Physics/test utilities | `TestBed/`, selected `Dima/` folders | Tests/experiments | Physics, memory, and utility experiments. | Source/project files present. | Mixed legacy deps. | Unknown. | Debug/reference only. | Low | Do not prioritize. |
+| External library projects | `External Library/`, `SDK/`, embedded third-party dirs | Library projects | Ogg, OpenAL, geometry, and other external dependency projects. | Legacy project files present. | Third-party licensing/provenance review. | Unknown. | Supports tool/editor builds. | Medium | Document before vendoring or building. |
+| Gamedata/script project wrappers | `xrStalker/` | Project wrappers | Historical wrappers for scripts/gamedata. | Legacy `.vcproj`/`.sln` present. | Local proprietary data not in repo. | Unknown. | Low by itself. | Low | Do not commit gamedata. |
+
+## D. Planned Tools Not Found In Repo
+
+| Component | Path | Type | Purpose | Current state | Dependencies | Build status | Runtime/modding value | Restoration priority | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| LTX/config validator | Planned | CLI validator | Validate `.ltx` syntax, include/load order, and common runtime references. | Not found as standalone modern tool. | Runtime config parser behavior. | Not implemented. | Helps modders catch safe errors before launch. | High | Good first new read-only tool after archive work. |
+| UI/XML validator | Planned | CLI validator | Validate UI XML files and string references. | Not found as standalone modern tool. | `xrXMLParser`, UI loader behavior. | Not implemented. | Useful after widescreen/UI restoration. | Medium | Keep read-only. |
+| Lua/script syntax helper | Planned | CLI validator | Check Lua syntax and basic binding availability. | Not found as standalone modern tool. | `xrLUA`, restored binding inventory. | Not implemented. | Useful for script modding. | Medium | Avoid false positives. |
+| OGF/OMF metadata inspector | Planned | CLI inspector | Read model/motion headers and metadata without conversion. | Not found as standalone modern tool. | Documented model formats. | Not implemented. | Useful for model pipeline research. | Medium | Read-only first. |
+| Texture metadata inspector | Planned | CLI inspector | Inspect DDS/DXT metadata and expected texture variants. | Not found as standalone modern tool. | DDS parsing, texture loader behavior. | Not implemented. | Useful for asset compatibility. | Medium | Avoid proprietary samples. |
+| Clean-room fixture generator | Planned | Test helper | Generate tiny non-proprietary fixtures for tool tests. | Not implemented. | Documented minimal formats. | Not implemented. | Enables CI-like tests without assets. | High | Synthetic data only. |
+
+## E. Format / Documentation-Only Areas
+
+| Component | Path | Type | Purpose | Current state | Dependencies | Build status | Runtime/modding value | Restoration priority | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| Archive formats | `docs/formats/archives.md` | Documentation | Record proven `.xp*` layout, unknowns, and safety constraints. | Active documentation. | `xrArchiveList`, `xr_unpack`, `xrFS`, `xrCompress`. | N/A. | Foundation for archive tools. | High | Do not document guesses as facts. |
+| Runtime layout / VFS precedence | `docs/modding/runtime-layout.md` | Documentation | Explain runtime folders, archive mounting, and override behavior. | Existing documentation. | Runtime filesystem behavior. | N/A. | Helps safe local mod workflows. | High | Keep aligned with restored loader. |
+| Asset policy | `docs/modding/assets-policy.md` | Documentation | Define legal boundaries for assets and archives. | Existing documentation. | None. | N/A. | Keeps repo clean. | High | Link from tool docs. |
+| Level/model/particle/shader formats | Planned docs | Documentation | Record proven file formats for compilers/editors/converters. | Partial and scattered in source only. | Runtime/editor source review. | N/A. | Needed before converters. | Medium | Read-only research first. |
+| Spawn/game graph serialization | Planned docs | Documentation | Record restored ALife/spawn/game graph binary layouts. | Runtime fixes exist but docs are incomplete. | Runtime serialization source. | N/A. | Needed before `xrAI` tooling. | High | Avoid data mutation until documented. |
+| SDK/editor dependency map | Planned docs | Documentation | Map editor/compiler dependencies and tool generations. | Initial inventory only. | Legacy project files. | N/A. | Guides future CMake work. | High | Start before restoring GUI editors. |
 
 ## CMake Modularization Track
 
-The root `CMakeLists.txt` still owns most restored runtime targets while compatibility work is active. New and restored tools should move toward local per-directory `CMakeLists.txt` files first, with the root file acting as orchestration over time.
+The root `CMakeLists.txt` still owns complex runtime targets while compatibility work is active. New and restored tools should use local per-directory `CMakeLists.txt` files, with the root file acting as orchestration over time.
 
-Current phases:
+Current local target ownership includes:
 
-* `tools/CMakeLists.txt` owns tool build options and delegates tool subdirectories.
-* `tools/xrArchiveList/CMakeLists.txt` owns the `xrArchiveList` target.
-* `tools/xr_unpack/CMakeLists.txt` owns the `xr_unpack` target.
-* `xrXMLParser/CMakeLists.txt` owns the `xrXMLParser` runtime target as the first low-risk runtime extraction.
-* `xr_3da/xrCDB/CMakeLists.txt` owns the `xrCDB` runtime target.
-* `xrParticles/CMakeLists.txt` owns the `xrParticles` runtime target.
-* `xrLUA/CMakeLists.txt` owns the `xrLUA` runtime target.
-* `xrNetServer/CMakeLists.txt` owns the `xrNetServer` runtime target.
+* `tools/CMakeLists.txt` for tool dispatch and tool options.
+* `tools/xrArchiveList/CMakeLists.txt` for `xrArchiveList`.
+* `tools/xr_unpack/CMakeLists.txt` for `xr_unpack`.
+* `xrXMLParser/CMakeLists.txt` for `xrXMLParser`.
+* `xr_3da/xrCDB/CMakeLists.txt` for `xrCDB`.
+* `xrParticles/CMakeLists.txt` for `xrParticles`.
+* `xrLUA/CMakeLists.txt` for `xrLUA`.
+* `xrNetServer/CMakeLists.txt` for `xrNetServer`.
 
-Future phases should move runtime components one target at a time, preserving target names, output paths, dependency discovery, and historical compatibility settings.
+Future options should remain explicit and opt-in where appropriate:
+
+* `BUILD_XR_TOOLS` for broad tool dispatch if/when the tree grows enough to need it.
+* `BUILD_XR_UNPACK` for the archive unpacker.
+* `BUILD_XR_SDK_TOOLS` for restored command-line SDK tools.
+* `BUILD_XR_EDITORS` for large GUI editor targets.
+* `BUILD_XR_COMPILERS` for level/AI/compiler targets.
+
+## Recommended Next Actions
+
+1. Add synthetic archive fixtures and path-safety tests for `xr_unpack`.
+2. Add optional `--filter` support for `xr_unpack list` and extraction planning.
+3. Start a small read-only LTX/config validator scaffold.
+4. Inventory `xrLC` and `xrAI` dependencies in more detail before attempting CMake restoration.
+5. Keep GUI editors and host plugins documented but deferred.
 
 ## Related Plans
 
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [SDK Restoration Plan](sdk-restoration-plan.md)
 * [Archive Formats](../formats/archives.md)
+* [Modding Overview](../modding/overview.md)

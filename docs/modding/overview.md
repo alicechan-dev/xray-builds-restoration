@@ -18,9 +18,21 @@ A future modding workflow should look like this:
 
 ## Current Scope
 
-Current modding documentation is preliminary. It records policy, runtime layout assumptions, archive format questions, and SDK/tool restoration plans. It does not provide a complete SDK and does not implement a new unpacker.
+Current modding documentation records policy, runtime layout assumptions, archive format research, and SDK/tool restoration plans. The tree now includes restored or scaffolded tool work such as `xrArchiveList` and `xr_unpack`, but it is not a complete SDK.
 
-Future work may include SDK/tool restoration, archive unpackers, format converters, format documentation, validators, and tutorials.
+`xr_unpack` is intended for local lawful archives and uses explicit safety modes. Dry-run planning is recommended before any extraction, and extracted output must not be committed to this repository.
+
+## SDK And Tool Restoration Track
+
+Tool restoration should proceed from read-only inspection toward safe write-capable workflows:
+
+* inventory historical tools and dependencies;
+* restore read-only inspectors and validators first;
+* add extraction or conversion only behind explicit flags and safety checks;
+* defer large GUI editors and host plugins until formats and dependencies are documented;
+* keep all proprietary runtime data outside version control.
+
+The next practical tool targets are synthetic `xr_unpack` tests, optional archive filtering, and a read-only LTX/config validator scaffold.
 
 ## Documentation Index
 
@@ -33,8 +45,9 @@ Future work may include SDK/tool restoration, archive unpackers, format converte
 
 ## Preliminary Roadmap
 
-* Document runtime layout.
-* Inventory SDK/tools.
-* Document archive formats.
-* Build minimal archive list/extract tool.
-* Write modding tutorials.
+* Keep runtime layout and filesystem precedence documented.
+* Maintain the SDK/tools inventory.
+* Expand archive format documentation only from proven source behavior.
+* Harden `xr_unpack` with synthetic tests and safe filtering.
+* Add read-only validators before converters/editors.
+* Write modding tutorials that rely on lawful local data or synthetic fixtures.

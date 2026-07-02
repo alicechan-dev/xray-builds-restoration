@@ -1,97 +1,157 @@
 # SDK Restoration Plan
 
-This document describes a future restoration roadmap for SDK, editor, converter, archive, and modding tools. It is planning documentation only; no tools are implemented here.
+This document describes the restoration roadmap for SDK, editor, converter, archive, compiler, and modding tools in the historical X-Ray / S.T.A.L.K.E.R. build 1935 tree. It is planning documentation only.
 
-The current repository focus remains source restoration for the build 1935 engine/runtime. SDK restoration should proceed after the runtime behavior, data loading, and file format assumptions are documented well enough to avoid accidental modernization or proprietary data churn.
+The current priority remains runtime correctness and binary compatibility. SDK restoration should proceed in small, auditable steps after each format or dependency assumption is proven from repository source, synthetic fixtures, or user-owned local data.
 
-## Phase 0: Inventory
+## Legal And Asset Policy
+
+SDK/tool work must not add proprietary assets, original game archives, extracted `gamedata/`, repacks, cracks, leaked data, or gamedata dumps to the repository. Tools are intended for lawful research, compatibility testing, and use with the user's own legally obtained game data outside version control. Repository tests should use synthetic fixtures wherever possible.
+
+## Phase 0: Inventory And Legal Boundaries
 
 Goals:
 
-* classify every tool/editor/project file found in the tree;
+* inventory every SDK/tool/editor/compiler/project file found in the tree;
+* classify components as restored, present-but-unrestored, build-unknown, planned, or documentation-only;
 * identify duplicate generations such as `Editor/`, `Editors/`, and `Editors/!old/`;
-* separate runtime-critical tools from optional SDK/editor tools;
-* record external dependencies and host SDK requirements;
-* document which tools require proprietary local data for manual testing.
+* document external dependencies, host SDK requirements, and legal limits;
+* record which tools require user-supplied local data for manual testing.
 
 Outputs:
 
 * updated [Tools and SDK Status](status.md);
-* dependency notes for each candidate tool;
-* a list of planned components not found in this repository.
+* documented legal/asset boundaries;
+* initial priority order for safe tool restoration.
 
-## Phase 1: Build System Discovery
-
-Goals:
-
-* read historical `.sln`, `.vcproj`, `.dsp`, `.dsw`, and Borland project files;
-* identify output names, compiler definitions, include paths, and linked libraries;
-* determine whether each target is command-line, DLL, editor UI, plugin, or host-specific extension;
-* decide which targets should enter modern CMake first.
-
-Command-line tools should be prioritized before large GUI editors because they are easier to test with synthetic data.
-
-## Phase 2: Dependency Mapping
+## Phase 1: Read-Only Tools
 
 Goals:
 
-* map DirectX 9, D3DX, DirectInput, DirectSound, OpenAL, EAX, Ogg/Vorbis, FreeImage, NVIDIA DXT, QSlim, MagicFM, MFC, SciLexer, CJ60Lib, and host SDK dependencies;
-* decide which dependencies can be built from source, imported locally, or deferred;
-* keep dependency configuration target-local and documented;
-* avoid depending on proprietary game assets for compilation or tests.
+* restore or create tools that inspect data without modifying it;
+* prefer archive `info`, `list`, and `verify` workflows before extraction;
+* add metadata inspectors for configs, XML, Lua, textures, models, particles, levels, and graph files only after layouts are proven;
+* keep malformed input handling graceful and bounded.
 
-## Phase 3: Minimal Tool Compilation
+Candidate targets:
 
-Goals:
+* `xr_unpack info/list/verify` improvements;
+* LTX/config validator scaffold;
+* UI XML/string-reference validator;
+* read-only model/texture/archive metadata inspectors.
 
-* restore minimal command-line tools first;
-* prefer read-only or diagnostic tools before write-capable tools;
-* add synthetic fixtures for each supported format;
-* keep behavior close to historical code while applying narrow modern compiler fixes.
-
-Candidate early targets:
-
-* archive listing and unpacker research tools;
-* `xrCompress` compatibility documentation;
-* script/config validators;
-* minimal format inspection tools.
-
-## Phase 4: Runtime-Compatible Workflows
+## Phase 2: Safe Extraction And Validation
 
 Goals:
 
-* confirm tools produce data compatible with the restored build 1935 runtime;
-* document runtime layout and virtual filesystem precedence;
-* define mod-directory override workflows;
-* validate only with user-supplied lawful local data or synthetic fixtures.
+* allow write-capable operations only behind explicit flags such as `--write`;
+* require dry-run planning before recommended extraction workflows;
+* prevent path traversal, absolute paths, drive-letter paths, duplicate output paths, out-of-bounds reads, and accidental overwrites;
+* add synthetic tests for path safety and parser bounds;
+* document that extracted proprietary data must stay outside the repository.
 
-This phase should avoid distributing extracted data. Manual compatibility notes can describe expected local inputs without committing them.
+Candidate targets:
 
-## Phase 5: Documentation And Tutorials
+* `xr_unpack extract --dry-run` and `--write` hardening;
+* optional `--filter` and `--limit` support;
+* synthetic archive fixtures where the format can be generated without proprietary data.
+
+## Phase 3: Low-Risk Converters And Validators
 
 Goals:
 
-* write tutorials for listing and extracting local archives;
-* document config/script inspection;
-* document separate mod-directory layout;
-* document editor/compiler workflows as they become stable;
-* maintain asset policy warnings near any workflow that touches proprietary data.
+* restore small command-line validators/converters before GUI editors;
+* match runtime parser behavior instead of inventing modernized behavior;
+* use synthetic fixtures and user-owned local data for manual checks;
+* keep tools target-local in CMake.
 
-## Tool Category Plans
+Candidate targets:
 
-| Tool category | Purpose for modders | Expected inputs/outputs | Likely dependencies | Risks | Restoration priority |
-|---|---|---|---|---|---|
-| Archive unpacker | Inspect and extract local archive contents for research and mod setup. | Input: lawful local `.xp*` archive. Output: listed entries or extracted files under a chosen directory. | `xrFS`, `xrCompress`, LZHUF/LZO helpers, path-safety layer. | Path traversal, overwrite behavior, incomplete format knowledge, proprietary data handling. | High |
-| Archive packer | Potentially create archives for local testing if legally and technically appropriate. | Input: local mod files. Output: archive package. | Full archive specification, deterministic writer, integrity metadata. | Could enable repack misuse; should not support cracks or proprietary redistribution. | Low |
-| Level editor | Edit scenes and level data before compilation. | Input: local SDK scene data/assets. Output: editor scene files and compiler-ready data. | Editor core, DirectX, Borland/VCL or ported UI, image and geometry libraries. | Multiple editor generations, proprietary asset requirements, UI/toolchain age. | Medium |
-| Actor/model editor | Edit meshes, skeletons, motions, and material assignments. | Input: local model source files and textures. Output: runtime/editor model data. | Editor core, DirectX, image libraries, object IO, skeleton/motion code. | Format drift, exporter dependency, high UI complexity. | Medium |
-| Shader/material tools | Edit engine and compiler shader/material descriptions. | Input: local shader/material definitions. Output: runtime and compiler shader metadata. | DirectX shader compiler era, editor rendering code, `Shader_xrLC` libraries. | SDK version sensitivity and runtime/compiler mismatch. | Medium |
-| Level compiler/light compiler | Build geometry, collision, lightmaps, sectors, and visibility data. | Input: editor-exported level data. Output: runtime level files, CFORM, lightmaps, AI/compiler artifacts. | `xrLC`, FreeImage, QSlim/OpenMesh/NVIDIA geometry code, `xrDXTC`, DirectX-era headers. | Large dependency surface, long-running jobs, binary format compatibility. | High |
-| Spawn/game graph tools | Build AI maps, level graphs, game graphs, and spawn data. | Input: editor exports, graph points, game object definitions. Output: runtime graph/spawn files. | `xrAI`, `xrSE_Factory`, Lua/Luabind/Boost-era code, MagicFM-style geometry libraries. | Serialization compatibility and object factory drift. | High |
-| Format converters | Convert source art and intermediate formats into X-Ray runtime formats. | Input: source models/textures/animations. Output: `.ogf`, textures, motions, or related runtime files. | Editor tools, plugins, QSlim, DXT libraries, host SDKs. | Host SDK licensing, binary library provenance, proprietary asset temptation. | Medium |
-| Config/script validation tools | Validate `.ltx`, XML, Lua scripts, and references before runtime launch. | Input: local configs/scripts. Output: diagnostics. | `xrLUA`, `xrXMLParser`, config parser behavior. | False positives if runtime parser behavior is not matched. | Medium |
-| Clean-room sample runtime tools | Generate tiny non-proprietary fixtures for tests and tutorials. | Input: simple generated metadata. Output: synthetic archives or minimal config/script samples. | Documented formats and small generators. | Accidentally depending on proprietary naming/data. | Medium |
+* LTX/config validation;
+* Lua syntax and binding inventory helpers;
+* XML/UI validation;
+* DDS/DXT metadata inspection;
+* model/animation metadata inspection.
 
-## Policy Guardrails
+## Phase 4: SDK Build Restoration
 
-SDK restoration must not add proprietary assets, original archives, extracted `gamedata/`, repacks, cracks, leaked data, or gamedata dumps. Repository tests should rely on synthetic fixtures. Manual tests may use the user's own legally obtained data outside version control.
+Goals:
+
+* restore larger historical compiler/editor targets after dependencies are mapped;
+* move each tool into a local `CMakeLists.txt` without changing target names or output paths unnecessarily;
+* keep external dependency discovery documented and opt-in;
+* prioritize command-line compilers before GUI editors where practical.
+
+Candidate targets:
+
+* `xrFS` archive/filesystem tooling;
+* `xrLC` and helper tools;
+* `xrAI` graph/spawn tooling;
+* `xrDXTC` and texture helpers;
+* editor core libraries needed by GUI applications.
+
+## Phase 5: Modding Workflows
+
+Goals:
+
+* document practical local workflows for lawful user-owned data;
+* prefer separate mod directories over editing extracted base data in place;
+* explain runtime layout, VFS precedence, config loading, and generated data behavior;
+* provide tutorials that do not require committed proprietary samples.
+
+Candidate outputs:
+
+* archive inspection/extraction tutorial;
+* config/script validation tutorial;
+* separate mod-directory workflow;
+* troubleshooting notes for runtime resource lookup.
+
+## Phase 6: Advanced SDK
+
+Goals:
+
+* restore complex GUI editors and host plugins only after lower-risk tooling is stable;
+* document host SDK requirements and licensing constraints;
+* avoid committing generated proprietary data;
+* keep editor/compiler behavior compatible with build 1935 formats.
+
+Candidate targets:
+
+* Level editor;
+* Actor/model editor;
+* Particle editor;
+* Shader editor;
+* 3ds Max / LightWave exporters;
+* launcher and script debug IDE.
+
+## CMake Planning
+
+The long-term direction is for the root `CMakeLists.txt` to provide project setup, global options, dependency discovery, shared helpers, and `add_subdirectory(...)` orchestration. Each restored component should own its target in a local `CMakeLists.txt`.
+
+Planned option families:
+
+* `BUILD_XR_TOOLS` for broad tool dispatch if needed.
+* `BUILD_XR_UNPACK` for the archive unpacker.
+* `BUILD_XR_SDK_TOOLS` for restored command-line SDK tools.
+* `BUILD_XR_EDITORS` for large GUI editor targets.
+* `BUILD_XR_COMPILERS` for level/AI/compiler targets.
+
+Large options should default to `OFF` until the dependency and legal/test story is clear.
+
+## Recommended First Practical Target
+
+After the current inventory, the safest next target is still the archive/tooling path:
+
+1. add synthetic path-safety and archive-directory tests for `xr_unpack`;
+2. add optional `--filter` support for `xr_unpack list` and extraction planning;
+3. start a read-only LTX/config validator scaffold.
+
+The first large historical SDK candidates to inventory in depth are `xrLC` and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented.
+
+## Related Documents
+
+* [Tools and SDK Status](status.md)
+* [Archive Unpacker Plan](unpacker-plan.md)
+* [Archive Formats](../formats/archives.md)
+* [Modding Overview](../modding/overview.md)
+* [Assets Policy](../modding/assets-policy.md)
