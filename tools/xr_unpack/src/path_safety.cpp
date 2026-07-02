@@ -94,6 +94,11 @@ PathValidationResult validate_archive_entry_path(const std::string& entry_path)
             return result;
         }
 
+        if (i->find(':') != std::string::npos) {
+            result.reason = "archive entry path contains a colon";
+            return result;
+        }
+
         normalized.push_back(*i);
     }
 

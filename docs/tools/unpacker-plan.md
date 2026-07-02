@@ -2,7 +2,7 @@
 
 This document outlines the technical plan for the `xr_unpack` X-Ray archive unpacker scaffold in `tools/xr_unpack/`.
 
-The current implementation is a safe read-only inspection tool. It parses proven `.xp*` directory metadata but does not read or write extracted file payloads.
+The current implementation is a safe read-only inspection and extraction-planning tool. It parses proven `.xp*` directory metadata and can dry-run planned output paths, but it does not read or write extracted file payloads.
 
 ## Goals
 
@@ -51,8 +51,8 @@ Proposed command examples:
 ```bat
 xr_unpack help
 xr_unpack info <archive>
-xr_unpack list <archive>
-xr_unpack extract <archive> <out_dir>
+xr_unpack list <archive> [--limit N]
+xr_unpack extract <archive> <out_dir> --dry-run [--limit N]
 xr_unpack verify <archive>
 ```
 
@@ -61,8 +61,10 @@ Suggested command behavior:
 * `help` prints usage and current limitations.
 * `info`, `list`, and `verify` perform read-only directory inspection.
 * `list` prints archive entry names, offsets, packed sizes, unpacked sizes, and compression status without writing files.
+* `list --limit N` prints only the first `N` entries.
 * `extract` writes files under `<out_dir>` after safety validation.
-* `extract` currently refuses with `archive parsing is read-only currently; extraction is not implemented yet`.
+* `extract` currently refuses unless `--dry-run` is passed.
+* `extract --dry-run` validates all planned output paths, duplicate outputs, existing files, and entry bounds, then prints what would be written. It writes nothing.
 * `verify` checks structure, directory entries, bounds, duplicate names, and path-safety warnings when known.
 * `info` reports archive family, directory chunk status, compression flags, entry count, and known limitations.
 
@@ -87,6 +89,7 @@ The implementation must:
 * reject absolute paths from archive entries;
 * reject `..` path traversal;
 * reject drive-letter paths such as `C:\...`;
+* reject colons in archive entry path components;
 * normalize `/` and `\` separators;
 * ensure composed output paths remain under the selected output directory;
 * avoid overwriting files unless a future explicit flag allows it;
@@ -139,6 +142,8 @@ The unpacker should produce predictable paths that match the runtime's virtual f
 4. Extend the read-only listing behavior into `xr_unpack list`. Done for proven directory metadata.
 5. Add `info` and `verify` behavior for structural validation. Done for proven directory metadata.
 6. Add synthetic fixtures for the directory parser.
-7. Add safe selected-file extraction with filters and dry-run support.
-8. Add full extraction only after path safety, overwrite policy, and integrity tests are stable.
-9. Document modding workflow examples using only lawful local data and synthetic repository fixtures.
+7. Add dry-run extraction planning. Done for full-archive plans with optional output limits.
+8. Add filters such as `--filter "*.ltx"` for listing and dry-run planning.
+9. Add safe selected-file extraction with filters and dry-run support.
+10. Add full extraction only after path safety, overwrite policy, and integrity tests are stable.
+11. Document modding workflow examples using only lawful local data and synthetic repository fixtures.

@@ -15,29 +15,31 @@ Do not commit original game archives, extracted proprietary assets, repacks, cra
 ```bat
 xr_unpack help
 xr_unpack info <archive>
-xr_unpack list <archive>
-xr_unpack extract <archive> <out_dir>
+xr_unpack list <archive> [--limit N]
+xr_unpack extract <archive> <out_dir> --dry-run [--limit N]
 xr_unpack verify <archive>
 ```
 
 Current command status:
 
 * `info` prints archive size, directory chunk metadata, entry count, and parser status.
-* `list` prints directory entries, offsets, packed sizes, unpacked sizes, and compression status.
+* `list` prints directory entries, offsets, packed sizes, unpacked sizes, and compression status. Use `--limit N` to print only the first `N` entries.
 * `verify` checks directory structure, entry bounds, duplicate names, and path-safety warnings without extracting payloads.
-* `extract` is intentionally disabled and reports that extraction is not implemented yet.
+* `extract` refuses unless `--dry-run` is passed.
+* `extract --dry-run` validates planned output paths, duplicate outputs, existing target files, and entry bounds, then prints the paths it would write. It writes nothing.
 
 The parser is based on existing repository evidence from `xrCore/LocatorAPI.cpp`, `xrCompress/xrCompress.cpp`, and `tools/xrArchiveList/`.
 
 ## Safety Rules
 
-Extraction support must validate paths before writing files. The read-only `verify` command already applies the same archive-entry path checks to listed entries.
+Extraction support must validate paths before writing files. The read-only `verify` command and dry-run extraction planner already apply the same archive-entry path checks to listed entries.
 
 The current safety helpers are designed to:
 
 * reject absolute archive entry paths;
 * reject `..` parent-directory traversal;
 * reject drive-letter paths such as `C:\...`;
+* reject colons in archive entry path components;
 * normalize `/` and `\` separators;
 * compose output paths under the requested output directory;
 * refuse overwriting existing files unless a future explicit flag allows it.
@@ -60,4 +62,5 @@ cmake --build build --config Debug --target xr_unpack -- //m:1 //v:minimal //clp
 
 1. Add synthetic archive fixtures for the proven chunk/directory format.
 2. Document payload compression and decompression behavior before reading file data.
-3. Add extraction only after path safety and overwrite policy tests are in place.
+3. Add filtering support such as `--filter "*.ltx"` for list and dry-run planning.
+4. Add extraction only after path safety and overwrite policy tests are in place.

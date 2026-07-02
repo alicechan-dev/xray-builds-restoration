@@ -31,7 +31,7 @@ Known structure for the supported `.xp*` directory metadata phase:
 * each directory entry is `stringZ path`, `u32 offset`, `u32 unpacked_size`, `u32 packed_size`;
 * entries are registered under the archive base name plus the stored relative path at runtime.
 
-`xr_unpack info`, `xr_unpack list`, and `xr_unpack verify` use only this metadata and do not read or extract file payloads.
+`xr_unpack info`, `xr_unpack list`, `xr_unpack verify`, and `xr_unpack extract --dry-run` use only this metadata and do not read or extract file payloads.
 
 ## Unknowns To Investigate
 
