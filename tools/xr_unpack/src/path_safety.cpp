@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <fstream>
+#include <sys/stat.h>
 #include <vector>
 
 namespace xr_unpack
@@ -139,7 +140,7 @@ PathValidationResult compose_output_path(const std::string& output_dir, const st
 
 bool should_refuse_existing_output(const std::string& output_path)
 {
-    std::ifstream existing(output_path.c_str(), std::ios::binary);
-    return existing.good();
+    struct _stat info;
+    return _stat(output_path.c_str(), &info) == 0;
 }
 }

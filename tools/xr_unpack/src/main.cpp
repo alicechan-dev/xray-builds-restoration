@@ -2,17 +2,22 @@
 #include "path_safety.h"
 
 #include "xrCore.h"
+#include "rt_compressor.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <map>
 #include <set>
+#include <sys/stat.h>
 #include <string>
 #include <vector>
+#include <windows.h>
 
 namespace
 {
@@ -34,10 +39,11 @@ void print_help()
         << "  xr_unpack info <archive>\n"
         << "  xr_unpack list <archive> [--limit N]\n"
         << "  xr_unpack extract <archive> <out_dir> --dry-run [--limit N]\n"
+        << "  xr_unpack extract <archive> <out_dir> --write\n"
         << "  xr_unpack verify <archive>\n"
         << "\n"
         << "info, list, and verify perform read-only inspection of proven .xp* archive\n"
-        << "directory metadata. extract only supports dry-run planning in this phase.\n";
+        << "directory metadata. extract writes files only when --write is passed.\n";
 }
 
 int require_arg_count(int argc, int expected, const char* usage)
@@ -211,22 +217,43 @@ int verify_archive(const char* archive_path)
 int report_extract_disabled(const char* archive)
 {
     const xr_unpack::ArchiveInfo info = xr_unpack::inspect_archive_path(archive);
-    std::cerr << "xr_unpack extract: extraction is not enabled yet; use --dry-run to inspect planned output\n";
+    std::cerr << "xr_unpack extract: extraction is not enabled by default; use --dry-run to inspect planned output or --write to extract\n";
     std::cerr << "archive: " << info.path << "\n";
     std::cerr << "detected: " << xr_unpack::archive_family_name(info.family) << "\n";
     return kNotImplemented;
 }
 
-struct DryRunOptions
+struct ExtractOptions
 {
     bool dry_run;
+    bool write;
     bool has_limit;
     std::size_t limit;
 };
 
-bool parse_extract_options(int argc, char** argv, DryRunOptions& options)
+struct PlannedEntry
+{
+    const xr_unpack::ArchiveEntry* entry;
+    std::string output_path;
+    bool directory;
+};
+
+struct ExtractPlan
+{
+    xr_unpack::ArchiveContents archive;
+    std::vector<PlannedEntry> entries;
+    std::size_t safe_entries;
+    std::size_t unsafe_entries;
+    std::size_t duplicate_outputs;
+    std::size_t existing_outputs;
+    std::size_t out_of_bounds;
+    std::uint64_t would_write_bytes;
+};
+
+bool parse_extract_options(int argc, char** argv, ExtractOptions& options)
 {
     options.dry_run = false;
+    options.write = false;
     options.has_limit = false;
     options.limit = 0;
 
@@ -234,6 +261,11 @@ bool parse_extract_options(int argc, char** argv, DryRunOptions& options)
         const std::string option = argv[i];
         if (option == "--dry-run") {
             options.dry_run = true;
+            continue;
+        }
+
+        if (option == "--write") {
+            options.write = true;
             continue;
         }
 
@@ -257,75 +289,358 @@ bool parse_extract_options(int argc, char** argv, DryRunOptions& options)
         return false;
     }
 
+    if (options.dry_run && options.write) {
+        std::cerr << "xr_unpack: choose either --dry-run or --write, not both\n";
+        return false;
+    }
+
+    if (options.write && options.has_limit) {
+        std::cerr << "xr_unpack: --limit is only supported with --dry-run\n";
+        return false;
+    }
+
     return true;
 }
 
-int plan_extract_dry_run(const char* archive_path, const char* output_dir, const DryRunOptions& options)
+bool entry_is_directory_placeholder(const xr_unpack::ArchiveEntry& entry)
 {
-    const xr_unpack::ArchiveContents archive = xr_unpack::read_archive(archive_path);
-    if (!archive.errors.empty()) {
-        print_archive_errors(archive);
-        return kRuntimeError;
+    if (entry.size_real || entry.size_compressed || entry.name.empty())
+        return false;
+
+    const char last = entry.name[entry.name.size() - 1];
+    return last == '/' || last == '\\';
+}
+
+bool path_exists_as_directory(const std::string& path)
+{
+    struct _stat info;
+    return _stat(path.c_str(), &info) == 0 && (info.st_mode & _S_IFDIR) != 0;
+}
+
+bool path_exists(const std::string& path)
+{
+    struct _stat info;
+    return _stat(path.c_str(), &info) == 0;
+}
+
+std::vector<std::string> output_ancestors(std::string output_key)
+{
+    std::vector<std::string> result;
+    for (;;) {
+        const std::size_t separator = output_key.find_last_of("/\\");
+        if (separator == std::string::npos)
+            break;
+
+        output_key.erase(separator);
+        if (!output_key.empty())
+            result.push_back(output_key);
     }
 
-    std::size_t safe_entries = 0;
-    std::size_t unsafe_entries = 0;
-    std::size_t duplicate_outputs = 0;
-    std::size_t existing_outputs = 0;
-    std::size_t out_of_bounds = 0;
-    std::uint64_t would_write_bytes = 0;
-    std::map<std::string, std::string> planned_outputs;
-    std::vector<std::string> planned_paths;
+    return result;
+}
 
-    for (std::vector<xr_unpack::ArchiveEntry>::const_iterator i = archive.entries.begin(); i != archive.entries.end(); ++i) {
+ExtractPlan build_extract_plan(const char* archive_path, const char* output_dir)
+{
+    ExtractPlan plan;
+    plan.archive = xr_unpack::read_archive(archive_path);
+    plan.safe_entries = 0;
+    plan.unsafe_entries = 0;
+    plan.duplicate_outputs = 0;
+    plan.existing_outputs = 0;
+    plan.out_of_bounds = 0;
+    plan.would_write_bytes = 0;
+
+    std::map<std::string, std::string> planned_outputs;
+    std::set<std::string> planned_files;
+
+    for (std::vector<xr_unpack::ArchiveEntry>::const_iterator i = plan.archive.entries.begin(); i != plan.archive.entries.end(); ++i) {
         const xr_unpack::PathValidationResult output = xr_unpack::compose_output_path(output_dir, i->name);
         if (!output.ok) {
-            ++unsafe_entries;
+            ++plan.unsafe_entries;
             continue;
         }
 
-        ++safe_entries;
-        would_write_bytes += i->size_real;
+        ++plan.safe_entries;
+        plan.would_write_bytes += i->size_real;
 
+        const bool directory = entry_is_directory_placeholder(*i);
         const std::string output_key = lowercase(output.normalized);
         if (planned_outputs.find(output_key) != planned_outputs.end())
-            ++duplicate_outputs;
+            ++plan.duplicate_outputs;
         else
             planned_outputs[output_key] = i->name;
 
-        if (xr_unpack::should_refuse_existing_output(output.normalized))
-            ++existing_outputs;
+        const std::vector<std::string> ancestors = output_ancestors(output_key);
+        for (std::vector<std::string>::const_iterator ancestor = ancestors.begin(); ancestor != ancestors.end(); ++ancestor) {
+            if (planned_files.find(*ancestor) != planned_files.end()) {
+                ++plan.duplicate_outputs;
+                break;
+            }
+        }
+
+        if (!directory)
+            planned_files.insert(output_key);
+
+        if (directory) {
+            if (path_exists(output.normalized) && !path_exists_as_directory(output.normalized))
+                ++plan.existing_outputs;
+        }
+        else if (xr_unpack::should_refuse_existing_output(output.normalized))
+            ++plan.existing_outputs;
 
         const std::uint64_t end = static_cast<std::uint64_t>(i->offset) + i->size_compressed;
-        if (end > archive.info.archive_size)
-            ++out_of_bounds;
+        if (end > plan.archive.info.archive_size)
+            ++plan.out_of_bounds;
 
-        planned_paths.push_back(output.normalized);
+        PlannedEntry planned;
+        planned.entry = &(*i);
+        planned.output_path = output.normalized;
+        planned.directory = directory;
+        plan.entries.push_back(planned);
     }
 
-    std::cout << "archive: " << archive.info.path << "\n";
-    std::cout << "output_dir: " << output_dir << "\n";
-    std::cout << "mode: dry-run\n";
-    std::cout << "entries: " << archive.entries.size() << "\n";
-    std::cout << "safe_entries: " << safe_entries << "\n";
-    std::cout << "unsafe_entries: " << unsafe_entries << "\n";
-    std::cout << "duplicates: " << duplicate_outputs << "\n";
-    std::cout << "existing_outputs: " << existing_outputs << "\n";
-    std::cout << "out_of_bounds_entries: " << out_of_bounds << "\n";
-    std::cout << "would_write_bytes: " << would_write_bytes << "\n";
-    std::cout << "status: " << ((unsafe_entries || duplicate_outputs || out_of_bounds) ? "failed" : "ok") << "\n";
+    return plan;
+}
 
-    const std::size_t print_count = options.has_limit ? std::min(options.limit, planned_paths.size()) : planned_paths.size();
+void print_extract_plan_summary(const ExtractPlan& plan, const char* output_dir, const char* mode)
+{
+    std::cout << "archive: " << plan.archive.info.path << "\n";
+    std::cout << "output_dir: " << output_dir << "\n";
+    std::cout << "mode: " << mode << "\n";
+    std::cout << "entries: " << plan.archive.entries.size() << "\n";
+    std::cout << "safe_entries: " << plan.safe_entries << "\n";
+    std::cout << "unsafe_entries: " << plan.unsafe_entries << "\n";
+    std::cout << "duplicates: " << plan.duplicate_outputs << "\n";
+    std::cout << "existing_outputs: " << plan.existing_outputs << "\n";
+    std::cout << "out_of_bounds_entries: " << plan.out_of_bounds << "\n";
+    std::cout << "would_write_bytes: " << plan.would_write_bytes << "\n";
+    std::cout << "status: " << ((plan.unsafe_entries || plan.duplicate_outputs || plan.existing_outputs || plan.out_of_bounds) ? "failed" : "ok") << "\n";
+}
+
+bool extract_plan_is_safe_to_write(const ExtractPlan& plan)
+{
+    return plan.archive.errors.empty() &&
+        !plan.unsafe_entries &&
+        !plan.duplicate_outputs &&
+        !plan.existing_outputs &&
+        !plan.out_of_bounds;
+}
+
+int plan_extract_dry_run(const char* archive_path, const char* output_dir, const ExtractOptions& options)
+{
+    const ExtractPlan plan = build_extract_plan(archive_path, output_dir);
+    if (!plan.archive.errors.empty()) {
+        print_archive_errors(plan.archive);
+        return kRuntimeError;
+    }
+
+    print_extract_plan_summary(plan, output_dir, "dry-run");
+
+    const std::size_t print_count = options.has_limit ? std::min(options.limit, plan.entries.size()) : plan.entries.size();
     std::cout << "planned_paths:\n";
     for (std::size_t i = 0; i < print_count; ++i)
-        std::cout << planned_paths[i] << "\n";
+        std::cout << plan.entries[i].output_path << "\n";
 
-    if (options.has_limit && planned_paths.size() > print_count)
-        std::cout << "# output limited to " << print_count << " of " << planned_paths.size() << " planned paths\n";
+    if (options.has_limit && plan.entries.size() > print_count)
+        std::cout << "# output limited to " << print_count << " of " << plan.entries.size() << " planned paths\n";
 
     std::cout << "no files were written\n";
 
-    return (unsafe_entries || duplicate_outputs || out_of_bounds) ? kRuntimeError : kOk;
+    return extract_plan_is_safe_to_write(plan) ? kOk : kRuntimeError;
+}
+
+bool create_directory_if_needed(const std::string& path)
+{
+    if (path.empty() || path_exists_as_directory(path))
+        return true;
+
+    if (CreateDirectoryA(path.c_str(), 0))
+        return true;
+
+    return GetLastError() == ERROR_ALREADY_EXISTS && path_exists_as_directory(path);
+}
+
+bool ensure_parent_directories(const std::string& file_path)
+{
+    const std::size_t last_separator = file_path.find_last_of("/\\");
+    if (last_separator == std::string::npos)
+        return true;
+
+    const std::string directory = file_path.substr(0, last_separator);
+    if (directory.empty())
+        return true;
+
+    std::string current;
+    std::size_t pos = 0;
+    if (directory.size() >= 2 && directory[1] == ':') {
+        current = directory.substr(0, 2);
+        pos = 2;
+        if (pos < directory.size() && (directory[pos] == '/' || directory[pos] == '\\')) {
+            current += directory[pos];
+            ++pos;
+        }
+    }
+
+    while (pos < directory.size()) {
+        const std::size_t next = directory.find_first_of("/\\", pos);
+        const std::string component = directory.substr(pos, next == std::string::npos ? std::string::npos : next - pos);
+        if (!component.empty()) {
+            if (!current.empty() && current[current.size() - 1] != '/' && current[current.size() - 1] != '\\')
+                current += '/';
+            current += component;
+            if (!create_directory_if_needed(current))
+                return false;
+        }
+
+        if (next == std::string::npos)
+            break;
+        pos = next + 1;
+    }
+
+    return true;
+}
+
+bool read_exact(std::ifstream& file, char* data, std::size_t size)
+{
+    if (!size)
+        return true;
+
+    file.read(data, static_cast<std::streamsize>(size));
+    return file.gcount() == static_cast<std::streamsize>(size);
+}
+
+bool copy_stored_entry(std::ifstream& archive_file, std::ofstream& output_file, const xr_unpack::ArchiveEntry& entry, std::uint64_t& bytes_written)
+{
+    const std::size_t kChunkSize = 1024 * 1024;
+    std::vector<char> buffer(kChunkSize);
+    std::uint32_t remaining = entry.size_real;
+
+    archive_file.seekg(entry.offset, std::ios::beg);
+    if (!archive_file)
+        return false;
+
+    while (remaining) {
+        const std::size_t request = std::min<std::size_t>(buffer.size(), remaining);
+        if (!read_exact(archive_file, buffer.data(), request))
+            return false;
+
+        output_file.write(buffer.data(), static_cast<std::streamsize>(request));
+        if (!output_file)
+            return false;
+
+        remaining -= static_cast<std::uint32_t>(request);
+        bytes_written += request;
+    }
+
+    return true;
+}
+
+bool copy_compressed_entry(std::ifstream& archive_file, std::ofstream& output_file, const xr_unpack::ArchiveEntry& entry, std::uint64_t& bytes_written)
+{
+    const std::uint32_t kMaxBufferedEntrySize = 256u * 1024u * 1024u;
+    if (entry.size_real > kMaxBufferedEntrySize || entry.size_compressed > kMaxBufferedEntrySize) {
+        std::cerr << "xr_unpack extract: compressed entry is too large to buffer safely: " << entry.name << "\n";
+        return false;
+    }
+
+    std::vector<unsigned char> compressed(entry.size_compressed);
+    std::vector<unsigned char> decompressed(entry.size_real);
+
+    archive_file.seekg(entry.offset, std::ios::beg);
+    if (!archive_file)
+        return false;
+
+    if (!compressed.empty() && !read_exact(archive_file, reinterpret_cast<char*>(compressed.data()), compressed.size()))
+        return false;
+
+    const std::uint32_t decompressed_size = rtc_decompress(decompressed.empty() ? 0 : decompressed.data(), entry.size_real, compressed.empty() ? 0 : compressed.data(), entry.size_compressed);
+    if (decompressed_size != entry.size_real) {
+        std::cerr << "xr_unpack extract: decompressed size mismatch for entry: " << entry.name << "\n";
+        return false;
+    }
+
+    if (!decompressed.empty()) {
+        output_file.write(reinterpret_cast<const char*>(decompressed.data()), static_cast<std::streamsize>(decompressed.size()));
+        if (!output_file)
+            return false;
+    }
+
+    bytes_written += decompressed.size();
+    return true;
+}
+
+int write_extract(const char* archive_path, const char* output_dir)
+{
+    const ExtractPlan plan = build_extract_plan(archive_path, output_dir);
+    if (!plan.archive.errors.empty()) {
+        print_archive_errors(plan.archive);
+        return kRuntimeError;
+    }
+
+    print_extract_plan_summary(plan, output_dir, "write");
+
+    if (!extract_plan_is_safe_to_write(plan)) {
+        std::cerr << "xr_unpack extract: refusing to write because the extraction plan is not safe\n";
+        return kRuntimeError;
+    }
+
+    std::ifstream archive_file(archive_path, std::ios::binary);
+    if (!archive_file) {
+        std::cerr << "xr_unpack extract: cannot open archive for reading: " << archive_path << "\n";
+        return kRuntimeError;
+    }
+
+    std::size_t entries_written = 0;
+    std::uint64_t bytes_written = 0;
+
+    for (std::vector<PlannedEntry>::const_iterator i = plan.entries.begin(); i != plan.entries.end(); ++i) {
+        if (i->directory) {
+            if (!ensure_parent_directories(i->output_path)) {
+                std::cerr << "xr_unpack extract: cannot create parent directory for: " << i->output_path << "\n";
+                return kRuntimeError;
+            }
+
+            if (!create_directory_if_needed(i->output_path)) {
+                std::cerr << "xr_unpack extract: cannot create output directory: " << i->output_path << "\n";
+                return kRuntimeError;
+            }
+
+            ++entries_written;
+            continue;
+        }
+
+        if (!ensure_parent_directories(i->output_path)) {
+            std::cerr << "xr_unpack extract: cannot create output directory for: " << i->output_path << "\n";
+            return kRuntimeError;
+        }
+
+        if (xr_unpack::should_refuse_existing_output(i->output_path)) {
+            std::cerr << "xr_unpack extract: output already exists: " << i->output_path << "\n";
+            return kRuntimeError;
+        }
+
+        std::ofstream output_file(i->output_path.c_str(), std::ios::binary);
+        if (!output_file) {
+            std::cerr << "xr_unpack extract: cannot create output file: " << i->output_path << "\n";
+            return kRuntimeError;
+        }
+
+        const bool ok = (i->entry->size_real == i->entry->size_compressed)
+            ? copy_stored_entry(archive_file, output_file, *i->entry, bytes_written)
+            : copy_compressed_entry(archive_file, output_file, *i->entry, bytes_written);
+
+        if (!ok) {
+            std::cerr << "xr_unpack extract: failed while writing entry: " << i->entry->name << "\n";
+            return kRuntimeError;
+        }
+
+        ++entries_written;
+    }
+
+    std::cout << "entries_written: " << entries_written << "\n";
+    std::cout << "bytes_written: " << bytes_written << "\n";
+    std::cout << "status: ok\n";
+    return kOk;
 }
 }
 
@@ -381,7 +696,7 @@ int main(int argc, char** argv)
     else if (command == "extract") {
         if (argc < 4) {
             std::cerr << "xr_unpack: invalid arguments\n";
-            std::cerr << "usage: xr_unpack extract <archive> <out_dir> --dry-run [--limit N]\n";
+            std::cerr << "usage: xr_unpack extract <archive> <out_dir> (--dry-run [--limit N] | --write)\n";
             result = kUsageError;
         }
         else if (std::string(argv[3]).empty()) {
@@ -389,11 +704,11 @@ int main(int argc, char** argv)
             result = kUsageError;
         }
         else {
-            DryRunOptions options;
+            ExtractOptions options;
             if (!parse_extract_options(argc, argv, options))
                 result = kUsageError;
             else if (!options.dry_run)
-                result = report_extract_disabled(argv[2]);
+                result = options.write ? write_extract(argv[2], argv[3]) : report_extract_disabled(argv[2]);
             else
                 result = plan_extract_dry_run(argv[2], argv[3], options);
         }

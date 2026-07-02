@@ -4,7 +4,7 @@ This page is a research-oriented note for X-Ray archive formats relevant to the 
 
 The project currently focuses on source restoration. Archive research should support lawful compatibility testing, local modding workflows, and future safe tooling.
 
-`tools/xr_unpack/` now contains an opt-in read-only CLI for proven `.xp*` directory metadata. It must not extract or write archive contents until payload handling is backed by reliable source-code evidence and synthetic tests.
+`tools/xr_unpack/` now contains an opt-in CLI for proven `.xp*` directory metadata and explicit extraction. It writes files only when `extract --write` is passed and must not be used to commit proprietary extracted data.
 
 ## Known / Expected Archive Extensions
 
@@ -31,7 +31,7 @@ Known structure for the supported `.xp*` directory metadata phase:
 * each directory entry is `stringZ path`, `u32 offset`, `u32 unpacked_size`, `u32 packed_size`;
 * entries are registered under the archive base name plus the stored relative path at runtime.
 
-`xr_unpack info`, `xr_unpack list`, `xr_unpack verify`, and `xr_unpack extract --dry-run` use only this metadata and do not read or extract file payloads.
+`xr_unpack info`, `xr_unpack list`, `xr_unpack verify`, and `xr_unpack extract --dry-run` use this metadata without writing files. `xr_unpack extract --write` uses the same metadata and safety checks, reads payloads at the recorded offsets, copies stored entries directly, and decompresses compressed entries with the same runtime `rtc_decompress` path used by `LocatorAPI`.
 
 ## Unknowns To Investigate
 
