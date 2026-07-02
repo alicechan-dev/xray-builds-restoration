@@ -138,6 +138,7 @@ public:
 	virtual void ReceivePhrase			(DIALOG_SHARED_PTR& phrase_dialog);
 	virtual void UpdateAvailableDialogs	(CPhraseDialogManager* partner);
 	virtual void TryToTalk				();
+	virtual void TryToTalk				(CInventoryOwner* talk_partner);
 
 	virtual void reinit			();
 	virtual void reload			(LPCSTR section);

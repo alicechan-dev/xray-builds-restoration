@@ -99,7 +99,7 @@ void CAI_PhraseDialogManager::UpdateAvailableDialogs	(CPhraseDialogManager* part
 	m_AvailableDialogs.clear();
 	m_CheckedDialogs.clear();
 
-	if(*m_sStartDialog) 
+	if(*m_sStartDialog)
 		inherited::AddAvailableDialog(*m_sStartDialog, partner);
 	inherited::AddAvailableDialog("hello_dialog", partner);
 

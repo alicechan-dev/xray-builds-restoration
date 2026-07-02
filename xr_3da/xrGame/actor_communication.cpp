@@ -247,11 +247,16 @@ void   CActor::UpdateAvailableDialogs	(CPhraseDialogManager* partner)
 
 void CActor::TryToTalk()
 {
-	VERIFY(m_pPersonWeLookingAt);
+	TryToTalk(m_pPersonWeLookingAt);
+}
+
+void CActor::TryToTalk(CInventoryOwner* talk_partner)
+{
+	VERIFY(talk_partner);
 
 	if(!IsTalking())
 	{
-		RunTalkDialog(m_pPersonWeLookingAt);
+		RunTalkDialog(talk_partner);
 	}
 }
 

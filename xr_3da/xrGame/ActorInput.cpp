@@ -301,7 +301,7 @@ void CActor::ActorUse()
 
 			if(pEntityAliveWeLookingAt->g_Alive())
 			{
-				TryToTalk();
+				TryToTalk(pPersonWeLookingAt);
 			}
 			//обыск трупа
 			else  if(!Level().IR_GetKeyState(DIK_LSHIFT))
