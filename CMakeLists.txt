@@ -1819,6 +1819,10 @@ if(MSVC)
     /NODEFAULTLIB:x:\\xrParticles.lib
     /NODEFAULTLIB:x:\\xrParticlesB.lib
     /NODEFAULTLIB:x:\\xrNetServer.lib
+    # Debug renderer/game paths import these helpers from the original
+    # xr_3da.lib surface. Keep decorated names in a .def so CMake does not
+    # escape '$' inside template-based MSVC symbols.
+    "$<$<OR:$<CONFIG:Debug>,$<CONFIG:Mixed>>:/DEF:${CMAKE_CURRENT_SOURCE_DIR}/cmake/compat/msvc/xr3da_debug_exports.def>"
     $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL /MAP>
     $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
   )

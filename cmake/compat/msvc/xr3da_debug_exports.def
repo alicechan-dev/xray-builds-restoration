@@ -1,0 +1,9 @@
+EXPORTS
+  ?dbg_Draw@CBackend@@QAEXW4_D3DPRIMITIVETYPE@@PAUL@FVF@@HPAGH@Z
+  ?dbg_Draw@CBackend@@QAEXW4_D3DPRIMITIVETYPE@@PAUL@FVF@@H@Z
+  ?dbg_DrawOBB@CBackend@@QAEXAAU?$_matrix@M@@AAU?$_vector3@M@@I@Z
+  ?dbg_DrawTRI@CBackend@@QAEXAAU?$_matrix@M@@AAU?$_vector3@M@@11I@Z
+  ?dbg_DrawLINE@CBackend@@QAEXAAU?$_matrix@M@@AAU?$_vector3@M@@1I@Z
+  ?dbg_DrawEllipse@CBackend@@QAEXAAU?$_matrix@M@@I@Z
+  ?dbgRender@CObjectSpace@@QAEXXZ
+  ?bDebug@@3HA DATA
