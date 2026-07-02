@@ -4,6 +4,7 @@ add_executable(xr_unpack
   src/archive_reader.h
   src/path_safety.cpp
   src/path_safety.h
+  "${PROJECT_SOURCE_DIR}/xrCore/LzHuf.cpp"
 )
 
 set_target_properties(xr_unpack PROPERTIES
@@ -26,13 +27,18 @@ endforeach()
 
 target_include_directories(xr_unpack PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src"
+  "${PROJECT_SOURCE_DIR}/xrCore"
+  "${PROJECT_SOURCE_DIR}/cmake/compat/msvc"
 )
 
 target_compile_definitions(xr_unpack PRIVATE
   WIN32
   _CONSOLE
+  _FARQ=
+  _HAS_AUTO_PTR_ETC=1
   $<$<CONFIG:Debug>:_DEBUG>
   $<$<NOT:$<CONFIG:Debug>>:NDEBUG>
+  $<$<CONFIG:Mixed>:MIXED>
 )
 
 if(MSVC)
@@ -40,6 +46,7 @@ if(MSVC)
     /nologo
     /W3
     /GR
+    /Gz
     /EHsc
   )
 
@@ -49,3 +56,7 @@ if(MSVC)
     $<$<NOT:$<CONFIG:Debug>>:/DEBUG /INCREMENTAL:NO /OPT:REF /OPT:ICF>
   )
 endif()
+
+target_link_libraries(xr_unpack PRIVATE
+  xrCore
+)

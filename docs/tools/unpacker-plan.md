@@ -2,7 +2,7 @@
 
 This document outlines the technical plan for the `xr_unpack` X-Ray archive unpacker scaffold in `tools/xr_unpack/`.
 
-The current implementation is intentionally a safe CLI skeleton only. Archive parsing and extraction are not implemented yet; format research is required before the tool may read payloads or write extracted files.
+The current implementation is a safe read-only inspection tool. It parses proven `.xp*` directory metadata but does not read or write extracted file payloads.
 
 ## Goals
 
@@ -42,7 +42,7 @@ Initial research should focus on historical X-Ray archives referenced by the bui
 * directory chunks compatible with the existing `tools/xrArchiveList/` diagnostic;
 * any variant required by build 1935-era runtime compatibility testing.
 
-Support should be added only after the format is documented well enough to extract safely.
+The first supported phase is based on repository evidence from `xrCore/LocatorAPI.cpp`, `xrCompress/xrCompress.cpp`, and `tools/xrArchiveList/`: top-level chunks contain a directory chunk with entry records of `stringZ path`, `u32 offset`, `u32 unpacked size`, and `u32 packed size`. Extraction support should be added only after payload compression and overwrite behavior are documented well enough to extract safely.
 
 ## CLI Design
 
@@ -59,22 +59,23 @@ xr_unpack verify <archive>
 Suggested command behavior:
 
 * `help` prints usage and current limitations.
-* `info`, `list`, `extract`, and `verify` currently fail with `archive parsing is not implemented yet; format research is required`.
-* `list` prints archive entry names and optional metadata without writing files.
+* `info`, `list`, and `verify` perform read-only directory inspection.
+* `list` prints archive entry names, offsets, packed sizes, unpacked sizes, and compression status without writing files.
 * `extract` writes files under `<out_dir>` after safety validation.
-* `verify` checks structure, directory entries, sizes, compression metadata, and hashes/checksums when known.
-* `info` reports archive family, header fields, directory chunk status, compression flags, and known limitations.
+* `extract` currently refuses with `archive parsing is read-only currently; extraction is not implemented yet`.
+* `verify` checks structure, directory entries, bounds, duplicate names, and path-safety warnings when known.
+* `info` reports archive family, directory chunk status, compression flags, entry count, and known limitations.
 
 ## Format Research Checklist
 
-Before implementation, document:
+Before extraction implementation, document:
 
 * archive header layout and magic/version fields, if any;
-* chunk structure and directory table layout;
+* any additional chunk types beyond the proven directory chunk;
 * entry name encoding and path separator conventions;
 * packed and unpacked size fields;
 * file offset rules and alignment requirements;
-* compression flags and algorithms, including LZHUF/LZO use where applicable;
+* payload compression flags and algorithms, including LZHUF/LZO use where applicable;
 * checksum, hash, or integrity behavior;
 * behavior differences between historical archive versions;
 * how the runtime resolves duplicate names or archive priority.
@@ -135,8 +136,9 @@ The unpacker should produce predictable paths that match the runtime's virtual f
 1. Document archive structures from `xrFS`, `xrCompress`, and the existing archive listing helper.
 2. Keep the `tools/xr_unpack/` CLI skeleton buildable behind `BUILD_XR_UNPACK`.
 3. Create synthetic archive fixtures with no proprietary content.
-4. Extend the read-only listing behavior into `xr_unpack list`.
-5. Add `info` and `verify` behavior for structural validation.
-6. Add safe selected-file extraction with filters and dry-run support.
-7. Add full extraction only after path safety, overwrite policy, and integrity tests are stable.
-8. Document modding workflow examples using only lawful local data and synthetic repository fixtures.
+4. Extend the read-only listing behavior into `xr_unpack list`. Done for proven directory metadata.
+5. Add `info` and `verify` behavior for structural validation. Done for proven directory metadata.
+6. Add synthetic fixtures for the directory parser.
+7. Add safe selected-file extraction with filters and dry-run support.
+8. Add full extraction only after path safety, overwrite policy, and integrity tests are stable.
+9. Document modding workflow examples using only lawful local data and synthetic repository fixtures.

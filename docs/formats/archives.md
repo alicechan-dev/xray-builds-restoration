@@ -4,7 +4,7 @@ This page is a research-oriented note for X-Ray archive formats relevant to the 
 
 The project currently focuses on source restoration. Archive research should support lawful compatibility testing, local modding workflows, and future safe tooling.
 
-`tools/xr_unpack/` now contains an opt-in CLI scaffold for this future work. It must not parse, extract, or write archive contents until the format notes below are backed by reliable source-code evidence and synthetic tests.
+`tools/xr_unpack/` now contains an opt-in read-only CLI for proven `.xp*` directory metadata. It must not extract or write archive contents until payload handling is backed by reliable source-code evidence and synthetic tests.
 
 ## Known / Expected Archive Extensions
 
@@ -17,15 +17,31 @@ Known or expected archive families to investigate:
 
 The exact extension set, version range, and compatibility boundaries still need to be documented.
 
+## Proven Current Layout
+
+The current read-only parser is based on matching behavior in `xrCore/LocatorAPI.cpp`, `xrCompress/xrCompress.cpp`, and `tools/xrArchiveList/`.
+
+Known structure for the supported `.xp*` directory metadata phase:
+
+* top-level archive data is scanned as chunks;
+* each chunk starts with little-endian `u32 type` and `u32 size`;
+* bit `1 << 31` in `type` marks compressed chunk payload;
+* chunk type `1` is the directory table used by `LocatorAPI::ProcessArchive`;
+* compressed directory chunks are decompressed through the existing LZHUF helper;
+* each directory entry is `stringZ path`, `u32 offset`, `u32 unpacked_size`, `u32 packed_size`;
+* entries are registered under the archive base name plus the stored relative path at runtime.
+
+`xr_unpack info`, `xr_unpack list`, and `xr_unpack verify` use only this metadata and do not read or extract file payloads.
+
 ## Unknowns To Investigate
 
 Research tasks:
 
 * identify archive header layout, magic values, and version fields;
-* identify chunk framing and directory table layout;
+* identify additional chunk framing variants beyond the proven directory chunk;
 * identify filename encoding, separator behavior, and case rules;
 * identify packed size, unpacked size, offsets, and alignment rules;
-* identify compression flags and algorithms;
+* identify file payload compression flags and algorithms;
 * identify checksum, hash, or integrity behavior;
 * identify duplicate entry behavior and archive priority rules;
 * compare historical archive versions used by nearby X-Ray builds.
@@ -43,9 +59,10 @@ The existing archive listing helper treats archive content as typed chunks and l
 
 ### Directory Table
 
-Research should confirm:
+Proven for the current `.xp*` directory path: the directory chunk can be compressed with the top-level compression marker, and each entry stores a NUL-terminated path plus offset, unpacked size, and packed size fields.
 
-* whether the directory chunk can be compressed;
+Research should still confirm:
+
 * whether entry records contain flags beyond name, offset, size, and compressed-size style fields;
 * how file offsets relate to chunk boundaries;
 * how duplicate virtual paths are resolved;
