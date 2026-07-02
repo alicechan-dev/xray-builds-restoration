@@ -32,7 +32,15 @@ public:
 
 	CMatrix			()
 	{
-		Memory.mem_fill	(this,0,sizeof(CMatrix));
+		::memset		(&xform,0,sizeof(xform));
+		dwFrame			= 0;
+		dwMode			= modeProgrammable;
+		tcm				= 0;
+		::memset		(&scaleU,0,sizeof(scaleU));
+		::memset		(&scaleV,0,sizeof(scaleV));
+		::memset		(&rotate,0,sizeof(rotate));
+		::memset		(&scrollU,0,sizeof(scrollU));
+		::memset		(&scrollV,0,sizeof(scrollV));
 	}
 
 	IC void			tc_trans	(Fmatrix& T, float u, float v)

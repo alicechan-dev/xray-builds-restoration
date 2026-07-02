@@ -23,7 +23,14 @@ public:
 
 	CConstant		()
 	{
-		Memory.mem_fill	(this,0,sizeof(CConstant));
+		const_float.set	(0,0,0,0);
+		const_dword		= 0;
+		dwFrame			= 0;
+		dwMode			= modeProgrammable;
+		::memset		(&_R,0,sizeof(_R));
+		::memset		(&_G,0,sizeof(_G));
+		::memset		(&_B,0,sizeof(_B));
+		::memset		(&_A,0,sizeof(_A));
 	}
 	IC void			set_float	(float r, float g, float b, float a)
 	{
