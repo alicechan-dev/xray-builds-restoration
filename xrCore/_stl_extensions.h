@@ -38,8 +38,8 @@ public:
 	void	clear				()								{ erase(begin(),end());				} 
 	void	clear_and_free		()								{ std::vector<T>::clear();			}
 	void	clear_not_free()									{ std::vector<T>::clear();	}
-	const_reference operator[]	(size_type _Pos) const			{ {VERIFY(_Pos<size());} return (*(begin() + _Pos)); }
-	reference operator[]		(size_type _Pos)				{ {VERIFY(_Pos<size());} return (*(begin() + _Pos)); }
+	const_reference operator[]	(size_type _Pos) const			{ {VERIFY(_Pos<size());} return std::vector<T>::operator[](_Pos); }
+	reference operator[]		(size_type _Pos)				{ {VERIFY(_Pos<size());} return std::vector<T>::operator[](_Pos); }
 };
 
 template	<>												
@@ -108,8 +108,8 @@ template	<typename T>									class	xr_vector		: public std::vector<T,xr_allocat
 	void	clear()											{ clear_not_free	();	} 
 #endif
 
-	const_reference operator[](size_type _Pos) const		{ {VERIFY(_Pos<size());} return (*(begin() + _Pos)); }
-	reference operator[](size_type _Pos)					{ {VERIFY(_Pos<size());} return (*(begin() + _Pos)); }
+	const_reference operator[](size_type _Pos) const		{ {VERIFY(_Pos<size());} return __super::operator[](_Pos); }
+	reference operator[](size_type _Pos)					{ {VERIFY(_Pos<size());} return __super::operator[](_Pos); }
 };
 template	<>												class	xr_vector<bool>	: public std::vector<bool,xr_allocator_t<bool> >						{ public: 
 	u32		size() const									{ return (u32)__super::size();	} 
