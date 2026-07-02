@@ -60,6 +60,7 @@ Current phases:
 * `tools/xrArchiveList/CMakeLists.txt` owns the `xrArchiveList` target.
 * `tools/xr_unpack/CMakeLists.txt` owns the `xr_unpack` target.
 * `xrXMLParser/CMakeLists.txt` owns the `xrXMLParser` runtime target as the first low-risk runtime extraction.
+* `xr_3da/xrCDB/CMakeLists.txt` owns the `xrCDB` runtime target.
 
 Future phases should move runtime components one target at a time, preserving target names, output paths, dependency discovery, and historical compatibility settings.
 
