@@ -66,21 +66,37 @@ void CActor::detach_Vehicle()
 
 bool CActor::use_Vehicle(CPhysicsShellHolder* object)
 {
-	
+	BOOL trace_use = strstr(Core.Params,"-traceuse") ? TRUE : FALSE;
 	CHolderCustom* vehicle=smart_cast<CHolderCustom*>(object);
 	Fvector center;
 	Center(center);
+	if(trace_use)
+		Msg("[use_vehicle] object=%p vehicle=%p holder=%p", object, vehicle, m_holder);
 	if(m_holder){
-		if(!vehicle&& m_holder->Use(Device.vCameraPosition, Device.vCameraDirection,center)) detach_Vehicle();
-		else{ 
-			if(m_holder==vehicle)
-				if(m_holder->Use(Device.vCameraPosition, Device.vCameraDirection,center))detach_Vehicle();
+		if(!vehicle){
+			bool used = m_holder->Use(Device.vCameraPosition, Device.vCameraDirection,center);
+			if(trace_use)
+				Msg("[use_vehicle] current holder use without focused vehicle: used=%d", used ? 1 : 0);
+			if(used) detach_Vehicle();
+		}
+		else{
+			if(m_holder==vehicle){
+				bool used = m_holder->Use(Device.vCameraPosition, Device.vCameraDirection,center);
+				if(trace_use)
+					Msg("[use_vehicle] current holder use focused vehicle: used=%d", used ? 1 : 0);
+				if(used)detach_Vehicle();
+			}
+			else if(trace_use)
+				Msg("[use_vehicle] focused vehicle is not current holder");
 		}
 		return true;
 	}else{
 		if(vehicle)
 		{
-			if( vehicle->Use(Device.vCameraPosition, Device.vCameraDirection,center))
+			bool used = vehicle->Use(Device.vCameraPosition, Device.vCameraDirection,center);
+			if(trace_use)
+				Msg("[use_vehicle] vehicle Use returned %d", used ? 1 : 0);
+			if(used)
 			{
 //				if (pCamBobbing){Level().Cameras.RemoveEffector(cefBobbing); pCamBobbing=0;}
 				if (pCamBobbing)
@@ -90,9 +106,13 @@ bool CActor::use_Vehicle(CPhysicsShellHolder* object)
 				}
 
 				attach_Vehicle(vehicle);
+				if(trace_use)
+					Msg("[use_vehicle] attach requested, holder=%p", m_holder);
 			}
 			return true;
 		}
+		if(trace_use)
+			Msg("[use_vehicle] no vehicle cast from object");
 		return false;
 	}
 }

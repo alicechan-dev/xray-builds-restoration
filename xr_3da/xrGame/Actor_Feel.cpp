@@ -49,16 +49,6 @@ void CActor::PickupModeUpdate()
 {
 	if(!m_bPickupMode) return;
 
-	//подбирание объекта
-	if(inventory().m_pTarget && inventory().m_pTarget->Useful() &&
-		m_pUsableObject && m_pUsableObject->nonscript_usable())
-	{
-		NET_Packet P;
-		u_EventGen(P,GE_OWNERSHIP_TAKE, ID());
-		P.w_u16(inventory().m_pTarget->ID());
-		u_EventSend(P);
-	}
-
 	// ????? GetNearest ?????
 	feel_touch_update(Position(), /*inventory().GetTakeDist()*/m_fPickupInfoRadius);
 
@@ -67,6 +57,33 @@ void CActor::PickupModeUpdate()
 	{
 		PickupInfoDraw(*it);
 	}
+}
+
+bool CActor::PickupTarget()
+{
+	Collide::rq_result RQ = HUD().GetCurrentRayQuery();
+	if(!RQ.O)
+	{
+		CObject* current_entity = Level().CurrentEntity();
+		if(current_entity)
+			current_entity->setEnabled(false);
+		Level().ObjectSpace.RayPick(Device.vCameraPosition, Device.vCameraDirection, inventory().GetTakeDist(), Collide::rqtBoth, RQ);
+		if(current_entity)
+			current_entity->setEnabled(true);
+	}
+
+	if(!RQ.O || RQ.range >= inventory().GetTakeDist())
+		return false;
+
+	PIItem target = smart_cast<PIItem>(RQ.O);
+	if(!target || !target->Useful() || target->H_Parent())
+		return false;
+
+	NET_Packet P;
+	u_EventGen(P,GE_OWNERSHIP_TAKE, ID());
+	P.w_u16(target->ID());
+	u_EventSend(P);
+	return true;
 }
 
 void CActor::PickupInfoDraw(CObject* object)

@@ -234,23 +234,70 @@ void CActor::IR_OnMouseMove(int dx, int dy)
 void CActor::ActorUse()
 {
 	PickupModeOn();
+	bool picked_up = PickupTarget();
+	BOOL trace_use = strstr(Core.Params,"-traceuse") ? TRUE : FALSE;
 
 	if(m_PhysicMovementControl->PHCapture())
 		m_PhysicMovementControl->PHReleaseObject();
 
-	if(!m_pUsableObject) return;
-
-	m_pUsableObject->use(this);
-	
-
-	if(m_pUsableObject->nonscript_usable())
+	Collide::rq_result RQ = HUD().GetCurrentRayQuery();
+	if(!RQ.O)
 	{
-		if(m_pPersonWeLookingAt)
+		CObject* current_entity = Level().CurrentEntity();
+		if(current_entity)
+			current_entity->setEnabled(false);
+		Level().ObjectSpace.RayPick(Device.vCameraPosition, Device.vCameraDirection, m_fPickupInfoRadius, Collide::rqtBoth, RQ);
+		if(current_entity)
+			current_entity->setEnabled(true);
+	}
+
+	CGameObject* focused_object = smart_cast<CGameObject*>(RQ.O);
+	CPhysicsShellHolder* object = smart_cast<CPhysicsShellHolder*>(RQ.O);
+	CUsableScriptObject* pFocusedUsable = smart_cast<CUsableScriptObject*>(RQ.O);
+	CUsableScriptObject* pUsableObject = m_pUsableObject ? m_pUsableObject : pFocusedUsable;
+	CInventoryOwner* pFocusedPerson = smart_cast<CInventoryOwner*>(RQ.O);
+	CInventoryOwner* pPersonWeLookingAt = m_pPersonWeLookingAt ? m_pPersonWeLookingAt : pFocusedPerson;
+	CHolderCustom* pFocusedVehicle = smart_cast<CHolderCustom*>(RQ.O);
+	CHolderCustom* pVehicleWeLookingAt = m_pVehicleWeLookingAt ? m_pVehicleWeLookingAt : pFocusedVehicle;
+	CCar* pFocusedCar = smart_cast<CCar*>(pVehicleWeLookingAt);
+	if(!object && pFocusedCar)
+		object = smart_cast<CPhysicsShellHolder*>(pFocusedCar);
+
+	if(trace_use)
+	{
+		Msg("[use] ray obj=%p name=%s section=%s range=%.3f cls=%I64u picked=%d usable=%p person=%p vehicle=%p focused_vehicle=%p physics=%p shift=%d",
+			RQ.O,
+			focused_object ? *focused_object->cName() : "<none>",
+			focused_object ? *focused_object->cNameSect() : "<none>",
+			RQ.range,
+			focused_object ? focused_object->SUB_CLS_ID : u64(0),
+			picked_up ? 1 : 0,
+			pUsableObject,
+			pPersonWeLookingAt,
+			m_pVehicleWeLookingAt,
+			pFocusedVehicle,
+			object,
+			Level().IR_GetKeyState(DIK_LSHIFT) ? 1 : 0);
+	}
+
+	if(pUsableObject)
+	{
+		if(trace_use)
+			Msg("[use] script usable: nonscript=%d", pUsableObject->nonscript_usable() ? 1 : 0);
+		pUsableObject->use(this);
+	}
+
+	if(!pUsableObject || pUsableObject->nonscript_usable() || pFocusedVehicle)
+	{
+		if(pPersonWeLookingAt)
 		{
-			CEntityAlive* pEntityAliveWeLookingAt = 
-				smart_cast<CEntityAlive*>(m_pPersonWeLookingAt);
+			CEntityAlive* pEntityAliveWeLookingAt =
+				smart_cast<CEntityAlive*>(pPersonWeLookingAt);
 
 			VERIFY(pEntityAliveWeLookingAt);
+
+			if(trace_use)
+				Msg("[use] person branch: alive=%d shift=%d", pEntityAliveWeLookingAt->g_Alive() ? 1 : 0, Level().IR_GetKeyState(DIK_LSHIFT) ? 1 : 0);
 
 			if(pEntityAliveWeLookingAt->g_Alive())
 			{
@@ -261,33 +308,37 @@ void CActor::ActorUse()
 			{
 				//только если находимся в режиме single
 				CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame());
+				if(trace_use)
+					Msg("[use] corpse inventory: ui=%p", pGameSP);
 				if(pGameSP)pGameSP->StartCarBody(&inventory(), this,
-					&m_pPersonWeLookingAt->inventory(),
-					smart_cast<CGameObject*>(m_pPersonWeLookingAt));
+					&pPersonWeLookingAt->inventory(),
+					smart_cast<CGameObject*>(pPersonWeLookingAt));
 			}
 		}
-		else if(m_pVehicleWeLookingAt && smart_cast<CCar*>(m_pVehicleWeLookingAt) && Level().IR_GetKeyState(DIK_LSHIFT))
+		else if(pVehicleWeLookingAt && pFocusedCar && Level().IR_GetKeyState(DIK_LSHIFT))
 		{
 			//только если находимся в режиме single
 			CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame());
+			if(trace_use)
+				Msg("[use] car inventory branch: ui=%p", pGameSP);
 			if(pGameSP)pGameSP->StartCarBody(&inventory(), this,
-				m_pVehicleWeLookingAt->GetInventory(),
-				smart_cast<CGameObject*>(m_pVehicleWeLookingAt));
+				pVehicleWeLookingAt->GetInventory(),
+				smart_cast<CGameObject*>(pVehicleWeLookingAt));
 
 		}
-		Collide::rq_result& RQ = HUD().GetCurrentRayQuery();
-		CPhysicsShellHolder* object = smart_cast<CPhysicsShellHolder*>(RQ.O);
 		u16 element = BI_NONE;
-		if(object) 
+		if(object)
 			element = (u16)RQ.element;
 
 		if(Level().IR_GetKeyState(DIK_LSHIFT))
 		{
-	
+
 			if(!m_PhysicMovementControl->PHCapture())
 			{
+				if(trace_use)
+					Msg("[use] physics capture: object=%p element=%d", object, element);
 				m_PhysicMovementControl->PHCaptureObject(object,element);
-			
+
 			}
 
 		}
@@ -295,6 +346,8 @@ void CActor::ActorUse()
 		{
 			if (object)
 			{
+				if(trace_use)
+					Msg("[use] physics holder branch: cls=%I64u", object->SUB_CLS_ID);
 				switch (object->SUB_CLS_ID)
 				{
 				case CLSID_CAR:					if(use_Vehicle(object))			return;	break;
@@ -306,16 +359,20 @@ void CActor::ActorUse()
 				if (m_holder)
 				{
 					CGameObject* holder			= smart_cast<CGameObject*>(m_holder);
+					if(trace_use)
+						Msg("[use] current holder branch: holder=%p cls=%I64u", holder, holder ? holder->SUB_CLS_ID : u64(0));
 					switch (holder->SUB_CLS_ID)
 					{
 					case CLSID_CAR:					if(use_Vehicle(0))			return;	break;
 					case CLSID_OBJECT_W_MOUNTED:	if(use_MountedWeapon(0))	return;	break;
 					}
 				}
+				else if(trace_use)
+					Msg("[use] no physics holder/current holder branch");
 			}
 		}
 	}
-
-
+	else if(trace_use)
+		Msg("[use] blocked by script usable object");
 }
 //void CActor::IR_OnMousePress(int btn)

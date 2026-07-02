@@ -895,7 +895,7 @@ void CActor::shedule_Update	(u32 DT)
 	
 	m_pObjectWeLookingAt = smart_cast<CGameObject*>(RQ.O);
 
-	if(RQ.O &&  RQ.range<inventory().GetTakeDist()) 
+	if(RQ.O &&  RQ.range<m_fPickupInfoRadius)
 	{
 		m_pUsableObject					= smart_cast<CUsableScriptObject*>(RQ.O);
 		inventory().m_pTarget			= smart_cast<PIItem>(RQ.O);
@@ -935,6 +935,7 @@ void CActor::shedule_Update	(u32 DT)
 	{
 		inventory().m_pTarget	= NULL;
 		m_pPersonWeLookingAt	= NULL;
+		m_pVehicleWeLookingAt	= NULL;
 		m_sDefaultObjAction		= NULL;
 		m_pUsableObject			= NULL;
 	}
