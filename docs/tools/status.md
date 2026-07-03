@@ -25,7 +25,7 @@ No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks
 | Level compiler | `xrLC/` | Compiler tool | Builds geometry, collision, lightmaps, sectors, portals, and visibility data. | Legacy projects/source present; not restored. | DirectX 9-era SDK, FreeImage, QSlim/OpenMesh/NVIDIA geometry code, `xrDXTC`, `xrCore`. | Unknown. | Required for full level modding workflow. | High | Large dependency surface; inventory first. |
 | Level compiler helper tools | `xrLC/close/`, `xrLC/xrDO_Light/`, `xrLC/xrHemisphere/` | Helper CLIs | Auxiliary level/light/hemisphere compilation support. | Legacy project files present. | Same family as `xrLC`. | Unknown. | Supports compiler workflow. | Medium | Restore after main compiler map is understood. |
 | AI / game graph compiler | `xrAI/` | Compiler tool | Builds AI maps, level graphs, game graphs, spawn/ALife graph data. | Legacy `.vcproj` present; not restored. | Runtime graph code, `xrSE_Factory` concepts, Lua/Luabind/Boost-era code, MagicFM-style library. | Unknown. | Required for spawn and AI-compatible mods. | High | Must match restored serialization formats. |
-| Level editor | `Editor/LevelEditor/`, `Editors/LevelEditor/`, `Editors/!old/LevelEditor/` | GUI editor | Historical level/world editing workflow. | Multiple source generations present. | Editor core, DirectX, Borland/VCL-era UI assumptions. | Unknown. | Important but not first safe target. | Medium | Choose canonical generation before porting. |
+| Level editor | `Editor/LevelEditor/`, `Editors/LevelEditor/`, `Editors/!old/LevelEditor/` | GUI editor | Historical level/world editing workflow. | Inventoried; no modern CMake target. `Editors/LevelEditor/` is the best current candidate but is a Borland C++ Builder 6/VCL app. | `Editors/ECore`, `Editors/xrEProps`, DirectX 9, Borland VCL/packages, ElPack/AlexMX, MagicFM, Boost 1.30.x, runtime-style editor libraries. | Not build-probed; no VS2022/CMake target exists. | Important but not first safe target. | Medium | See [Level Editor Inventory](level-editor-inventory.md). First blocker is the Borland/VCL GUI boundary, not one missing library. |
 | Actor/model editor | `Editor/ActorEditor/`, `Editors/ActorEditor/`, `Editors/!old/ActorEditor/` | GUI editor | Edits models, skeletons, motions, materials, and export metadata. | Multiple source generations present. | Editor core, DirectX, image/mesh helpers. | Unknown. | Important for model modding. | Medium | Defer until formats and editor core are mapped. |
 | Particle editor | `Editor/ParticleEditor/`, `Editors/ParticleEditor/`, `Editors/!old/ParticleEditor/` | GUI editor | Edits particle effects and related runtime data. | Source present. | Editor core, DirectX/editor rendering. | Unknown. | Useful once particle formats are documented. | Medium | Coordinate with `xrParticles`. |
 | Shader editor | `Editor/ShaderEditor/`, `Editors/ShaderEditor/`, `Editors/!old/ShaderEditor/` | GUI editor | Edits shader/material descriptions. | Source present. | DirectX shader compiler era, editor rendering. | Unknown. | Useful for material workflows. | Medium | Sensitive to SDK versioning. |
@@ -102,8 +102,8 @@ Future options should remain explicit and opt-in where appropriate:
 ## Recommended Next Actions
 
 1. Add synthetic archive fixtures and path-safety tests for `xr_unpack`.
-2. Add optional `--filter` support for `xr_unpack list` and extraction planning.
-3. Start a small read-only LTX/config validator scaffold.
+2. Start a small read-only LTX/config validator scaffold.
+3. Inventory `Editors/ECore` before any LevelEditor build attempt.
 4. Inventory `xrLC` and `xrAI` dependencies in more detail before attempting CMake restoration.
 5. Keep GUI editors and host plugins documented but deferred.
 

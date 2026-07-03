@@ -117,7 +117,7 @@ Goals:
 
 Candidate targets:
 
-* Level editor;
+* Level editor, after `Editors/ECore` and `xrEProps` are inventoried;
 * Actor/model editor;
 * Particle editor;
 * Shader editor;
@@ -146,7 +146,7 @@ After the current inventory, the safest next target is still the archive/tooling
 2. add optional `--filter` support for `xr_unpack list` and extraction planning;
 3. start a read-only LTX/config validator scaffold.
 
-The first large historical SDK candidates to inventory in depth are `xrLC` and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented.
+The first large historical SDK candidates to inventory in depth are `Editors/ECore`, `xrLC`, and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented. `LevelEditor.exe` should wait until its Borland/VCL boundary and shared editor DLL dependencies are mapped.
 
 ## Related Documents
 
