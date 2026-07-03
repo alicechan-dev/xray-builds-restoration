@@ -8,7 +8,7 @@ This document records the first CMake restoration pass for `Editors/Tools/ETools
 
 A modern opt-in CMake target named `ETools` now exists. It is intentionally partial: it builds the non-QSlim DLL wrapper source set and excludes the VIPM/progressive-mesh sources that require the old `x:/xrQSlim.lib` dependency until `xrQSlim` has its own CMake target.
 
-Configure succeeds with `BUILD_XR_ETOOLS=ON`. The current build probe compiles and reaches link, then fails on the first remaining editor-tool dependency: `CreateDX.cpp` imports `FSColorPickerDoModal`, but `ColorPicker.lib` is not present beside `Editors/Tools/ETools/ETools.vcproj`.
+Configure succeeds with `BUILD_XR_ETOOLS=ON`. The first build blocker was the missing `FSColorPickerDoModal` import used by `CreateDX.cpp`; the modern target now links the matching historical `Editor/Tools/ETools/ColorPicker.lib` import library and the partial `ETools` target builds in Release.
 
 ## Project Files Found
 
@@ -16,7 +16,7 @@ Configure succeeds with `BUILD_XR_ETOOLS=ON`. The current build probe compiles a
 |---|---|---|---|
 | `Editors/Tools/ETools/ETools.vcproj` | VS2003 Win32 DLL project | `x:\ETools.dll`, `x:\ETools.lib` | Main project converted to CMake scaffold. |
 | `Editors/Tools/ETools/tools.sln` | VS2003 solution | Mixed tool solution | Paths inside the solution point to sibling projects as if the solution belonged one directory higher. It includes DXT, LWO, Gauss, xrProgressive, ETools, and xrHemisphere. |
-| `Editor/Tools/ETools/CreateDX.dsp` | Older VC6-style project | Unknown helper output | Older generation contains `ColorPicker.lib`, but it was not linked into the current `Editors/Tools/ETools` target to avoid silently mixing generations. |
+| `Editor/Tools/ETools/CreateDX.dsp` | Older VC6-style project | Unknown helper output | Older generation contains the `ColorPicker.lib` import library now used by the partial CMake target. |
 
 ## CMake Target
 
@@ -56,7 +56,7 @@ Reason: these form the VIPM/progressive-mesh path and depend on `MxQMetric.h`, `
 | `xrCore` | `stdafx.h` includes `<xrCore.h>` and the old project linked `x:/xrCore.lib`. | Linked through existing CMake target `xrCore`. Historical `x:/xrCore.lib` pragma is ignored in this target. |
 | DirectX 9 / D3DX | `stdafx.h` includes `d3dx9.h`; `CreateDX.cpp` wraps many D3DX calls. | Uses existing DirectX SDK discovery variables and links `d3dx9`. |
 | `dxerr9` | `CreateDX.cpp` includes `dxerr9.h`; old project linked `dxerr9.lib`. | Uses local compatibility header and ignores `dxerr9.lib`, matching other modern targets. |
-| ColorPicker | `ETools.vcproj` references `ColorPicker.lib`; `CreateDX.cpp` imports `FSColorPickerDoModal`. | First build blocker: missing beside `Editors/Tools/ETools`. Older `Editor/Tools/ETools/ColorPicker.lib` exists but was not mixed in. |
+| ColorPicker | `ETools.vcproj` references `ColorPicker.lib`; `CreateDX.cpp` imports `FSColorPickerDoModal`. | Linked from the older `Editor/Tools/ETools/ColorPicker.lib` import library after confirming it exports the required symbol. Runtime deployment still needs the matching `ColorPicker.dll` if `FSColorPickerExecute` is used. |
 | `xrQSlim` | `stdafx.h` had `x:/xrQSlim.lib`; VIPM sources include `MxQMetric.h` and use QSlim types. | Excluded pending a separate `xrQSlim` CMake port. |
 | MFC/VCL | `UseOfMFC="0"`; no `.dfm` or VCL forms in this folder. | Not a blocker for this target. |
 
@@ -76,24 +76,24 @@ Build command:
 cmake --build build-etools-check --config Release --target ETools -- /m:1 /v:minimal /clp:ErrorsOnly
 ```
 
-Result: failed at link with:
+Result: passed.
 
-```text
-CreateDX.obj : error LNK2019: unresolved external symbol "__declspec(dllimport) bool __stdcall FSColorPickerDoModal(unsigned int *,unsigned int *,int)"
-```
-
-## First Blocker
+## First Blocker Fixed
 
 `CreateDX.cpp` exports `FSColorPickerExecute` by forwarding to imported `FSColorPickerDoModal`. The current `Editors/Tools/ETools` folder does not contain the old `ColorPicker.lib` that `ETools.vcproj` lists.
 
-The older `Editor/Tools/ETools` tree does contain a small `ColorPicker.lib`, but this pass intentionally avoids linking that cross-generation binary until provenance and compatibility are checked.
+The older `Editor/Tools/ETools` tree contains a small import library with both `?FSColorPickerDoModal@@YG_NPAI0H@Z` and `__imp_?FSColorPickerDoModal@@YG_NPAI0H@Z`. The CMake target now links that proven import library instead of adding a stub or disabling the exported wrapper.
+
+## Remaining Boundaries
+
+This does not make the whole editor stack restored. The target still excludes the QSlim/VIPM sources, and actual use of the color picker export may require locating and deploying the matching historical `ColorPicker.dll`.
 
 ## Recommended Next Step
 
 Pick one of these narrow follow-ups:
 
-1. Inventory the older `Editor/Tools/ETools/ColorPicker.lib` and any source/project that produced it, then decide whether it is safe to use as an imported library for this target.
-2. Split `CreateDX.cpp` behind a CMake option and build an `ETools` core DLL containing only ray-triangle helpers while D3DX/color picker integration remains disabled.
-3. Restore `xrQSlim` as a separate CMake static library, then re-enable the excluded VIPM/progressive-mesh sources.
+1. Locate the matching `ColorPicker.dll` or source/project that produced it, then document runtime deployment expectations for editor tools.
+2. Restore `xrQSlim` as a separate CMake static library, then re-enable the excluded VIPM/progressive-mesh sources.
+3. Inventory `Editors/ECore` and `Editors/xrEProps` before attempting any LevelEditor GUI target.
 
 Do not proceed to `LevelEditor.exe` until `ETools`, `xrQSlim`, `ECore`, and `xrEProps` boundaries are clearer.

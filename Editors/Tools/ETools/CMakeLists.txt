@@ -1,4 +1,5 @@
 set(ETOOLS_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(ETOOLS_LEGACY_COLORPICKER_LIB "${PROJECT_SOURCE_DIR}/Editor/Tools/ETools/ColorPicker.lib")
 
 # First SDK-tool CMake pass for the historical ETools DLL.  The original
 # ETools.vcproj also built VIPM/progressive-mesh sources that depend on
@@ -117,6 +118,11 @@ target_link_libraries(ETools PRIVATE
 
 if(EXISTS "${ETOOLS_DIR}/ColorPicker.lib")
   target_link_libraries(ETools PRIVATE "${ETOOLS_DIR}/ColorPicker.lib")
+elseif(EXISTS "${ETOOLS_LEGACY_COLORPICKER_LIB}")
+  # The current Editors/Tools/ETools snapshot references ColorPicker.lib but
+  # lacks a local copy.  The older Editor/Tools/ETools helper project contains
+  # the matching import library for FSColorPickerDoModal.
+  target_link_libraries(ETools PRIVATE "${ETOOLS_LEGACY_COLORPICKER_LIB}")
 else()
   message(WARNING "ETools.vcproj referenced ColorPicker.lib, but it was not found beside the project. FSColorPickerExecute may fail to link until that dependency is restored.")
 endif()
