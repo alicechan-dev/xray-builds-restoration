@@ -71,14 +71,19 @@ First result: failed on missing Borland `fastmath.h`.
 
 Fix applied: added `cmake/compat/msvc/fastmath.h`, a narrow MSVC compatibility shim that includes the standard math declarations while preserving the old `sqrtf` macro behavior expected by `Editors/ECore/stdafx.h`.
 
-Current result after the fix: build advances to the next Borland CRT compatibility blocker:
+Second blocker fixed: added `cmake/compat/msvc/utime.h`, a narrow MSVC compatibility shim that forwards Borland-style `<utime.h>` includes to MSVC's `<sys/utime.h>`.
+
+Current result after the fix: build advances to the next Borland/MSVC CRT wrapper blocker:
 
 ```text
-Editors\ECore\stdafx.h(31,10): error C1083: Cannot open include file: 'utime.h': No such file or directory
+Editors\ECore\stdafx.h(38,14): error C2373: '_eof': redefinition; different type modifiers
+Editors\ECore\stdafx.h(42,14): error C2373: '_access': redefinition; different type modifiers
+Editors\ECore\stdafx.h(46,15): error C2373: '_lseek': redefinition; different type modifiers
+Editors\ECore\stdafx.h(51,14): error C2373: '_dup': redefinition; different type modifiers
 ```
 
 ## Recommended Next Step
 
-Fix the next Borland CRT compatibility include narrowly, likely with an MSVC compatibility `utime.h` that forwards to `<sys/utime.h>`, then rebuild only `xrECore` and stop at the next real blocker.
+Fix the old Borland compatibility wrapper block in `Editors/ECore/stdafx.h` narrowly for MSVC, without changing runtime targets or deleting the historical wrappers. Then rebuild only `xrECore` and stop at the next real blocker.
 
 Do not proceed to `LevelEditor.exe` until `xrECore`, `xrEProps`, `ETools`, and the Borland/VCL package boundary are clearer.
