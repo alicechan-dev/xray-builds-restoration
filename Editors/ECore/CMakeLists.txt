@@ -89,6 +89,7 @@ target_compile_definitions(xrECore PRIVATE
   _USRDLL
   _EDITOR
   _ECOREB
+  _FARQ=
   DIRECTINPUT_VERSION=0x0700
   _HAS_AUTO_PTR_ETC=1
   $<$<CONFIG:Debug>:_DEBUG>
