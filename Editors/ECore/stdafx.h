@@ -31,31 +31,34 @@
 #include <utime.h>
 
 // iseful macros
-// MSC names for functions
-#ifdef _eof
-#undef _eof
+// Borland used non-underscore CRT names; MSVC already provides these symbols.
+#ifdef __BORLANDC__
+    // MSC names for functions
+    #ifdef _eof
+    #undef _eof
+    #endif
+    __inline int _eof	(int _a)   		                        { return ::eof(_a); }
+    #ifdef _access
+    #undef _access
+    #endif
+    __inline int _access(const char *_a, int _b)                { return ::access(_a,_b); }
+    #ifdef _lseek
+    #undef _lseek
+    #endif
+    __inline long _lseek(int handle, long offset, int fromwhere){ return ::lseek(handle, offset, fromwhere);}
+    #ifdef _dup
+    #undef _dup
+    #endif
+    #define fmodf fmod
+    __inline int _dup    (int handle)                           { return ::dup(handle);}
+    __inline float modff(float a, float *b){
+	    double x,y;
+        y = modf(double(a),&x);
+        *b = x;
+        return float(y);
+    }
+    __inline float expf	(float val)                           	{ return ::exp(val);}
 #endif
-__inline int _eof	(int _a)   		                        { return ::eof(_a); }
-#ifdef _access
-#undef _access
-#endif
-__inline int _access(const char *_a, int _b)                { return ::access(_a,_b); }
-#ifdef _lseek
-#undef _lseek
-#endif
-__inline long _lseek(int handle, long offset, int fromwhere){ return ::lseek(handle, offset, fromwhere);}
-#ifdef _dup
-#undef _dup
-#endif
-#define fmodf fmod
-__inline int _dup    (int handle)                           { return ::dup(handle);}
-__inline float modff(float a, float *b){
-	double x,y;
-    y = modf(double(a),&x);
-    *b = x;
-    return float(y);
-}
-__inline float expf	(float val)                           	{ return ::exp(val);}
 
 
 #ifdef	_ECOREB

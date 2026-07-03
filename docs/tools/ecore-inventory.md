@@ -73,17 +73,17 @@ Fix applied: added `cmake/compat/msvc/fastmath.h`, a narrow MSVC compatibility s
 
 Second blocker fixed: added `cmake/compat/msvc/utime.h`, a narrow MSVC compatibility shim that forwards Borland-style `<utime.h>` includes to MSVC's `<sys/utime.h>`.
 
-Current result after the fix: build advances to the next Borland/MSVC CRT wrapper blocker:
+Third blocker fixed: the old Borland-to-MSVC CRT wrapper block in `Editors/ECore/stdafx.h` is now guarded with `__BORLANDC__`, preserving the historical aliases for Borland while allowing MSVC to use its own CRT declarations.
+
+Current result after the fix: build advances to an allocator compatibility blocker in `xrCore/_stl_extensions.h`:
 
 ```text
-Editors\ECore\stdafx.h(38,14): error C2373: '_eof': redefinition; different type modifiers
-Editors\ECore\stdafx.h(42,14): error C2373: '_access': redefinition; different type modifiers
-Editors\ECore\stdafx.h(46,15): error C2373: '_lseek': redefinition; different type modifiers
-Editors\ECore\stdafx.h(51,14): error C2373: '_dup': redefinition; different type modifiers
+xrCore\_stl_extensions.h(80,19): error C2143: syntax error: missing ';' before '*'
+xrCore\_stl_extensions.h(82,40): error C2143: syntax error: missing ',' before '*'
 ```
 
 ## Recommended Next Step
 
-Fix the old Borland compatibility wrapper block in `Editors/ECore/stdafx.h` narrowly for MSVC, without changing runtime targets or deleting the historical wrappers. Then rebuild only `xrECore` and stop at the next real blocker.
+Investigate why the experimental `xrECore` target is taking the non-Borland `xr_allocator_t` path in `xrCore/_stl_extensions.h` without the expected `_FARQ` compatibility definition. Keep that fix target-local and rebuild only `xrECore`.
 
 Do not proceed to `LevelEditor.exe` until `xrECore`, `xrEProps`, `ETools`, and the Borland/VCL package boundary are clearer.
