@@ -37,13 +37,14 @@ void print_help()
         << "usage:\n"
         << "  xr_unpack help\n"
         << "  xr_unpack info <archive>\n"
-        << "  xr_unpack list <archive> [--limit N]\n"
-        << "  xr_unpack extract <archive> <out_dir> --dry-run [--limit N]\n"
+        << "  xr_unpack list <archive> [--limit N] [--filter PATTERN]\n"
+        << "  xr_unpack extract <archive> <out_dir> --dry-run [--limit N] [--filter PATTERN]\n"
         << "  xr_unpack extract <archive> <out_dir> --write\n"
         << "  xr_unpack verify <archive>\n"
         << "\n"
         << "info, list, and verify perform read-only inspection of proven .xp* archive\n"
-        << "directory metadata. extract writes files only when --write is passed.\n";
+        << "directory metadata. extract writes files only when --write is passed.\n"
+        << "--filter supports simple '*' and '?' wildcards for list and dry-run output.\n";
 }
 
 int require_arg_count(int argc, int expected, const char* usage)
@@ -80,10 +81,74 @@ bool parse_limit_value(const char* value, std::size_t& limit)
     return true;
 }
 
-bool parse_limit_option(int argc, char** argv, int first_option, std::size_t& limit, bool& has_limit)
+std::string normalized_match_text(std::string value)
 {
-    has_limit = false;
-    limit = 0;
+    for (std::string::iterator i = value.begin(); i != value.end(); ++i) {
+        if (*i == '\\')
+            *i = '/';
+        else
+            *i = static_cast<char>(std::tolower(static_cast<unsigned char>(*i)));
+    }
+
+    return value;
+}
+
+bool wildcard_match(const char* pattern, const char* value)
+{
+    const char* star = 0;
+    const char* retry = 0;
+
+    while (*value) {
+        if (*pattern == '?' || *pattern == *value) {
+            ++pattern;
+            ++value;
+            continue;
+        }
+
+        if (*pattern == '*') {
+            star = pattern++;
+            retry = value;
+            continue;
+        }
+
+        if (star) {
+            pattern = star + 1;
+            value = ++retry;
+            continue;
+        }
+
+        return false;
+    }
+
+    while (*pattern == '*')
+        ++pattern;
+
+    return !*pattern;
+}
+
+bool entry_matches_filter(const xr_unpack::ArchiveEntry& entry, bool has_filter, const std::string& filter)
+{
+    if (!has_filter)
+        return true;
+
+    const std::string name = normalized_match_text(entry.normalized_name.empty() ? entry.name : entry.normalized_name);
+    return wildcard_match(filter.c_str(), name.c_str());
+}
+
+struct ListOptions
+{
+    bool has_limit;
+    std::size_t limit;
+    bool has_filter;
+    std::string filter;
+};
+
+bool parse_list_options(int argc, char** argv, int first_option, ListOptions& options)
+{
+    options.has_limit = false;
+    options.limit = 0;
+    options.has_filter = false;
+    options.filter.clear();
 
     for (int i = first_option; i < argc; ++i) {
         const std::string option = argv[i];
@@ -93,12 +158,24 @@ bool parse_limit_option(int argc, char** argv, int first_option, std::size_t& li
                 return false;
             }
 
-            if (!parse_limit_value(argv[i + 1], limit)) {
+            if (!parse_limit_value(argv[i + 1], options.limit)) {
                 std::cerr << "xr_unpack: invalid --limit value '" << argv[i + 1] << "'\n";
                 return false;
             }
 
-            has_limit = true;
+            options.has_limit = true;
+            ++i;
+            continue;
+        }
+
+        if (option == "--filter") {
+            if (i + 1 >= argc) {
+                std::cerr << "xr_unpack: --filter requires a pattern\n";
+                return false;
+            }
+
+            options.has_filter = true;
+            options.filter = normalized_match_text(argv[i + 1]);
             ++i;
             continue;
         }
@@ -141,7 +218,7 @@ int print_info(const char* archive_path)
     return kOk;
 }
 
-int print_list(const char* archive_path, std::size_t limit, bool has_limit)
+int print_list(const char* archive_path, const ListOptions& options)
 {
     const xr_unpack::ArchiveContents archive = xr_unpack::read_archive(archive_path);
     if (!archive.errors.empty()) {
@@ -151,9 +228,15 @@ int print_list(const char* archive_path, std::size_t limit, bool has_limit)
 
     std::cout << "path\toffset\tpacked_size\tunpacked_size\tflags\n";
     std::size_t printed = 0;
+    std::size_t matched = 0;
     for (std::vector<xr_unpack::ArchiveEntry>::const_iterator i = archive.entries.begin(); i != archive.entries.end(); ++i) {
-        if (has_limit && printed >= limit)
-            break;
+        if (!entry_matches_filter(*i, options.has_filter, options.filter))
+            continue;
+
+        ++matched;
+
+        if (options.has_limit && printed >= options.limit)
+            continue;
 
         std::cout
             << i->name << "\t"
@@ -167,8 +250,11 @@ int print_list(const char* archive_path, std::size_t limit, bool has_limit)
         ++printed;
     }
 
-    if (has_limit && archive.entries.size() > printed)
-        std::cout << "# output limited to " << printed << " of " << archive.entries.size() << " entries\n";
+    if (options.has_filter)
+        std::cout << "# matched " << matched << " of " << archive.entries.size() << " entries\n";
+
+    if (options.has_limit && matched > printed)
+        std::cout << "# output limited to " << printed << " of " << matched << " matched entries\n";
 
     return kOk;
 }
@@ -229,6 +315,8 @@ struct ExtractOptions
     bool write;
     bool has_limit;
     std::size_t limit;
+    bool has_filter;
+    std::string filter;
 };
 
 struct PlannedEntry
@@ -256,6 +344,8 @@ bool parse_extract_options(int argc, char** argv, ExtractOptions& options)
     options.write = false;
     options.has_limit = false;
     options.limit = 0;
+    options.has_filter = false;
+    options.filter.clear();
 
     for (int i = 4; i < argc; ++i) {
         const std::string option = argv[i];
@@ -285,6 +375,18 @@ bool parse_extract_options(int argc, char** argv, ExtractOptions& options)
             continue;
         }
 
+        if (option == "--filter") {
+            if (i + 1 >= argc) {
+                std::cerr << "xr_unpack: --filter requires a pattern\n";
+                return false;
+            }
+
+            options.has_filter = true;
+            options.filter = normalized_match_text(argv[i + 1]);
+            ++i;
+            continue;
+        }
+
         std::cerr << "xr_unpack: unknown extract option '" << option << "'\n";
         return false;
     }
@@ -296,6 +398,11 @@ bool parse_extract_options(int argc, char** argv, ExtractOptions& options)
 
     if (options.write && options.has_limit) {
         std::cerr << "xr_unpack: --limit is only supported with --dry-run\n";
+        return false;
+    }
+
+    if (options.write && options.has_filter) {
+        std::cerr << "xr_unpack: --filter is currently supported only with list and extract --dry-run\n";
         return false;
     }
 
@@ -339,7 +446,7 @@ std::vector<std::string> output_ancestors(std::string output_key)
     return result;
 }
 
-ExtractPlan build_extract_plan(const char* archive_path, const char* output_dir)
+ExtractPlan build_extract_plan(const char* archive_path, const char* output_dir, const ExtractOptions& options)
 {
     ExtractPlan plan;
     plan.archive = xr_unpack::read_archive(archive_path);
@@ -354,6 +461,9 @@ ExtractPlan build_extract_plan(const char* archive_path, const char* output_dir)
     std::set<std::string> planned_files;
 
     for (std::vector<xr_unpack::ArchiveEntry>::const_iterator i = plan.archive.entries.begin(); i != plan.archive.entries.end(); ++i) {
+        if (!entry_matches_filter(*i, options.has_filter, options.filter))
+            continue;
+
         const xr_unpack::PathValidationResult output = xr_unpack::compose_output_path(output_dir, i->name);
         if (!output.ok) {
             ++plan.unsafe_entries;
@@ -407,7 +517,9 @@ void print_extract_plan_summary(const ExtractPlan& plan, const char* output_dir,
     std::cout << "archive: " << plan.archive.info.path << "\n";
     std::cout << "output_dir: " << output_dir << "\n";
     std::cout << "mode: " << mode << "\n";
-    std::cout << "entries: " << plan.archive.entries.size() << "\n";
+    std::cout << "entries: " << plan.entries.size() << "\n";
+    if (plan.entries.size() != plan.archive.entries.size())
+        std::cout << "archive_entries: " << plan.archive.entries.size() << "\n";
     std::cout << "safe_entries: " << plan.safe_entries << "\n";
     std::cout << "unsafe_entries: " << plan.unsafe_entries << "\n";
     std::cout << "duplicates: " << plan.duplicate_outputs << "\n";
@@ -428,7 +540,7 @@ bool extract_plan_is_safe_to_write(const ExtractPlan& plan)
 
 int plan_extract_dry_run(const char* archive_path, const char* output_dir, const ExtractOptions& options)
 {
-    const ExtractPlan plan = build_extract_plan(archive_path, output_dir);
+    const ExtractPlan plan = build_extract_plan(archive_path, output_dir, options);
     if (!plan.archive.errors.empty()) {
         print_archive_errors(plan.archive);
         return kRuntimeError;
@@ -571,7 +683,15 @@ bool copy_compressed_entry(std::ifstream& archive_file, std::ofstream& output_fi
 
 int write_extract(const char* archive_path, const char* output_dir)
 {
-    const ExtractPlan plan = build_extract_plan(archive_path, output_dir);
+    ExtractOptions options;
+    options.dry_run = false;
+    options.write = true;
+    options.has_limit = false;
+    options.limit = 0;
+    options.has_filter = false;
+    options.filter.clear();
+
+    const ExtractPlan plan = build_extract_plan(archive_path, output_dir, options);
     if (!plan.archive.errors.empty()) {
         print_archive_errors(plan.archive);
         return kRuntimeError;
@@ -673,17 +793,16 @@ int main(int argc, char** argv)
     else if (command == "list") {
         if (argc < 3) {
             std::cerr << "xr_unpack: invalid arguments\n";
-            std::cerr << "usage: xr_unpack list <archive> [--limit N]\n";
+            std::cerr << "usage: xr_unpack list <archive> [--limit N] [--filter PATTERN]\n";
             result = kUsageError;
         }
         else
         {
-            std::size_t limit = 0;
-            bool has_limit = false;
-            if (!parse_limit_option(argc, argv, 3, limit, has_limit))
+            ListOptions options;
+            if (!parse_list_options(argc, argv, 3, options))
                 result = kUsageError;
             else
-                result = print_list(argv[2], limit, has_limit);
+                result = print_list(argv[2], options);
         }
     }
     else if (command == "verify") {
@@ -696,7 +815,7 @@ int main(int argc, char** argv)
     else if (command == "extract") {
         if (argc < 4) {
             std::cerr << "xr_unpack: invalid arguments\n";
-            std::cerr << "usage: xr_unpack extract <archive> <out_dir> (--dry-run [--limit N] | --write)\n";
+            std::cerr << "usage: xr_unpack extract <archive> <out_dir> (--dry-run [--limit N] [--filter PATTERN] | --write)\n";
             result = kUsageError;
         }
         else if (std::string(argv[3]).empty()) {

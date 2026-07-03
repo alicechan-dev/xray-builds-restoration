@@ -15,8 +15,8 @@ Do not commit original game archives, extracted proprietary assets, repacks, cra
 ```bat
 xr_unpack help
 xr_unpack info <archive>
-xr_unpack list <archive> [--limit N]
-xr_unpack extract <archive> <out_dir> --dry-run [--limit N]
+xr_unpack list <archive> [--limit N] [--filter PATTERN]
+xr_unpack extract <archive> <out_dir> --dry-run [--limit N] [--filter PATTERN]
 xr_unpack extract <archive> <out_dir> --write
 xr_unpack verify <archive>
 ```
@@ -24,10 +24,10 @@ xr_unpack verify <archive>
 Current command status:
 
 * `info` prints archive size, directory chunk metadata, entry count, and parser status.
-* `list` prints directory entries, offsets, packed sizes, unpacked sizes, and compression status. Use `--limit N` to print only the first `N` entries.
+* `list` prints directory entries, offsets, packed sizes, unpacked sizes, and compression status. Use `--limit N` to print only the first `N` entries and `--filter PATTERN` to match archive paths with simple `*` and `?` wildcards.
 * `verify` checks directory structure, entry bounds, duplicate names, and path-safety warnings without extracting payloads.
 * `extract` refuses unless `--dry-run` or `--write` is passed.
-* `extract --dry-run` validates planned output paths, duplicate outputs, existing target files, and entry bounds, then prints the paths it would write. It writes nothing.
+* `extract --dry-run` validates planned output paths, duplicate outputs, existing target files, and entry bounds, then prints the paths it would write. It writes nothing. Use `--filter PATTERN` to plan only matching entries.
 * `extract --write` runs the same safety plan, refuses unsafe paths, duplicate outputs, out-of-bounds entries, and existing output files, then writes files under `<out_dir>`.
 
 The parser is based on existing repository evidence from `xrCore/LocatorAPI.cpp`, `xrCompress/xrCompress.cpp`, and `tools/xrArchiveList/`.
@@ -66,5 +66,5 @@ cmake --build build --config Debug --target xr_unpack -- //m:1 //v:minimal //clp
 
 1. Add synthetic archive fixtures for the proven chunk/directory format.
 2. Add synthetic archive fixtures for stored and compressed payload extraction.
-3. Add filtering support such as `--filter "*.ltx"` for list and dry-run planning.
+3. Add selected-file extraction after filter behavior has synthetic tests.
 4. Add an explicit `--overwrite` policy only if it becomes necessary.

@@ -51,8 +51,8 @@ Proposed command examples:
 ```bat
 xr_unpack help
 xr_unpack info <archive>
-xr_unpack list <archive> [--limit N]
-xr_unpack extract <archive> <out_dir> --dry-run [--limit N]
+xr_unpack list <archive> [--limit N] [--filter PATTERN]
+xr_unpack extract <archive> <out_dir> --dry-run [--limit N] [--filter PATTERN]
 xr_unpack extract <archive> <out_dir> --write
 xr_unpack verify <archive>
 ```
@@ -63,9 +63,11 @@ Suggested command behavior:
 * `info`, `list`, and `verify` perform read-only directory inspection.
 * `list` prints archive entry names, offsets, packed sizes, unpacked sizes, and compression status without writing files.
 * `list --limit N` prints only the first `N` entries.
+* `list --filter PATTERN` matches archive paths with simple `*` and `?` wildcards.
 * `extract` writes files under `<out_dir>` after safety validation.
 * `extract` refuses unless `--dry-run` or `--write` is passed.
 * `extract --dry-run` validates all planned output paths, duplicate outputs, existing files, and entry bounds, then prints what would be written. It writes nothing.
+* `extract --dry-run --filter PATTERN` plans only matching entries; filtered real extraction remains disabled until selected-file extraction has tests.
 * `extract --write` runs the same plan and writes files only if there are no unsafe entries, duplicate outputs, existing outputs, or out-of-bounds entries.
 * `verify` checks structure, directory entries, bounds, duplicate names, and path-safety warnings when known.
 * `info` reports archive family, directory chunk status, compression flags, entry count, and known limitations.
@@ -146,7 +148,7 @@ The unpacker should produce predictable paths that match the runtime's virtual f
 6. Add synthetic fixtures for the directory parser.
 7. Add dry-run extraction planning. Done for full-archive plans with optional output limits.
 8. Add explicit full extraction with `--write`, shared safety preflight, no overwrite by default, and proven runtime decompression. Done.
-9. Add filters such as `--filter "*.ltx"` for listing and dry-run planning.
+9. Add filters such as `--filter "*.ltx"` for listing and dry-run planning. Done.
 10. Add safe selected-file extraction with filters and dry-run support.
 11. Add an explicit overwrite policy only if needed.
 12. Document modding workflow examples using only lawful local data and synthetic repository fixtures.
