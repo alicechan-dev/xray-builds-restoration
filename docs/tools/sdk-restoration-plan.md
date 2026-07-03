@@ -88,6 +88,7 @@ Candidate targets:
 * `xrLC` and helper tools;
 * `xrAI` graph/spawn tooling;
 * `xrDXTC` and texture helpers;
+* `Editors/Tools/ETools` and other low-level editor helper DLLs;
 * editor core libraries needed by GUI applications.
 
 ## Phase 5: Modding Workflows
@@ -146,7 +147,7 @@ After the current inventory, the safest next target is still the archive/tooling
 2. add optional `--filter` support for `xr_unpack list` and extraction planning;
 3. start a read-only LTX/config validator scaffold.
 
-The first large historical SDK candidates to inventory in depth are `Editors/ECore`, `xrLC`, and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented. `LevelEditor.exe` should wait until its Borland/VCL boundary and shared editor DLL dependencies are mapped.
+The first large historical SDK candidates to inventory in depth are `Editors/ECore`, `xrLC`, and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented. `Editors/Tools/ETools` now has a partial opt-in CMake target; `LevelEditor.exe` should wait until ETools, its ColorPicker dependency, `xrQSlim`, the Borland/VCL boundary, and shared editor DLL dependencies are mapped.
 
 ## Related Documents
 
