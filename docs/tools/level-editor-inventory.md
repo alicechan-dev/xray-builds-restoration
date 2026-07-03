@@ -15,7 +15,7 @@ No modern CMake target for LevelEditor was found. No build probe was run because
 | `Editors/LevelEditor/` | `Editors/LevelEditor/LevelEditor.bpr` | `x:\LevelEditor.exe` | Borland/VCL GUI editor | Best current candidate tree. Contains `Edit/` and `Engine/` subfolders, 130 `.cpp` files, 92 `.h` files, 23 `.dfm` forms, and one `.res` file. |
 | `Editor/LevelEditor/` | `Editor/LevelEditor/LevelEditor.bpr` | `x:\LevelEditor.exe` | Older Borland/VCL GUI editor | Older/alternate generation with more monolithic source list. Useful for history comparison, not the first port target. |
 | `Editors/!old/LevelEditor/` | `Editors/!old/LevelEditor/LevelEditor.bpr` | likely `LevelEditor.exe` | Old Borland/VCL GUI editor | Historical reference snapshot. |
-| `Editors/ECore/` | `Editors/ECore/xrECoreB.bpr` | `x:\xrECoreB.dll` | Shared editor/runtime-style DLL | Required by the current `Editors/LevelEditor` tree. Contains editor rendering, thumbnails, image manager, object IO, particle support, render backend copies, and shared UI helpers. |
+| `Editors/ECore/` | `Editors/ECore/xrECoreB.bpr` | `x:\xrECoreB.dll` | Shared editor/runtime-style DLL | Required by the current `Editors/LevelEditor` tree. Contains editor rendering, thumbnails, image manager, object IO, particle support, render backend copies, and shared UI helpers. Experimental CMake target `xrECore` now exists. |
 | `Editors/xrEProps/` | `Editors/xrEProps/xrEPropsB.bpr` | likely `xrEPropsB.dll` | Shared editor property UI DLL | Required by editor property helpers. Runtime docs already note this DLL is optional for game runtime but important for editor workflows. |
 | `Editors/Tools/ETools/` | `Editors/Tools/ETools/tools.sln`, `Editors/Tools/ETools/ETools.vcproj` | likely `ETools.lib`/tool helper output | Visual Studio helper library/tool | Referenced by editor include paths as `P:\Tools\ETools` / `..\..\Tools\Etools`. |
 | `Editor/LevelOptions/`, `Editors/LevelOptions/` | `xrLC_Options.bpr` | `xrLC_Options.dll` | Borland/VCL options dialog | Related to level/compiler options, not the editor itself. |
@@ -60,7 +60,7 @@ No modern CMake target for LevelEditor was found. No build probe was run because
 
 ## Existing CMake Status
 
-No `LevelEditor`, `xrLevelEditor`, `xrECoreB`, or `xrEPropsB` CMake target was found in the current tree. The editor project is not currently part of the modern CMake build.
+No `LevelEditor`, `xrLevelEditor`, or `xrEPropsB` CMake target was found in the current tree. An experimental opt-in `xrECore` CMake target now exists, but the editor application itself is still not part of the modern CMake build.
 
 A build probe was not run in this pass because the available project file is a Borland `.bpr`, not a VS2022/CMake target. Creating a new target would require a broad port of VCL forms, Borland-specific headers, packages, and shared editor libraries.
 
@@ -70,14 +70,14 @@ The first real blocker is not a missing include or one library; it is the Borlan
 
 Before trying to build `LevelEditor.exe`, the project needs a smaller dependency plan:
 
-1. inventory and classify `Editors/ECore/xrECoreB.bpr` sources;
+1. continue the `xrECore` build probe from the current `utime.h` Borland CRT compatibility blocker;
 2. inventory `Editors/xrEProps/xrEPropsB.bpr` and property helper boundaries;
-3. inspect `Editors/Tools/ETools` as a possible isolated VS project build probe;
+3. map remaining `xrECore` external package boundaries such as ElPack, AlexMX, and MagicFM;
 4. decide whether GUI restoration will preserve Borland/VCL externally, build a compatibility layer, or port editor UI forms incrementally.
 
 ## Recommended Next Safe Step
 
-Do not start with `LevelEditor.exe`. The safer next pass is to inventory `Editors/ECore` in detail, because LevelEditor depends on it and it contains many reusable editor/runtime-style systems: render backend copies, thumbnails, image manager, object IO, particle support, and shared editor helpers.
+Do not start with `LevelEditor.exe`. Continue with `xrECore` and `xrEProps` dependency-library probes first, because LevelEditor depends on them and they contain many reusable editor/runtime-style systems: render backend copies, thumbnails, image manager, object IO, particle support, property helpers, and shared editor helpers.
 
 A second low-risk option is a build probe for `Editors/Tools/ETools` because it already has a Visual Studio solution/project file and appears more isolated than the VCL GUI editor.
 

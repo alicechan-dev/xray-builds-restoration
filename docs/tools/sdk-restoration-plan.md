@@ -147,11 +147,12 @@ After the current inventory, the safest next target is still the archive/tooling
 2. add optional `--filter` support for `xr_unpack list` and extraction planning;
 3. start a read-only LTX/config validator scaffold.
 
-The first large historical SDK candidates to inventory in depth are `Editors/ECore`, `xrLC`, and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented. `Editors/Tools/ETools` now has a partial opt-in CMake target that builds after linking the matching historical ColorPicker import library; `LevelEditor.exe` should still wait until `xrQSlim`, the Borland/VCL boundary, runtime ColorPicker deployment, and shared editor DLL dependencies are mapped.
+The first large historical SDK candidates to inventory in depth are `Editors/ECore`, `xrLC`, and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented. `Editors/Tools/ETools` now has a partial opt-in CMake target that builds after linking the matching historical ColorPicker import library. `Editors/ECore` now has an experimental opt-in `xrECore` CMake target; its first Borland `fastmath.h` blocker is fixed, and the next blocker is `utime.h` compatibility. `LevelEditor.exe` should still wait until `xrECore`, `xrEProps`, `xrQSlim`, the Borland/VCL boundary, runtime ColorPicker deployment, and shared editor DLL dependencies are mapped.
 
 ## Related Documents
 
 * [Tools and SDK Status](status.md)
+* [ECore CMake Port Inventory](ecore-inventory.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)
