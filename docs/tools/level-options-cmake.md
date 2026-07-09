@@ -54,9 +54,9 @@ cmake --build build-sdk-next-editor-check --config Release `
   --target LevelOptions -- /m:1 /v:minimal /clp:ErrorsOnly
 ```
 
-Configuration is expected to pass. Compilation currently stops through the
-required `xrECore` dependency at the known ElPack boundary when
-`XR_ELPACK_ROOT` is unset:
+Configuration is expected to pass. A dependency-aware target build may spend
+time walking the required editor chain first, where `xrECore` is already known
+to stop at the ElPack boundary when `XR_ELPACK_ROOT` is unset:
 
 ```text
 Editors/ECore/Engine/GameMtlLib.h(...): fatal error C1083:
@@ -64,6 +64,20 @@ Cannot open include file: 'ElTree.hpp'
 ```
 
 This is the same honest blocker as `xrECore`, `xrEProps`, and LevelEditor.
+
+A direct LevelOptions compile probe, using MSBuild with project references
+disabled, now gets past the local Borland/MSVC CRT wrapper aliases,
+DirectSound wave-format include ordering, and the existing non-GUI VCL value
+shims. It stops at the same package boundary in the LevelOptions form itself:
+
+```text
+Editors/LevelOptions/Editor/SceneProperties.h(7): fatal error C1083:
+Cannot open include file: 'ElTree.hpp'
+```
+
+That header owns the actual GUI dependencies for this dialog:
+`ElTree.hpp`, `ElXPThemedControl.hpp`, AlexMX control headers, VCL headers, and
+`.dfm` form behavior.
 
 ## Next Honest Step
 

@@ -175,8 +175,10 @@ succeeds; compilation stops in `xrECore` at the expected ElPack boundary. See
 `BUILD_XR_LEVEL_OPTIONS`. It represents the historical `xrLC_options.dll`
 Borland project as a dependency/source probe, keeps the `.dfm` metadata visible,
 and does not port VCL or fake ElPack/AlexMX controls. Configuration succeeds;
-compilation stops through the required `xrECore` dependency at the expected
-ElPack boundary. The historical project also references missing
+dependency-aware builds may stop through the required `xrECore` dependency at
+the expected ElPack boundary. A direct LevelOptions compile probe gets past the
+local Borland CRT compatibility issue and stops at `SceneProperties.h` missing
+`ElTree.hpp`. The historical project also references missing
 `xrLC_OptionsEntry.cpp`. See [LevelOptions CMake Shell](level-options-cmake.md).
 
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
