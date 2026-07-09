@@ -15,10 +15,11 @@ Current users include:
 - LevelEditor, ActorEditor, ParticleEditor, ShaderEditor, and LevelOptions
   generations under `Editor/` and `Editors/`.
 
-The experimental `xrECore` and `xrEProps` CMake targets consume the option.
-Future editor targets should reuse the same cache path without exposing it to
-runtime targets. `xrEProps` requires ElPack throughout its folder, item-list,
-and property-list interfaces; it is not limited to one optional form.
+The experimental `xrECore`, `xrEProps`, and `LevelEditor` CMake targets consume
+the option. Future editor targets should reuse the same cache path without
+exposing it to runtime targets. `xrEProps` requires ElPack throughout its
+folder, item-list, and property-list interfaces; LevelEditor also uses ElPack
+widgets directly in its forms and frames.
 
 ## Local Configuration
 

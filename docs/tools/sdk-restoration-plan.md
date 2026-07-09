@@ -165,6 +165,12 @@ VCL widgets or `elpackB6.lib` inherently compatible with MSVC. See
 configuration succeeds and compilation stops at the expected ElPack boundary.
 See [xrEProps CMake Port Inventory](xreprops-inventory.md).
 
+`Editors/LevelEditor` now has an opt-in `LevelEditor` CMake shell behind
+`BUILD_XR_LEVEL_EDITOR`. It imports its source list from the canonical Borland
+project and enables the ECore/EProps/ETools dependency chain. Configuration
+succeeds; compilation stops in `xrECore` at the expected ElPack boundary. See
+[LevelEditor CMake Shell](level-editor-cmake.md).
+
 ## Related Documents
 
 * [Tools and SDK Status](status.md)
@@ -172,6 +178,7 @@ See [xrEProps CMake Port Inventory](xreprops-inventory.md).
 * [Legacy DirectX SDK Support](legacy-directx.md)
 * [ElPack Dependency](elpack-dependency.md)
 * [xrEProps CMake Port Inventory](xreprops-inventory.md)
+* [LevelEditor CMake Shell](level-editor-cmake.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)

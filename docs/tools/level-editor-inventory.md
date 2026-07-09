@@ -1,12 +1,14 @@
 # Level Editor Inventory
 
-This document records the first SDK investigation pass for the historical X-Ray build 1935 LevelEditor sources. It is documentation only; no LevelEditor port or build-system migration is implemented here.
+This document records the SDK investigation and first CMake shell for the historical X-Ray build 1935 LevelEditor sources.
 
 ## Summary
 
 The level editor source is present, but it is not a small isolated Visual Studio 2022 target. The most complete-looking tree is `Editors/LevelEditor/`, which is a Borland C++ Builder 6 VCL application that depends on shared editor DLL/library code, third-party Borland components, DirectX, MagicFM, old Boost, and runtime-style X-Ray libraries.
 
-No modern CMake target for LevelEditor was found. No build probe was run because there is no existing CMake target and creating one would be a broad GUI/editor port rather than a safe probe.
+An experimental opt-in `LevelEditor` CMake shell now exists behind
+`BUILD_XR_LEVEL_EDITOR`. It expresses the historical source and dependency
+chain without claiming that the Borland/VCL GUI is portable.
 
 ## Source Locations Found
 
@@ -60,9 +62,14 @@ No modern CMake target for LevelEditor was found. No build probe was run because
 
 ## Existing CMake Status
 
-No `LevelEditor`, `xrLevelEditor`, or `xrEPropsB` CMake target was found in the current tree. An experimental opt-in `xrECore` CMake target now exists, but the editor application itself is still not part of the modern CMake build.
+`Editors/LevelEditor/CMakeLists.txt` defines the opt-in `LevelEditor` target.
+It imports the live C++ units from `LevelEditor.bpr` and brings in the
+experimental `xrECore`, `xrEProps`, and `ETools` targets. Configure succeeds;
+the build stops in `xrECore` at missing `ElTree.hpp`.
 
-A build probe was not run in this pass because the available project file is a Borland `.bpr`, not a VS2022/CMake target. Creating a new target would require a broad port of VCL forms, Borland-specific headers, packages, and shared editor libraries.
+The `.bpr` also references absent `Splash.cpp` and `resource.res`; these are
+reported as snapshot warnings and are not fabricated. See
+[LevelEditor CMake Shell](level-editor-cmake.md).
 
 ## First Blocker
 
@@ -83,4 +90,6 @@ A second low-risk option is a build probe for `Editors/Tools/ETools` because it 
 
 ## Validation Performed
 
-Commands used for this investigation were read-only searches and file inspection only. No build was run, and no runtime/gameplay/render targets were touched.
+The VS2022 Win32 configure passed with `BUILD_XR_LEVEL_EDITOR=ON`. An isolated
+`LevelEditor` build was attempted and stopped at the expected ElPack boundary
+inside `xrECore`. No runtime/gameplay/render target definitions were changed.
