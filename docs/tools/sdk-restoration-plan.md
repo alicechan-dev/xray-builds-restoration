@@ -207,6 +207,19 @@ GUI/package dependencies such as `Classes.hpp`, `ElTree.hpp`, and
 present in this repository snapshot, and matching MagicFM SDK headers remain
 missing. See [ParticleEditor CMake Shell](particle-editor-cmake.md).
 
+`Editors/ActorEditor` now has an opt-in `ActorEditor` CMake shell behind
+`BUILD_XR_ACTOR_EDITOR`. It imports the active Borland C++ Builder 6 project
+source list, keeps the form metadata visible, and declares the existing
+ECore/EProps/ETools plus `xrParticles` dependency chain. Configuration
+succeeds; dependency-aware builds may stop through the required editor
+dependencies at the known ElPack boundary while `XR_ELPACK_ROOT` is unset. A
+direct ActorEditor compile probe gets past the local Borland CRT aliases,
+DirectSound include ordering, and audited VCL value shims, then stops at real
+GUI/package dependencies such as `Classes.hpp` and `ElTree.hpp`. The active
+project asks for `MagicFMDLLB.lib`, which is not present in this repository
+snapshot, and matching MagicFM SDK headers remain missing. See [ActorEditor
+CMake Shell](actor-editor-cmake.md).
+
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
@@ -232,6 +245,7 @@ Completed CMake milestones:
 - `LevelOptions` configures as an opt-in dependency/source shell;
 - `ShaderEditor` configures as an opt-in dependency/source shell;
 - `ParticleEditor` configures as an opt-in dependency/source shell;
+- `ActorEditor` configures as an opt-in dependency/source shell;
 - non-GUI compatibility contracts cover `AnsiString`, `TMsgDlgType`,
   `TMsgDlgButtons`, and `TShiftState`;
 - editor-only DirectX and ElPack roots have validation diagnostics.
@@ -258,6 +272,7 @@ runtime bug restoration.
 * [LevelEditor CMake Shell](level-editor-cmake.md)
 * [ShaderEditor CMake Shell](shader-editor-cmake.md)
 * [ParticleEditor CMake Shell](particle-editor-cmake.md)
+* [ActorEditor CMake Shell](actor-editor-cmake.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)

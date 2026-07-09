@@ -7,6 +7,7 @@ option(BUILD_XR_LEVEL_EDITOR "Build the experimental historical LevelEditor shel
 option(BUILD_XR_LEVEL_OPTIONS "Build the experimental historical LevelOptions DLL shell" OFF)
 option(BUILD_XR_SHADER_EDITOR "Build the experimental historical ShaderEditor shell" OFF)
 option(BUILD_XR_PARTICLE_EDITOR "Build the experimental historical ParticleEditor shell" OFF)
+option(BUILD_XR_ACTOR_EDITOR "Build the experimental historical ActorEditor shell" OFF)
 option(BUILD_XR_VCL_COMPAT_TESTS "Build isolated non-GUI VCL compatibility contract tests" OFF)
 set(XR_LEGACY_DX_ROOT "" CACHE PATH "Optional DirectX SDK root used only by restored SDK/editor targets")
 set(XR_ELPACK_ROOT "" CACHE PATH "Optional local ElPack root used only by restored SDK/editor targets")
@@ -39,6 +40,10 @@ endif()
 if(BUILD_XR_PARTICLE_EDITOR)
   set(XR_EDITOR_SDK_ENABLED TRUE)
   list(APPEND XR_EDITOR_SDK_TARGETS ParticleEditor xrECore xrEProps)
+endif()
+if(BUILD_XR_ACTOR_EDITOR)
+  set(XR_EDITOR_SDK_ENABLED TRUE)
+  list(APPEND XR_EDITOR_SDK_TARGETS ActorEditor xrECore xrEProps)
 endif()
 list(REMOVE_DUPLICATES XR_EDITOR_SDK_TARGETS)
 
@@ -76,7 +81,7 @@ if(XR_EDITOR_SDK_ENABLED)
     message(WARNING
       "SDK/editor dependency: XR_ELPACK_ROOT is unset. ElPack is required by "
       "xrECore, xrEProps, LevelEditor, LevelOptions, ShaderEditor, and "
-      "ParticleEditor; builds may stop at ElTree.hpp.")
+      "ParticleEditor, and ActorEditor; builds may stop at ElTree.hpp.")
   endif()
 
   if(XR_ALEXMX_ROOT)
@@ -177,7 +182,7 @@ if(XR_EDITOR_SDK_ENABLED)
       "(true VCL GUI package restoration remains blocked)")
   endif()
 
-  if(BUILD_XR_ECORE OR BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR)
+  if(BUILD_XR_ECORE OR BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR OR BUILD_XR_ACTOR_EDITOR)
     if(XR_LEGACY_DX_ROOT)
       message(STATUS "  XR_LEGACY_DX_ROOT: '${XR_LEGACY_DX_ROOT}'")
     else()
@@ -187,7 +192,7 @@ if(XR_EDITOR_SDK_ENABLED)
     endif()
   endif()
 
-  if(BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR)
+  if(BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR OR BUILD_XR_ACTOR_EDITOR)
     if(XRAY_BOOST_ROOT)
       message(STATUS "  XRAY_BOOST_ROOT: '${XRAY_BOOST_ROOT}'")
     else()
@@ -206,15 +211,15 @@ if(BUILD_XR_UNPACK)
   add_subdirectory(xr_unpack)
 endif()
 
-if(BUILD_XR_ETOOLS OR BUILD_XR_ECORE OR BUILD_XR_EPROPS OR BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR)
+if(BUILD_XR_ETOOLS OR BUILD_XR_ECORE OR BUILD_XR_EPROPS OR BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR OR BUILD_XR_ACTOR_EDITOR)
   add_subdirectory("${PROJECT_SOURCE_DIR}/Editors/Tools/ETools" "${CMAKE_BINARY_DIR}/Editors/Tools/ETools")
 endif()
 
-if(BUILD_XR_EPROPS OR BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR)
+if(BUILD_XR_EPROPS OR BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR OR BUILD_XR_ACTOR_EDITOR)
   add_subdirectory("${PROJECT_SOURCE_DIR}/Editors/xrEProps" "${CMAKE_BINARY_DIR}/Editors/xrEProps")
 endif()
 
-if(BUILD_XR_ECORE OR BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR)
+if(BUILD_XR_ECORE OR BUILD_XR_LEVEL_EDITOR OR BUILD_XR_LEVEL_OPTIONS OR BUILD_XR_SHADER_EDITOR OR BUILD_XR_PARTICLE_EDITOR OR BUILD_XR_ACTOR_EDITOR)
   add_subdirectory("${PROJECT_SOURCE_DIR}/Editors/ECore" "${CMAKE_BINARY_DIR}/Editors/ECore")
 endif()
 
@@ -232,6 +237,10 @@ endif()
 
 if(BUILD_XR_PARTICLE_EDITOR)
   add_subdirectory("${PROJECT_SOURCE_DIR}/Editors/ParticleEditor" "${CMAKE_BINARY_DIR}/Editors/ParticleEditor")
+endif()
+
+if(BUILD_XR_ACTOR_EDITOR)
+  add_subdirectory("${PROJECT_SOURCE_DIR}/Editors/ActorEditor" "${CMAKE_BINARY_DIR}/Editors/ActorEditor")
 endif()
 
 if(BUILD_XR_VCL_COMPAT_TESTS)
