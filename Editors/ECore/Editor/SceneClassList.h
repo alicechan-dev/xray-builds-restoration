@@ -85,11 +85,11 @@ class CCustomObject;
         }
         IC SResult* r_begin	()
         {
-        	return results.begin();
+			return results.empty() ? 0 : &results.front();
         }
         IC SResult* r_end	()
         {
-        	return results.end();
+			return results.empty() ? 0 : &results.front() + results.size();
         }
         IC void r_clear		()
         {
