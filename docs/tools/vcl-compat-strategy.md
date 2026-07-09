@@ -29,6 +29,13 @@ providing a portable alternative. The small `TMsgDlgType` enum in the legacy
 `gauss` tool is useful evidence for values, but it is not a complete ECore
 dialog abstraction.
 
+The current build confirms that ElPack is part of retained editor interfaces,
+not merely an excluded form implementation. `GameMtlLib.h` is the first include
+owner, while `UI_ToolsCustom.h` reaches the same dependency through
+`xrEProps/ItemListHelper.h`. The historical project links `elpackB6.lib`.
+Consequently, no fake `ElTree.hpp`, opportunistic include guard, or source
+exclusion belongs in the non-GUI compatibility strategy.
+
 ## Chosen Strategy
 
 Use a staged, narrow form of Strategy A for non-GUI value semantics only:

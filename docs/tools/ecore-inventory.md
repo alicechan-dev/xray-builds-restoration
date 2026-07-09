@@ -85,12 +85,11 @@ Sixth blocker fixed: the tested `AnsiString` compatibility shim is included by
 `Editors/ECore/stdafx.h` for non-Borland builds through a private `xrECore`
 include path. Borland builds continue to obtain the original type from VCL.
 
-Current result after the button-set integration: the build advances past
-`TMsgDlgButtons` and stops at the next Borland/VCL and editor package types:
+Current result after the non-GUI value compatibility work and local STL/time
+fixes: the build reaches the ElPack UI dependency:
 
 ```text
-Editors\ECore\Editor\UI_Camera.h(...): error C2061: syntax error: identifier 'TShiftState'
-Editors\ECore\Engine\GameMtlLib.h(...): fatal error C1083: Cannot open include file: 'ElTree.hpp'
+Editors\ECore\Engine\GameMtlLib.h(50): fatal error C1083: Cannot open include file: 'ElTree.hpp'
 ```
 
 The isolated `TMsgDlgType` compatibility contract supplies only the audited
@@ -107,6 +106,25 @@ export code; `TShiftState` is part of the editor input interfaces; and
 dependency used by material and form headers. All translation units include
 `stdafx.h`, which exposes several of these types before individual source-file
 ownership can isolate them.
+
+## ElPack Boundary
+
+`GameMtlLib.h` is the first include owner seen by the current build. Although
+that header does not directly name a `TElTree` type, guarding its include would
+not remove the dependency: retained `UI_ToolsCustom.h` includes
+`ItemListHelper.h` from `xrEProps`, and those APIs use real `TElTree` and
+`TElTreeItem` objects throughout.
+
+The historical `xrEPropsB.bpr` links `elpackB6.lib` and names
+`R:\Borland\Components6\ElPack\Code\Source` as an include path. No ElPack
+headers or libraries were found in the repository or the inventoried local
+DirectX SDK tree. ElPack is therefore a Borland UI package dependency, not a
+candidate for the non-GUI VCL value compatibility layer.
+
+No source or include was guarded or excluded for this probe. A future ElPack
+root option would only be meaningful alongside a viable Borland-compatible UI
+toolchain; adding an include path alone would not make its VCL widgets usable
+by MSVC.
 
 No source was excluded in this probe. The isolated `AnsiString` value shim does
 not provide or imply any VCL UI behavior.
