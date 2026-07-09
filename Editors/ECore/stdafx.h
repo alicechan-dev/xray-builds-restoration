@@ -81,6 +81,7 @@
 
 #ifndef __BORLANDC__
 #include <AnsiString.h>
+#include <TMsgDlgType.h>
 #endif
 
 #ifdef _EDITOR

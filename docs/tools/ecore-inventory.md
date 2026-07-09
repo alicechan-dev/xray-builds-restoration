@@ -85,14 +85,18 @@ Sixth blocker fixed: the tested `AnsiString` compatibility shim is included by
 `Editors/ECore/stdafx.h` for non-Borland builds through a private `xrECore`
 include path. Borland builds continue to obtain the original type from VCL.
 
-Current result after the integration: the build advances past `AnsiString` and
-stops at the next Borland/VCL and editor package types:
+Current result after the enum integration: the build advances past
+`TMsgDlgType` and stops at the next Borland/VCL and editor package types:
 
 ```text
-Editors\ECore\Editor\ELog.h(...): error C2061: syntax error: identifier 'TMsgDlgType'
+Editors\ECore\Editor\ELog.h(...): error C2061: syntax error: identifier 'TMsgDlgButtons'
 Editors\ECore\Editor\UI_Camera.h(...): error C2061: syntax error: identifier 'TShiftState'
 Editors\ECore\Engine\GameMtlLib.h(...): fatal error C1083: Cannot open include file: 'ElTree.hpp'
 ```
+
+The isolated `TMsgDlgType` compatibility contract now supplies only the audited
+five-value message category enum to non-Borland ECore builds. Dialog buttons,
+modal results, and `MessageDlg` remain unresolved VCL UI dependencies.
 
 This boundary cannot be removed honestly by excluding one additional form unit.
 `AnsiString` is part of retained object, thumbnail, image, sound, particle, and

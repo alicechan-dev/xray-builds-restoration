@@ -64,6 +64,20 @@ temporary lifetime, formatting truncation behavior, and case conversion before
 the type is used by `xrECore`. A simple `typedef std::string AnsiString` does
 not satisfy this contract.
 
+## `TMsgDlgType` Contract
+
+The repository contains matching legacy declarations in both generations of
+the `gauss` tool:
+
+```cpp
+enum TMsgDlgType { mtWarning, mtError, mtInformation, mtConfirmation, mtCustom };
+```
+
+The isolated `vcl_msgdlg_type_contract` target verifies those five values and
+their declaration order. The compatibility header defines no button sets,
+modal results, dialog functions, or GUI behavior. Non-Borland `xrECore` builds
+consume only this enum; Borland builds continue to use the VCL declaration.
+
 ## Explicit Non-Goals
 
 * No `TForm`, `TFrame`, `TComponent`, `TObject`, or `Application` placeholders.
@@ -89,5 +103,6 @@ boundary at a time and must not extend this value-type layer into VCL UI
 behavior.
 
 `xrECore` remains an honest build probe; integrating `AnsiString` does not imply
-support for `TShiftState`, dialog types, forms, `Application`, closures, or
-ElPack.
+support for `TShiftState`, dialog button/result types, forms, `Application`,
+closures, or ElPack. The compatible `TMsgDlgType` enum is a message category
+only and does not change that boundary.
