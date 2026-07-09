@@ -223,9 +223,9 @@ CMake Shell](actor-editor-cmake.md).
 `Editors/Tools/LWO` now has an opt-in non-GUI `LWO` CMake shell behind
 `BUILD_XR_LWO`. It represents the historical LightWave object helper DLL and
 does not depend on ElPack, VCL, AlexMX, or MagicFM. Configuration succeeds;
-compilation stops at the real source snapshot gap: missing `lwo2.h` and the
-other LightWave reader files referenced by the legacy project. See [LWO CMake
-Shell](lwo-cmake.md).
+the missing `lwo2.h` and related reader sources in the active folder are
+resolved narrowly from the older `Editor/Tools/LWO` generation, and the
+Release target builds. See [LWO CMake Shell](lwo-cmake.md).
 
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost

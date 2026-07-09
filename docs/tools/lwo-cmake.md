@@ -26,14 +26,15 @@ Those exports wrap the LightWave object reader API (`lwGetObject` and
 
 ## Source Snapshot Status
 
-The repository snapshot contains:
+The active `Editors/Tools/LWO` snapshot contains:
 
 - `LWO.cpp`
 - `envelope.c`
 - `LWO.vcproj`
 
 The historical project references additional LightWave reader sources and
-headers that are absent from this snapshot, including:
+headers that are absent from that active folder, but present in the older
+`Editor/Tools/LWO` generation:
 
 - `lwo2.h`
 - `envelope.h`
@@ -47,7 +48,9 @@ headers that are absent from this snapshot, including:
 - `vecmath.c`
 - `vmap.c`
 
-CMake reports the missing project entries instead of inventing replacements.
+CMake imports those older-generation files narrowly for this target instead of
+copying or reinventing them. If a project entry is absent from both snapshots,
+CMake reports it.
 
 ## Build Probe
 
@@ -59,19 +62,21 @@ cmake --build build-lwo-check --config Release `
   --target LWO -- /m:1 /v:minimal /clp:ErrorsOnly
 ```
 
-Configure succeeds and the target is generated. The first compile blocker is
-expected to be the missing LightWave reader header:
+Configure succeeds and the target is generated. The missing LightWave reader
+files are resolved from `Editor/Tools/LWO`, and the Release build currently
+passes.
 
 ```text
-Editors/Tools/LWO/LWO.cpp(...): fatal error C1083:
-Cannot open include file: 'lwo2.h'
+cmake --build build-lwo-check --config Release `
+  --target LWO -- /m:1 /v:minimal /clp:ErrorsOnly
 ```
 
-This is a source/dependency snapshot gap, not a GUI package blocker.
+This target remains non-GUI and does not use the Borland/VCL editor package
+stack.
 
 ## Next Honest Step
 
-Locate the matching historical LightWave reader source set or another lawful
-copy of the missing files. Do not replace it with guessed parser code in this
-target. A clean-room reader should be a separate researched tool after the
-format is documented.
+Next, validate the exported `LWO_ImportObject` and `LWO_CloseFile` entrypoints
+against a lawful synthetic or user-owned LightWave object fixture. Do not
+replace the reader with guessed parser code. A clean-room reader should be a
+separate researched tool after the format is documented.

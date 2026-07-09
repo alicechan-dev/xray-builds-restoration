@@ -1,9 +1,11 @@
 set(XR_LWO_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(XR_LWO_LEGACY_DIR "${PROJECT_SOURCE_DIR}/Editor/Tools/LWO")
 set(XR_LWO_PROJECT "${XR_LWO_DIR}/LWO.vcproj")
 
 # Experimental build-probe shell for the historical LightWave object helper
 # DLL. The legacy .vcproj remains authoritative for source ownership; missing
-# referenced files are reported instead of fabricated.
+# referenced files are resolved from the older Editor/Tools/LWO generation when
+# available and reported instead of fabricated when absent from both snapshots.
 file(STRINGS "${XR_LWO_PROJECT}" XR_LWO_PROJECT_LINES
   REGEX "RelativePath=\"\\.\\\\[^\"]+\"")
 
@@ -14,17 +16,26 @@ foreach(line IN LISTS XR_LWO_PROJECT_LINES)
   if(path_match)
     string(REPLACE "\\" "/" relative_path "${CMAKE_MATCH_1}")
     set(source_path "${XR_LWO_DIR}/${relative_path}")
+    set(legacy_source_path "${XR_LWO_LEGACY_DIR}/${relative_path}")
     get_filename_component(source_ext "${relative_path}" EXT)
     string(TOLOWER "${source_ext}" source_ext)
     if(source_ext STREQUAL ".cpp" OR source_ext STREQUAL ".c")
       if(EXISTS "${source_path}")
         list(APPEND XR_LWO_SOURCES "${source_path}")
+      elseif(EXISTS "${legacy_source_path}")
+        list(APPEND XR_LWO_SOURCES "${legacy_source_path}")
+        message(STATUS
+          "LWO: using legacy Editor/Tools/LWO source '${relative_path}'")
       else()
         message(WARNING "LWO.vcproj references missing source '${relative_path}'")
       endif()
     else()
       if(EXISTS "${source_path}")
         list(APPEND XR_LWO_PROJECT_FILES "${source_path}")
+      elseif(EXISTS "${legacy_source_path}")
+        list(APPEND XR_LWO_PROJECT_FILES "${legacy_source_path}")
+        message(STATUS
+          "LWO: using legacy Editor/Tools/LWO file '${relative_path}'")
       else()
         message(WARNING "LWO.vcproj references missing file '${relative_path}'")
       endif()
@@ -68,7 +79,10 @@ foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
   )
 endforeach()
 
-target_include_directories(LWO PRIVATE "${XR_LWO_DIR}")
+target_include_directories(LWO PRIVATE
+  "${XR_LWO_DIR}"
+  "${XR_LWO_LEGACY_DIR}"
+)
 
 target_compile_definitions(LWO PRIVATE
   WIN32
