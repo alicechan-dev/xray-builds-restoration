@@ -83,6 +83,7 @@
 #include <AnsiString.h>
 #include <TMsgDlgButtons.h>
 #include <TMsgDlgType.h>
+#include <TShiftState.h>
 #endif
 
 #ifdef _EDITOR
