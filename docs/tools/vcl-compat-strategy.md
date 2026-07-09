@@ -75,10 +75,16 @@ not satisfy this contract.
 
 ## Next Safe Implementation
 
-Create an opt-in, standalone compatibility test target for the audited
-`AnsiString` contract. Keep it disconnected from `xrECore` until those tests
-pass. After that, replace only non-GUI string usage in a small ECore slice and
-reassess whether an `xrECoreBase` target has a coherent API and dependency set.
+An experimental `AnsiString` shim now lives in
+`cmake/compat/vcl/AnsiString.h`. The opt-in
+`vcl_ansi_string_contract` executable tests only the audited non-GUI value
+semantics and remains disconnected from `xrECore`.
+
+The next step is to compare the contract against the original Borland behavior,
+especially formatting failure, indexing failure, codepage handling, and
+temporary conversion lifetime. Only then should a small non-GUI ECore slice
+consume it and help determine whether an `xrECoreBase` target has a coherent
+API and dependency set.
 
 Until then, `xrECore` remains an honest build probe blocked first by
 `AnsiString` in `Editors/ECore/stdafx.h`.

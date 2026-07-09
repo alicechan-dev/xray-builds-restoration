@@ -2,6 +2,7 @@ option(XRAY_BUILD_ARCHIVE_LIST "Build the read-only X-Ray archive listing diagno
 option(BUILD_XR_UNPACK "Build the experimental xr_unpack archive unpacker scaffold" OFF)
 option(BUILD_XR_ETOOLS "Build the experimental editor ETools SDK helper DLL" OFF)
 option(BUILD_XR_ECORE "Build the experimental editor core SDK DLL" OFF)
+option(BUILD_XR_VCL_COMPAT_TESTS "Build isolated non-GUI VCL compatibility contract tests" OFF)
 
 if(XRAY_BUILD_ARCHIVE_LIST)
   add_subdirectory(xrArchiveList)
@@ -17,4 +18,8 @@ endif()
 
 if(BUILD_XR_ECORE)
   add_subdirectory("${PROJECT_SOURCE_DIR}/Editors/ECore" "${CMAKE_BINARY_DIR}/Editors/ECore")
+endif()
+
+if(BUILD_XR_VCL_COMPAT_TESTS)
+  add_subdirectory("${PROJECT_SOURCE_DIR}/tests/compat/vcl" "${CMAKE_BINARY_DIR}/tests/compat/vcl")
 endif()
