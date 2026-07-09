@@ -17,7 +17,7 @@ xr_unpack help
 xr_unpack info <archive>
 xr_unpack list <archive> [--limit N] [--filter PATTERN]
 xr_unpack extract <archive> <out_dir> --dry-run [--limit N] [--filter PATTERN]
-xr_unpack extract <archive> <out_dir> --write
+xr_unpack extract <archive> <out_dir> --write [--filter PATTERN]
 xr_unpack verify <archive>
 ```
 
@@ -28,7 +28,7 @@ Current command status:
 * `verify` checks directory structure, entry bounds, duplicate names, and path-safety warnings without extracting payloads.
 * `extract` refuses unless `--dry-run` or `--write` is passed.
 * `extract --dry-run` validates planned output paths, duplicate outputs, existing target files, and entry bounds, then prints the paths it would write. It writes nothing. Use `--filter PATTERN` to plan only matching entries.
-* `extract --write` runs the same safety plan, refuses unsafe paths, duplicate outputs, out-of-bounds entries, and existing output files, then writes files under `<out_dir>`.
+* `extract --write` runs the same safety plan, refuses unsafe paths, duplicate outputs, out-of-bounds entries, and existing output files, then writes files under `<out_dir>`. Use `--filter PATTERN` to extract only matching entries after the filtered plan passes.
 
 The parser is based on existing repository evidence from `xrCore/LocatorAPI.cpp`, `xrCompress/xrCompress.cpp`, and `tools/xrArchiveList/`.
 
@@ -45,6 +45,7 @@ The current safety helpers are designed to:
 * normalize `/` and `\` separators;
 * compose output paths under the requested output directory;
 * refuse overwriting existing files unless a future explicit flag allows it.
+* remove a newly created partial output if payload reading or decompression fails.
 
 Run `extract --dry-run` before `extract --write`, especially when inspecting a new archive. Do not run extraction into the repository root or commit extracted proprietary files.
 
@@ -66,5 +67,5 @@ cmake --build build --config Debug --target xr_unpack -- //m:1 //v:minimal //clp
 
 1. Add synthetic archive fixtures for the proven chunk/directory format.
 2. Add synthetic archive fixtures for stored and compressed payload extraction.
-3. Add selected-file extraction after filter behavior has synthetic tests.
+3. Add synthetic coverage for selected-file extraction.
 4. Add an explicit `--overwrite` policy only if it becomes necessary.

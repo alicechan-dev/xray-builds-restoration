@@ -39,12 +39,12 @@ void print_help()
         << "  xr_unpack info <archive>\n"
         << "  xr_unpack list <archive> [--limit N] [--filter PATTERN]\n"
         << "  xr_unpack extract <archive> <out_dir> --dry-run [--limit N] [--filter PATTERN]\n"
-        << "  xr_unpack extract <archive> <out_dir> --write\n"
+        << "  xr_unpack extract <archive> <out_dir> --write [--filter PATTERN]\n"
         << "  xr_unpack verify <archive>\n"
         << "\n"
         << "info, list, and verify perform read-only inspection of proven .xp* archive\n"
         << "directory metadata. extract writes files only when --write is passed.\n"
-        << "--filter supports simple '*' and '?' wildcards for list and dry-run output.\n";
+        << "--filter supports simple '*' and '?' wildcards for list and extraction.\n";
 }
 
 int require_arg_count(int argc, int expected, const char* usage)
@@ -401,11 +401,6 @@ bool parse_extract_options(int argc, char** argv, ExtractOptions& options)
         return false;
     }
 
-    if (options.write && options.has_filter) {
-        std::cerr << "xr_unpack: --filter is currently supported only with list and extract --dry-run\n";
-        return false;
-    }
-
     return true;
 }
 
@@ -517,7 +512,7 @@ void print_extract_plan_summary(const ExtractPlan& plan, const char* output_dir,
     std::cout << "archive: " << plan.archive.info.path << "\n";
     std::cout << "output_dir: " << output_dir << "\n";
     std::cout << "mode: " << mode << "\n";
-    std::cout << "entries: " << plan.entries.size() << "\n";
+    std::cout << "entries_matched: " << plan.entries.size() << "\n";
     if (plan.entries.size() != plan.archive.entries.size())
         std::cout << "archive_entries: " << plan.archive.entries.size() << "\n";
     std::cout << "safe_entries: " << plan.safe_entries << "\n";
@@ -681,16 +676,8 @@ bool copy_compressed_entry(std::ifstream& archive_file, std::ofstream& output_fi
     return true;
 }
 
-int write_extract(const char* archive_path, const char* output_dir)
+int write_extract(const char* archive_path, const char* output_dir, const ExtractOptions& options)
 {
-    ExtractOptions options;
-    options.dry_run = false;
-    options.write = true;
-    options.has_limit = false;
-    options.limit = 0;
-    options.has_filter = false;
-    options.filter.clear();
-
     const ExtractPlan plan = build_extract_plan(archive_path, output_dir, options);
     if (!plan.archive.errors.empty()) {
         print_archive_errors(plan.archive);
@@ -710,7 +697,8 @@ int write_extract(const char* archive_path, const char* output_dir)
         return kRuntimeError;
     }
 
-    std::size_t entries_written = 0;
+    std::size_t files_written = 0;
+    std::size_t directories_written = 0;
     std::uint64_t bytes_written = 0;
 
     for (std::vector<PlannedEntry>::const_iterator i = plan.entries.begin(); i != plan.entries.end(); ++i) {
@@ -725,7 +713,7 @@ int write_extract(const char* archive_path, const char* output_dir)
                 return kRuntimeError;
             }
 
-            ++entries_written;
+            ++directories_written;
             continue;
         }
 
@@ -750,15 +738,19 @@ int write_extract(const char* archive_path, const char* output_dir)
             : copy_compressed_entry(archive_file, output_file, *i->entry, bytes_written);
 
         if (!ok) {
+            output_file.close();
+            DeleteFileA(i->output_path.c_str());
             std::cerr << "xr_unpack extract: failed while writing entry: " << i->entry->name << "\n";
             return kRuntimeError;
         }
 
-        ++entries_written;
+        ++files_written;
     }
 
-    std::cout << "entries_written: " << entries_written << "\n";
+    std::cout << "files_written: " << files_written << "\n";
+    std::cout << "directory_entries_created: " << directories_written << "\n";
     std::cout << "bytes_written: " << bytes_written << "\n";
+    std::cout << "refused_entries: 0\n";
     std::cout << "status: ok\n";
     return kOk;
 }
@@ -815,7 +807,7 @@ int main(int argc, char** argv)
     else if (command == "extract") {
         if (argc < 4) {
             std::cerr << "xr_unpack: invalid arguments\n";
-            std::cerr << "usage: xr_unpack extract <archive> <out_dir> (--dry-run [--limit N] [--filter PATTERN] | --write)\n";
+            std::cerr << "usage: xr_unpack extract <archive> <out_dir> (--dry-run [--limit N] [--filter PATTERN] | --write [--filter PATTERN])\n";
             result = kUsageError;
         }
         else if (std::string(argv[3]).empty()) {
@@ -827,7 +819,7 @@ int main(int argc, char** argv)
             if (!parse_extract_options(argc, argv, options))
                 result = kUsageError;
             else if (!options.dry_run)
-                result = options.write ? write_extract(argv[2], argv[3]) : report_extract_disabled(argv[2]);
+                result = options.write ? write_extract(argv[2], argv[3], options) : report_extract_disabled(argv[2]);
             else
                 result = plan_extract_dry_run(argv[2], argv[3], options);
         }
