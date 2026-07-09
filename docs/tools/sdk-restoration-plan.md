@@ -220,6 +220,13 @@ project asks for `MagicFMDLLB.lib`, which is not present in this repository
 snapshot, and matching MagicFM SDK headers remain missing. See [ActorEditor
 CMake Shell](actor-editor-cmake.md).
 
+`Editors/Tools/LWO` now has an opt-in non-GUI `LWO` CMake shell behind
+`BUILD_XR_LWO`. It represents the historical LightWave object helper DLL and
+does not depend on ElPack, VCL, AlexMX, or MagicFM. Configuration succeeds;
+compilation stops at the real source snapshot gap: missing `lwo2.h` and the
+other LightWave reader files referenced by the legacy project. See [LWO CMake
+Shell](lwo-cmake.md).
+
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
@@ -290,6 +297,7 @@ targets should remain on their own restoration path.
 * [ShaderEditor CMake Shell](shader-editor-cmake.md)
 * [ParticleEditor CMake Shell](particle-editor-cmake.md)
 * [ActorEditor CMake Shell](actor-editor-cmake.md)
+* [LWO CMake Shell](lwo-cmake.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)

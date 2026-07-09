@@ -8,6 +8,7 @@ option(BUILD_XR_LEVEL_OPTIONS "Build the experimental historical LevelOptions DL
 option(BUILD_XR_SHADER_EDITOR "Build the experimental historical ShaderEditor shell" OFF)
 option(BUILD_XR_PARTICLE_EDITOR "Build the experimental historical ParticleEditor shell" OFF)
 option(BUILD_XR_ACTOR_EDITOR "Build the experimental historical ActorEditor shell" OFF)
+option(BUILD_XR_LWO "Build the experimental historical LightWave object helper" OFF)
 option(BUILD_XR_VCL_COMPAT_TESTS "Build isolated non-GUI VCL compatibility contract tests" OFF)
 set(XR_LEGACY_DX_ROOT "" CACHE PATH "Optional DirectX SDK root used only by restored SDK/editor targets")
 set(XR_ELPACK_ROOT "" CACHE PATH "Optional local ElPack root used only by restored SDK/editor targets")
@@ -241,6 +242,10 @@ endif()
 
 if(BUILD_XR_ACTOR_EDITOR)
   add_subdirectory("${PROJECT_SOURCE_DIR}/Editors/ActorEditor" "${CMAKE_BINARY_DIR}/Editors/ActorEditor")
+endif()
+
+if(BUILD_XR_LWO)
+  add_subdirectory("${PROJECT_SOURCE_DIR}/Editors/Tools/LWO" "${CMAKE_BINARY_DIR}/Editors/Tools/LWO")
 endif()
 
 if(BUILD_XR_VCL_COMPAT_TESTS)
