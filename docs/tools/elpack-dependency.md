@@ -50,3 +50,12 @@ toolchain probe, not as a promise that the GUI layer builds.
 
 Do not copy ElPack headers or binaries into this repository, add their paths
 globally, or use this option for runtime targets.
+
+## Local Search Result
+
+The targeted local dependency inventory did not find `ElTree.hpp`,
+`elpackB6.lib`, or an ElPack package directory under `D:\Projects`, the likely
+installed Borland locations on `C:`, or `R:\Borland` (the `R:` drive was not
+present). `XR_ELPACK_ROOT` therefore remains unset in local build probes.
+
+See [Local Editor Dependency Inventory](editor-dependencies.md).

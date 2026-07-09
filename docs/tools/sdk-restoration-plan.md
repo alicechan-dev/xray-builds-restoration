@@ -171,6 +171,12 @@ project and enables the ECore/EProps/ETools dependency chain. Configuration
 succeeds; compilation stops in `xrECore` at the expected ElPack boundary. See
 [LevelEditor CMake Shell](level-editor-cmake.md).
 
+The [Local Editor Dependency Inventory](editor-dependencies.md) records the
+current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
+1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
+MagicFM SDK remain unavailable. Future `XR_ALEXMX_ROOT` and `XR_MAGICFM_ROOT`
+options should be added only after lawful, ABI-matched packages are found.
+
 ## Related Documents
 
 * [Tools and SDK Status](status.md)
@@ -179,6 +185,7 @@ succeeds; compilation stops in `xrECore` at the expected ElPack boundary. See
 * [ElPack Dependency](elpack-dependency.md)
 * [xrEProps CMake Port Inventory](xreprops-inventory.md)
 * [LevelEditor CMake Shell](level-editor-cmake.md)
+* [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)

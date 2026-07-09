@@ -94,6 +94,11 @@ Restored editor targets may use the optional `XR_LEGACY_DX_ROOT` cache path.
 The inventoried Summer 2004 DirectX 9.0 SDK is a strong historical match, but
 the option is deliberately target-local and does not affect runtime targets.
 See [Legacy DirectX SDK Support](legacy-directx.md).
+
+The local editor dependency search found ColorPicker and Boost 1.33.1
+candidates, but no ElPack, Borland/VCL installation, AlexMX control package, or
+complete MagicFM SDK. See
+[Local Editor Dependency Inventory](editor-dependencies.md).
 * `xrParticles/CMakeLists.txt` for `xrParticles`.
 * `xrLUA/CMakeLists.txt` for `xrLUA`.
 * `xrNetServer/CMakeLists.txt` for `xrNetServer`.

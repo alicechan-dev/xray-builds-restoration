@@ -41,6 +41,11 @@ Further historical dependencies remain unresolved: Borland VCL runtime and
 packages, AlexMX controls, MagicFM, old Boost, FreeImage/DXT helpers, LWO,
 hemisphere, Ogg tools, and progressive-mesh libraries.
 
+The local dependency inventory found the matching DirectX SDK, ColorPicker
+runtime/import pair, and Boost 1.33.1. It did not find ElPack, Borland/VCL,
+AlexMX control headers, or MagicFM SDK headers. See
+[Local Editor Dependency Inventory](editor-dependencies.md).
+
 ## Build Probe
 
 ```powershell
