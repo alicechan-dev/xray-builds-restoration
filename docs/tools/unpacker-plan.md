@@ -55,6 +55,7 @@ xr_unpack list <archive> [--limit N] [--filter PATTERN]
 xr_unpack extract <archive> <out_dir> --dry-run [--limit N] [--filter PATTERN]
 xr_unpack extract <archive> <out_dir> --write [--filter PATTERN]
 xr_unpack verify <archive>
+xr_unpack verify-extracted <archive> <out_dir> [--filter PATTERN]
 ```
 
 Suggested command behavior:
@@ -71,6 +72,7 @@ Suggested command behavior:
 * `extract --write` runs the same plan and writes files only if there are no unsafe entries, duplicate outputs, existing outputs, or out-of-bounds entries.
 * `extract --write --filter PATTERN` applies the same preflight to the matching subset before writing selected files.
 * `verify` checks structure, directory entries, bounds, duplicate names, and path-safety warnings when known.
+* `verify-extracted` compares matched safe file entries with an extracted tree without writing. It checks presence and unpacked size, counts skipped directory placeholders, and supports filters.
 * `info` reports archive family, directory chunk status, compression flags, entry count, and known limitations.
 
 ## Format Research Checklist
@@ -151,5 +153,6 @@ The unpacker should produce predictable paths that match the runtime's virtual f
 8. Add explicit full extraction with `--write`, shared safety preflight, no overwrite by default, and proven runtime decompression. Done.
 9. Add filters such as `--filter "*.ltx"` for listing and dry-run planning. Done.
 10. Add safe selected-file extraction with filters and dry-run support. Done.
-11. Add an explicit overwrite policy only if needed.
-12. Document modding workflow examples using only lawful local data and synthetic repository fixtures.
+11. Add read-only post-extraction presence and size verification. Done.
+12. Add an explicit overwrite policy only if needed.
+13. Document modding workflow examples using only lawful local data and synthetic repository fixtures.

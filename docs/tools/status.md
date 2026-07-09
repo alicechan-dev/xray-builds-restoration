@@ -103,6 +103,9 @@ complete MagicFM SDK. See
 Opt-in ECore, EProps, and LevelEditor configurations now print a consolidated
 dependency summary. Missing or invalid ElPack remains a non-fatal configure
 warning and predicts the expected `ElTree.hpp` build-stop.
+
+`xr_unpack verify-extracted` performs read-only post-extraction checks for
+missing files and unpacked-size mismatches, with optional path filtering.
 * `xrParticles/CMakeLists.txt` for `xrParticles`.
 * `xrLUA/CMakeLists.txt` for `xrLUA`.
 * `xrNetServer/CMakeLists.txt` for `xrNetServer`.

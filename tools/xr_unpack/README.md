@@ -19,6 +19,7 @@ xr_unpack list <archive> [--limit N] [--filter PATTERN]
 xr_unpack extract <archive> <out_dir> --dry-run [--limit N] [--filter PATTERN]
 xr_unpack extract <archive> <out_dir> --write [--filter PATTERN]
 xr_unpack verify <archive>
+xr_unpack verify-extracted <archive> <out_dir> [--filter PATTERN]
 ```
 
 Current command status:
@@ -29,6 +30,7 @@ Current command status:
 * `extract` refuses unless `--dry-run` or `--write` is passed.
 * `extract --dry-run` validates planned output paths, duplicate outputs, existing target files, and entry bounds, then prints the paths it would write. It writes nothing. Use `--filter PATTERN` to plan only matching entries.
 * `extract --write` runs the same safety plan, refuses unsafe paths, duplicate outputs, out-of-bounds entries, and existing output files, then writes files under `<out_dir>`. Use `--filter PATTERN` to extract only matching entries after the filtered plan passes.
+* `verify-extracted` performs a read-only comparison of archive entries against an extracted output tree. It reports missing files and size mismatches and supports `--filter PATTERN`. Directory placeholders are counted and skipped; extra output files are not checked.
 
 The parser is based on existing repository evidence from `xrCore/LocatorAPI.cpp`, `xrCompress/xrCompress.cpp`, and `tools/xrArchiveList/`.
 
@@ -49,6 +51,10 @@ The current safety helpers are designed to:
 
 Run `extract --dry-run` before `extract --write`, especially when inspecting a new archive. Do not run extraction into the repository root or commit extracted proprietary files.
 
+After extraction, run `verify-extracted` against the output directory. The
+command writes nothing and reports `status: ok` only when every matched safe
+file exists with the expected unpacked size.
+
 ## Build
 
 Configure with the tool enabled:
@@ -68,4 +74,5 @@ cmake --build build --config Debug --target xr_unpack -- //m:1 //v:minimal //clp
 1. Add synthetic archive fixtures for the proven chunk/directory format.
 2. Add synthetic archive fixtures for stored and compressed payload extraction.
 3. Add synthetic coverage for selected-file extraction.
-4. Add an explicit `--overwrite` policy only if it becomes necessary.
+4. Add synthetic coverage for extracted-tree verification.
+5. Add an explicit `--overwrite` policy only if it becomes necessary.

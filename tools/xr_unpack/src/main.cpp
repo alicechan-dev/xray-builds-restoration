@@ -41,6 +41,7 @@ void print_help()
         << "  xr_unpack extract <archive> <out_dir> --dry-run [--limit N] [--filter PATTERN]\n"
         << "  xr_unpack extract <archive> <out_dir> --write [--filter PATTERN]\n"
         << "  xr_unpack verify <archive>\n"
+        << "  xr_unpack verify-extracted <archive> <out_dir> [--filter PATTERN]\n"
         << "\n"
         << "info, list, and verify perform read-only inspection of proven .xp* archive\n"
         << "directory metadata. extract writes files only when --write is passed.\n"
@@ -411,6 +412,101 @@ bool entry_is_directory_placeholder(const xr_unpack::ArchiveEntry& entry)
 
     const char last = entry.name[entry.name.size() - 1];
     return last == '/' || last == '\\';
+}
+
+int verify_extracted(const char* archive_path, const char* output_dir, const ListOptions& options)
+{
+    const xr_unpack::ArchiveContents archive = xr_unpack::read_archive(archive_path);
+    if (!archive.errors.empty()) {
+        print_archive_errors(archive);
+        return kRuntimeError;
+    }
+
+    std::size_t matched_entries = 0;
+    std::size_t checked_files = 0;
+    std::size_t missing_files = 0;
+    std::size_t size_mismatches = 0;
+    std::size_t skipped_directories = 0;
+    std::size_t unsafe_entries = 0;
+    std::size_t duplicate_outputs = 0;
+    std::size_t out_of_bounds = 0;
+    std::uint64_t expected_bytes = 0;
+    std::uint64_t actual_bytes = 0;
+    std::set<std::string> output_names;
+
+    for (std::vector<xr_unpack::ArchiveEntry>::const_iterator i = archive.entries.begin(); i != archive.entries.end(); ++i) {
+        if (!entry_matches_filter(*i, options.has_filter, options.filter))
+            continue;
+
+        ++matched_entries;
+
+        const xr_unpack::PathValidationResult output = xr_unpack::compose_output_path(output_dir, i->name);
+        if (!output.ok) {
+            ++unsafe_entries;
+            std::cerr << "unsafe entry: " << i->name << " (" << output.reason << ")\n";
+            continue;
+        }
+
+        const std::uint64_t archive_end = static_cast<std::uint64_t>(i->offset) + i->size_compressed;
+        if (archive_end > archive.info.archive_size) {
+            ++out_of_bounds;
+            std::cerr << "out-of-bounds entry: " << i->name << "\n";
+            continue;
+        }
+
+        const std::string output_key = lowercase(output.normalized);
+        if (!output_names.insert(output_key).second) {
+            ++duplicate_outputs;
+            std::cerr << "duplicate output path: " << i->name << "\n";
+            continue;
+        }
+
+        if (entry_is_directory_placeholder(*i)) {
+            ++skipped_directories;
+            continue;
+        }
+
+        expected_bytes += i->size_real;
+
+        struct _stat64 info;
+        if (_stat64(output.normalized.c_str(), &info) != 0 || (info.st_mode & _S_IFREG) == 0) {
+            ++missing_files;
+            std::cerr << "missing extracted file: " << output.normalized << "\n";
+            continue;
+        }
+
+        ++checked_files;
+        const std::uint64_t actual_size = static_cast<std::uint64_t>(info.st_size);
+        actual_bytes += actual_size;
+        if (actual_size != i->size_real) {
+            ++size_mismatches;
+            std::cerr << "size mismatch: " << output.normalized
+                << " (expected " << i->size_real
+                << ", actual " << actual_size << ")\n";
+        }
+    }
+
+    const bool ok = !unsafe_entries &&
+        !duplicate_outputs &&
+        !out_of_bounds &&
+        !missing_files &&
+        !size_mismatches;
+
+    std::cout << "archive: " << archive.info.path << "\n";
+    std::cout << "output_dir: " << output_dir << "\n";
+    std::cout << "mode: verify-extracted\n";
+    std::cout << "entries_matched: " << matched_entries << "\n";
+    std::cout << "files_checked: " << checked_files << "\n";
+    std::cout << "missing_files: " << missing_files << "\n";
+    std::cout << "size_mismatches: " << size_mismatches << "\n";
+    std::cout << "directory_entries_skipped: " << skipped_directories << "\n";
+    std::cout << "unsafe_entries: " << unsafe_entries << "\n";
+    std::cout << "duplicates: " << duplicate_outputs << "\n";
+    std::cout << "out_of_bounds_entries: " << out_of_bounds << "\n";
+    std::cout << "expected_bytes: " << expected_bytes << "\n";
+    std::cout << "actual_bytes: " << actual_bytes << "\n";
+    std::cout << "status: " << (ok ? "ok" : "failed") << "\n";
+    return ok ? kOk : kRuntimeError;
 }
 
 bool path_exists_as_directory(const std::string& path)
@@ -803,6 +899,24 @@ int main(int argc, char** argv)
             result = check;
         else
             result = verify_archive(argv[2]);
+    }
+    else if (command == "verify-extracted") {
+        if (argc < 4) {
+            std::cerr << "xr_unpack: invalid arguments\n";
+            std::cerr << "usage: xr_unpack verify-extracted <archive> <out_dir> [--filter PATTERN]\n";
+            result = kUsageError;
+        }
+        else {
+            ListOptions options;
+            if (!parse_list_options(argc, argv, 4, options))
+                result = kUsageError;
+            else if (options.has_limit) {
+                std::cerr << "xr_unpack: --limit is not supported with verify-extracted\n";
+                result = kUsageError;
+            }
+            else
+                result = verify_extracted(argv[2], argv[3], options);
+        }
     }
     else if (command == "extract") {
         if (argc < 4) {
