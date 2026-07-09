@@ -61,19 +61,24 @@ target_include_directories(ETools PRIVATE
   "${PROJECT_SOURCE_DIR}/cmake/compat/msvc"
 )
 
-if(XRAY_EFFECTIVE_DXSDK_ROOT)
+set(ETOOLS_DXSDK_ROOT "${XR_LEGACY_DX_ROOT}")
+if(NOT ETOOLS_DXSDK_ROOT)
+  set(ETOOLS_DXSDK_ROOT "${XRAY_EFFECTIVE_DXSDK_ROOT}")
+endif()
+
+if(ETOOLS_DXSDK_ROOT)
   target_include_directories(ETools PRIVATE
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include"
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/include"
+    "${ETOOLS_DXSDK_ROOT}/Include"
+    "${ETOOLS_DXSDK_ROOT}/include"
   )
   target_link_directories(ETools PRIVATE
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib"
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib"
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib/x86"
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib/x86"
+    "${ETOOLS_DXSDK_ROOT}/Lib"
+    "${ETOOLS_DXSDK_ROOT}/lib"
+    "${ETOOLS_DXSDK_ROOT}/Lib/x86"
+    "${ETOOLS_DXSDK_ROOT}/lib/x86"
   )
 else()
-  message(WARNING "ETools includes legacy DirectX 9 D3DX headers. Set XRAY_DXSDK_ROOT, D3DXSDK_DIR, DXSDK_DIR, or DIRECTX_SDK_DIR if d3dx9.h is not available from the active include paths.")
+  message(WARNING "ETools includes legacy DirectX 9 D3DX headers. Set XR_LEGACY_DX_ROOT for SDK/editor targets, or use the existing global DirectX SDK variables.")
 endif()
 
 target_compile_definitions(ETools PRIVATE

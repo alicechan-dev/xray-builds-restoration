@@ -69,19 +69,24 @@ target_include_directories(xrECore PRIVATE
   "${PROJECT_SOURCE_DIR}/cmake/compat/vcl"
 )
 
-if(XRAY_EFFECTIVE_DXSDK_ROOT)
+set(XRECORE_DXSDK_ROOT "${XR_LEGACY_DX_ROOT}")
+if(NOT XRECORE_DXSDK_ROOT)
+  set(XRECORE_DXSDK_ROOT "${XRAY_EFFECTIVE_DXSDK_ROOT}")
+endif()
+
+if(XRECORE_DXSDK_ROOT)
   target_include_directories(xrECore PRIVATE
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/Include"
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/include"
+    "${XRECORE_DXSDK_ROOT}/Include"
+    "${XRECORE_DXSDK_ROOT}/include"
   )
   target_link_directories(xrECore PRIVATE
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib"
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib"
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/Lib/x86"
-    "${XRAY_EFFECTIVE_DXSDK_ROOT}/lib/x86"
+    "${XRECORE_DXSDK_ROOT}/Lib"
+    "${XRECORE_DXSDK_ROOT}/lib"
+    "${XRECORE_DXSDK_ROOT}/Lib/x86"
+    "${XRECORE_DXSDK_ROOT}/lib/x86"
   )
 else()
-  message(WARNING "xrECore includes legacy DirectX 9/D3DX headers. Set XRAY_DXSDK_ROOT, D3DXSDK_DIR, DXSDK_DIR, or DIRECTX_SDK_DIR if d3dx9.h is not available from the active include paths.")
+  message(WARNING "xrECore includes legacy DirectX 9/D3DX headers. Set XR_LEGACY_DX_ROOT for SDK/editor targets, or use the existing global DirectX SDK variables.")
 endif()
 
 target_compile_definitions(xrECore PRIVATE
