@@ -78,13 +78,16 @@ not satisfy this contract.
 An experimental `AnsiString` shim now lives in
 `cmake/compat/vcl/AnsiString.h`. The opt-in
 `vcl_ansi_string_contract` executable tests only the audited non-GUI value
-semantics and remains disconnected from `xrECore`.
+semantics. The experimental `xrECore` target now includes this shim for
+non-Borland builds only; Borland builds continue to obtain `AnsiString` from
+VCL.
 
 The next step is to compare the contract against the original Borland behavior,
 especially formatting failure, indexing failure, codepage handling, and
-temporary conversion lifetime. Only then should a small non-GUI ECore slice
-consume it and help determine whether an `xrECoreBase` target has a coherent
-API and dependency set.
+temporary conversion lifetime. The ECore probe must continue one compatibility
+boundary at a time and must not extend this value-type layer into VCL UI
+behavior.
 
-Until then, `xrECore` remains an honest build probe blocked first by
-`AnsiString` in `Editors/ECore/stdafx.h`.
+`xrECore` remains an honest build probe; integrating `AnsiString` does not imply
+support for `TShiftState`, dialog types, forms, `Application`, closures, or
+ElPack.

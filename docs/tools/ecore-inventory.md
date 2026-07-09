@@ -81,10 +81,16 @@ Fifth blocker fixed: `Editors/ECore/stdafx.h` now includes `mmreg.h` before
 `dsound.h`, matching the established `xrSound` include order and providing the
 wave-format declarations required by the DirectSound SDK.
 
-Current result after the fix: build advances past the DirectSound declaration blocker and reaches the Borland/VCL and editor package types:
+Sixth blocker fixed: the tested `AnsiString` compatibility shim is included by
+`Editors/ECore/stdafx.h` for non-Borland builds through a private `xrECore`
+include path. Borland builds continue to obtain the original type from VCL.
+
+Current result after the integration: the build advances past `AnsiString` and
+stops at the next Borland/VCL and editor package types:
 
 ```text
-Editors\ECore\stdafx.h(...): error C2065: 'AnsiString': undeclared identifier
+Editors\ECore\Editor\ELog.h(...): error C2061: syntax error: identifier 'TMsgDlgType'
+Editors\ECore\Editor\UI_Camera.h(...): error C2061: syntax error: identifier 'TShiftState'
 Editors\ECore\Engine\GameMtlLib.h(...): fatal error C1083: Cannot open include file: 'ElTree.hpp'
 ```
 
@@ -96,8 +102,8 @@ dependency used by material and form headers. All translation units include
 `stdafx.h`, which exposes several of these types before individual source-file
 ownership can isolate them.
 
-No source was excluded in this probe. A global `AnsiString` or VCL type shim
-would be a broad compatibility layer and would hide the actual SDK boundary.
+No source was excluded in this probe. The isolated `AnsiString` value shim does
+not provide or imply any VCL UI behavior.
 The audited migration strategy is recorded in
 [ECore VCL Compatibility Strategy](vcl-compat-strategy.md).
 

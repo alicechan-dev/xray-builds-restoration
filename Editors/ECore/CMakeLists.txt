@@ -66,6 +66,7 @@ target_include_directories(xrECore PRIVATE
   "${PROJECT_SOURCE_DIR}/Editors/xrEProps"
   "${PROJECT_SOURCE_DIR}/Editors/Tools/ETools"
   "${PROJECT_SOURCE_DIR}/cmake/compat/msvc"
+  "${PROJECT_SOURCE_DIR}/cmake/compat/vcl"
 )
 
 if(XRAY_EFFECTIVE_DXSDK_ROOT)

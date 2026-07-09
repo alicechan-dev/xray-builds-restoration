@@ -79,6 +79,10 @@
 // core
 #include <xrCore.h>
 
+#ifndef __BORLANDC__
+#include <AnsiString.h>
+#endif
+
 #ifdef _EDITOR
 	class PropValue;
 	class PropItem;
