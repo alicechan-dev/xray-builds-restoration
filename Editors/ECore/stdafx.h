@@ -96,6 +96,7 @@
 #include <d3d9.h>
 #include <d3dx9.h>
 #include <dinput.h>
+#include <mmreg.h>
 #include <dsound.h>
 
 // some user components

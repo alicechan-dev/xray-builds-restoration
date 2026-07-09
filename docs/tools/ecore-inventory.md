@@ -77,16 +77,21 @@ Third blocker fixed: the old Borland-to-MSVC CRT wrapper block in `Editors/ECore
 
 Fourth blocker fixed: `Editors/ECore/CMakeLists.txt` now defines `_FARQ=` for `xrECore`, matching the restored MSVC target convention used by the runtime and tools. This keeps the old allocator compatibility marker empty without changing `xrCore/_stl_extensions.h`.
 
-Current result after the fix: build advances past the allocator blocker and reaches the editor dependency boundary. The first emitted blocker is DirectSound SDK wave-format declarations in `dsound.h`, followed by Borland/VCL and editor package types:
+Fifth blocker fixed: `Editors/ECore/stdafx.h` now includes `mmreg.h` before
+`dsound.h`, matching the established `xrSound` include order and providing the
+wave-format declarations required by the DirectSound SDK.
+
+Current result after the fix: build advances past the DirectSound declaration blocker and reaches the Borland/VCL and editor package types:
 
 ```text
-dsound.h(...): error C4430: missing type specifier
 Editors\ECore\stdafx.h(...): error C2065: 'AnsiString': undeclared identifier
 Editors\ECore\Engine\GameMtlLib.h(...): fatal error C1083: Cannot open include file: 'ElTree.hpp'
 ```
 
 ## Recommended Next Step
 
-Investigate the DirectSound include-order compatibility first, then reassess the larger Borland/VCL and external editor package boundary (`AnsiString`, `TShiftState`, `ElTree.hpp`). Keep each fix narrow and rebuild only `xrECore`.
+Reassess the larger Borland/VCL and external editor package boundary
+(`AnsiString`, `TShiftState`, `ElTree.hpp`). Keep each fix narrow and rebuild
+only `xrECore`.
 
 Do not proceed to `LevelEditor.exe` until `xrECore`, `xrEProps`, `ETools`, and the Borland/VCL package boundary are clearer.
