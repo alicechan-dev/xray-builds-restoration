@@ -76,6 +76,22 @@ if(XR_EDITOR_ELPACK_INCLUDE_DIR)
   endif()
 endif()
 
+if(XR_EDITOR_ALEXMX_INCLUDE_DIR)
+  target_include_directories(xrEProps PRIVATE "${XR_EDITOR_ALEXMX_INCLUDE_DIR}")
+endif()
+
+if(XR_EDITOR_MAGICFM_INCLUDE_DIR)
+  target_include_directories(xrEProps PRIVATE "${XR_EDITOR_MAGICFM_INCLUDE_DIR}")
+endif()
+
+if(XR_EDITOR_BORLAND_INCLUDE_DIR)
+  target_include_directories(xrEProps PRIVATE "${XR_EDITOR_BORLAND_INCLUDE_DIR}")
+endif()
+
+if(XR_EDITOR_BORLAND_VCL_INCLUDE_DIR)
+  target_include_directories(xrEProps PRIVATE "${XR_EDITOR_BORLAND_VCL_INCLUDE_DIR}")
+endif()
+
 target_compile_definitions(xrEProps PRIVATE
   WIN32
   _WINDOWS

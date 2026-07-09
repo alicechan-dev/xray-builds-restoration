@@ -171,16 +171,27 @@ project and enables the ECore/EProps/ETools dependency chain. Configuration
 succeeds; compilation stops in `xrECore` at the expected ElPack boundary. See
 [LevelEditor CMake Shell](level-editor-cmake.md).
 
+`Editors/LevelOptions` now has an opt-in `LevelOptions` CMake shell behind
+`BUILD_XR_LEVEL_OPTIONS`. It represents the historical `xrLC_options.dll`
+Borland project as a dependency/source probe, keeps the `.dfm` metadata visible,
+and does not port VCL or fake ElPack/AlexMX controls. Configuration succeeds;
+compilation stops through the required `xrECore` dependency at the expected
+ElPack boundary. The historical project also references missing
+`xrLC_OptionsEntry.cpp`. See [LevelOptions CMake Shell](level-options-cmake.md).
+
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
-MagicFM SDK remain unavailable. Future `XR_ALEXMX_ROOT` and `XR_MAGICFM_ROOT`
-options should be added only after lawful, ABI-matched packages are found.
+MagicFM SDK remain unavailable. `XR_ALEXMX_ROOT`, `XR_MAGICFM_ROOT`, and
+`XR_BORLAND_ROOT` now exist as editor-only diagnostics and future target-local
+probes; they do not vendor packages, fake headers, or prove compiler/linker
+compatibility.
 
 The editor CMake dispatcher reports a consolidated dependency summary whenever
-ECore, EProps, or LevelEditor probes are enabled. External roots remain
-optional at configure time: invalid ElPack paths warn with the accepted layout,
-while builds remain free to stop honestly at the unresolved UI boundary.
+ECore, EProps, LevelEditor, or LevelOptions probes are enabled. External roots
+remain optional at configure time: invalid paths warn with the accepted layout
+or candidate-file expectations, while builds remain free to stop honestly at
+the unresolved UI boundary.
 
 ## SDK GUI Checkpoint
 
@@ -189,6 +200,7 @@ Completed CMake milestones:
 - `ETools` builds as a modern target;
 - `xrECore` and `xrEProps` configure as opt-in build probes;
 - `LevelEditor` configures as an opt-in dependency/source shell;
+- `LevelOptions` configures as an opt-in dependency/source shell;
 - non-GUI compatibility contracts cover `AnsiString`, `TMsgDlgType`,
   `TMsgDlgButtons`, and `TShiftState`;
 - editor-only DirectX and ElPack roots have validation diagnostics.

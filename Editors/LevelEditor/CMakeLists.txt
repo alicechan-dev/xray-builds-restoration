@@ -94,6 +94,22 @@ if(XR_EDITOR_ELPACK_INCLUDE_DIR)
   endif()
 endif()
 
+if(XR_EDITOR_ALEXMX_INCLUDE_DIR)
+  target_include_directories(LevelEditor PRIVATE "${XR_EDITOR_ALEXMX_INCLUDE_DIR}")
+endif()
+
+if(XR_EDITOR_MAGICFM_INCLUDE_DIR)
+  target_include_directories(LevelEditor PRIVATE "${XR_EDITOR_MAGICFM_INCLUDE_DIR}")
+endif()
+
+if(XR_EDITOR_BORLAND_INCLUDE_DIR)
+  target_include_directories(LevelEditor PRIVATE "${XR_EDITOR_BORLAND_INCLUDE_DIR}")
+endif()
+
+if(XR_EDITOR_BORLAND_VCL_INCLUDE_DIR)
+  target_include_directories(LevelEditor PRIVATE "${XR_EDITOR_BORLAND_VCL_INCLUDE_DIR}")
+endif()
+
 set(LEVEL_EDITOR_DXSDK_ROOT "${XR_LEGACY_DX_ROOT}")
 if(NOT LEVEL_EDITOR_DXSDK_ROOT)
   set(LEVEL_EDITOR_DXSDK_ROOT "${XRAY_EFFECTIVE_DXSDK_ROOT}")

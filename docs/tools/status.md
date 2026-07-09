@@ -31,7 +31,7 @@ No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks
 | Shader editor | `Editor/ShaderEditor/`, `Editors/ShaderEditor/`, `Editors/!old/ShaderEditor/` | GUI editor | Edits shader/material descriptions. | Source present. | DirectX shader compiler era, editor rendering. | Unknown. | Useful for material workflows. | Medium | Sensitive to SDK versioning. |
 | Editor core | `Editors/ECore/` | Shared editor library | Shared editor engine, thumbnails, object IO, properties, image helpers, and shader helpers. | Opt-in CMake target `xrECore` added as an experimental partial port. VCL form units are excluded for now. Tested non-GUI value shims are integrated for non-Borland builds only. | `xrCore`, `xrCDB`, `xrParticles`, `ETools`, DirectX 9/D3DX, `xrEProps`, Borland/VCL packages, ElPack/AlexMX, MagicFM. | Configure passes with `BUILD_XR_ECORE=ON`; compiler/value compatibility probes advance to the required `ElTree.hpp`/`elpackB6.lib` UI boundary. `XR_ELPACK_ROOT` provides an optional target-local path for lawful external dependency research, but ElPack remains a Borland UI boundary. | Foundation for restored editors. | High | See [ECore CMake Port Inventory](ecore-inventory.md), [VCL Compatibility Strategy](vcl-compat-strategy.md), and [ElPack Dependency](elpack-dependency.md). |
 | Editor properties library | `Editors/xrEProps/` | Shared editor DLL | Property-grid, item-list, chooser, numeric, text, and shader-function UI support. | Experimental opt-in `xrEProps` CMake target added behind `BUILD_XR_EPROPS`; the full historical source/form set is retained. | `xrCore`, `ETools`, Borland VCL, ElPack, AlexMX controls, `.dfm` forms. | Configure passes; build stops honestly at `FolderLib.h` missing `ElTree.hpp` when `XR_ELPACK_ROOT` is unset. | Needed by editor apps. | High | See [xrEProps CMake Port Inventory](xreprops-inventory.md). |
-| Level options tool | `Editor/LevelOptions/`, `Editors/LevelOptions/` | GUI tool | Level option/configuration editor support. | Source present. | Editor components. | Unknown. | Optional helper. | Low | Defer. |
+| Level options tool | `Editors/LevelOptions/` | GUI DLL/plugin | Historical `xrLC_options.dll` build-options dialog for level compiler workflows. | Experimental opt-in `LevelOptions` CMake shell added behind `BUILD_XR_LEVEL_OPTIONS`; source/form ownership is represented without porting VCL forms. | `xrECore`, `xrEProps`, `ETools`, runtime-style libraries, DirectX 9, ElPack, AlexMX controls, Borland/VCL, ColorPicker/MagicFM-era editor packages. | Configure passes; target build stops through required `xrECore` at missing `ElTree.hpp` when `XR_ELPACK_ROOT` is unset. The `.bpr` also references absent `xrLC_OptionsEntry.cpp`. | Optional helper for level compiler options once compiler/editor dependencies exist. | Low | See [LevelOptions CMake Shell](level-options-cmake.md). |
 | Texture/DXT tools | `Editors/Tools/DXT/`, `Editor/Tools/DXT/`, `xrDXTC/` | Converter/tool library | Texture compression and DDS/DXT conversion support. | Legacy source/project files present. | NVIDIA DXT libraries, DirectX/image code. | Unknown. | Useful for asset conversion. | Medium | Document binary library provenance first. |
 | Editor tools library | `Editors/Tools/ETools/` | Shared tool DLL | D3DX wrapper, editor helper exports, ray-triangle tests, and VIPM/progressive-mesh support. | Opt-in CMake target `ETools` added as a partial port. VIPM/xrQSlim sources are excluded until `xrQSlim` is restored. | `xrCore`, DirectX 9/D3DX, ColorPicker import library, future `xrQSlim`. | Configure passes with `BUILD_XR_ETOOLS=ON`; partial Release target builds after linking the matching historical `Editor/Tools/ETools/ColorPicker.lib` import library. | Early LevelEditor dependency and safer than full VCL GUI port. | High | See [ETools CMake Port Inventory](etools-inventory.md). Runtime use of the color picker export may still need the matching `ColorPicker.dll`. |
 | LWO tool | `Editors/Tools/LWO/` | Converter/helper | LightWave object/envelope handling utility. | Legacy project present. | LightWave object parsing code. | Unknown. | Import/export pipeline support. | Medium | Host-format research needed. |
@@ -87,6 +87,7 @@ Current local target ownership includes:
 * `tools/xr_unpack/CMakeLists.txt` for `xr_unpack`.
 * `Editors/ECore/CMakeLists.txt` for experimental `xrECore`.
 * `Editors/xrEProps/CMakeLists.txt` for experimental `xrEProps`.
+* `Editors/LevelOptions/CMakeLists.txt` for experimental `LevelOptions`.
 * `xrXMLParser/CMakeLists.txt` for `xrXMLParser`.
 * `xr_3da/xrCDB/CMakeLists.txt` for `xrCDB`.
 
@@ -97,12 +98,15 @@ See [Legacy DirectX SDK Support](legacy-directx.md).
 
 The local editor dependency search found ColorPicker and Boost 1.33.1
 candidates, but no ElPack, Borland/VCL installation, AlexMX control package, or
-complete MagicFM SDK. See
-[Local Editor Dependency Inventory](editor-dependencies.md).
+complete MagicFM SDK. Editor-only cache roots now exist for diagnostics and
+future target-local probes: `XR_ELPACK_ROOT`, `XR_ALEXMX_ROOT`,
+`XR_MAGICFM_ROOT`, and `XR_BORLAND_ROOT`. See [Local Editor Dependency
+Inventory](editor-dependencies.md).
 
-Opt-in ECore, EProps, and LevelEditor configurations now print a consolidated
-dependency summary. Missing or invalid ElPack remains a non-fatal configure
-warning and predicts the expected `ElTree.hpp` build-stop.
+Opt-in ECore, EProps, LevelEditor, and LevelOptions configurations now print a
+consolidated dependency summary. Missing or invalid editor roots remain
+non-fatal configure warnings/status messages and predict the expected build
+stops, especially `ElTree.hpp`.
 
 `xr_unpack verify-extracted` performs read-only post-extraction checks for
 missing files and unpacked-size mismatches, with optional path filtering.
@@ -148,5 +152,6 @@ archive/tooling work or focused runtime restoration.
 
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [SDK Restoration Plan](sdk-restoration-plan.md)
+* [LevelOptions CMake Shell](level-options-cmake.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)
