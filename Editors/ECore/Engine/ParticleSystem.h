@@ -215,7 +215,10 @@ namespace PS
 				strlwr(m_Computer);
 
 				// Time
-				_tzset(); time( (long*)&m_dwCreationTime );
+				_tzset();
+				time_t creation_time;
+				time(&creation_time);
+				m_dwCreationTime = static_cast<u32>(creation_time);
 				return true;
 			}
 			return false;
