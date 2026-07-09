@@ -88,10 +88,22 @@ Editors\ECore\stdafx.h(...): error C2065: 'AnsiString': undeclared identifier
 Editors\ECore\Engine\GameMtlLib.h(...): fatal error C1083: Cannot open include file: 'ElTree.hpp'
 ```
 
+This boundary cannot be removed honestly by excluding one additional form unit.
+`AnsiString` is part of retained object, thumbnail, image, sound, particle, and
+export code; `TShiftState` is part of the editor input interfaces; and
+`TMsgDlgType` is part of editor logging. `ElTree.hpp` is a separate ElPack UI
+dependency used by material and form headers. All translation units include
+`stdafx.h`, which exposes several of these types before individual source-file
+ownership can isolate them.
+
+No source was excluded in this probe. A global `AnsiString` or VCL type shim
+would be a broad compatibility layer and would hide the actual SDK boundary.
+
 ## Recommended Next Step
 
-Reassess the larger Borland/VCL and external editor package boundary
-(`AnsiString`, `TShiftState`, `ElTree.hpp`). Keep each fix narrow and rebuild
-only `xrECore`.
+Define and document a deliberate non-VCL ECore library boundary before changing
+the CMake source set, or restore a compiler/toolchain path that supplies the
+original VCL types. Treat ElPack restoration as a separate UI dependency. Do
+not continue excluding files opportunistically from `xrECore`.
 
 Do not proceed to `LevelEditor.exe` until `xrECore`, `xrEProps`, `ETools`, and the Borland/VCL package boundary are clearer.
