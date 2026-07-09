@@ -147,12 +147,18 @@ After the current inventory, the safest next target is still the archive/tooling
 2. add optional `--filter` support for `xr_unpack list` and extraction planning;
 3. start a read-only LTX/config validator scaffold.
 
-The first large historical SDK candidates to inventory in depth are `Editors/ECore`, `xrLC`, and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented. `Editors/Tools/ETools` now has a partial opt-in CMake target that builds after linking the matching historical ColorPicker import library. `Editors/ECore` now has an experimental opt-in `xrECore` CMake target; its low-level compiler compatibility blockers are fixed, but retained core APIs still depend pervasively on Borland/VCL types and ElPack. The [VCL compatibility strategy](vcl-compat-strategy.md) provides opt-in contracts for `AnsiString` and the `TMsgDlgType` message category enum; both tested shims are integrated into `xrECore` for non-Borland builds only. True forms, application behavior, closures, dialog buttons/results and behavior, and ElPack remain outside that layer. `LevelEditor.exe` should still wait until `xrECore`, `xrEProps`, `xrQSlim`, the Borland/VCL boundary, runtime ColorPicker deployment, and shared editor DLL dependencies are mapped.
+The first large historical SDK candidates to inventory in depth are `Editors/ECore`, `xrLC`, and `xrAI`, but they should not be ported until dependencies, command-line contracts, and binary format compatibility are documented. `Editors/Tools/ETools` now has a partial opt-in CMake target that builds after linking the matching historical ColorPicker import library. `Editors/ECore` now has an experimental opt-in `xrECore` CMake target; its low-level compiler compatibility blockers are fixed, but retained core APIs still depend pervasively on Borland/VCL types and ElPack. The [VCL compatibility strategy](vcl-compat-strategy.md) provides opt-in contracts for `AnsiString`, the `TMsgDlgType` message category enum, and `TMsgDlgButtons` value-set metadata; these tested shims are integrated into `xrECore` for non-Borland builds only. True forms, application behavior, closures, modal results and dialog behavior, and ElPack remain outside that layer. `LevelEditor.exe` should still wait until `xrECore`, `xrEProps`, `xrQSlim`, the Borland/VCL boundary, runtime ColorPicker deployment, and shared editor DLL dependencies are mapped.
+
+The locally inventoried DirectX 9.0 SDK Update (Summer 2004) matches the SDK
+generation named by the historical editor projects. Restored SDK targets may
+opt into it with `XR_LEGACY_DX_ROOT`; it is not a global runtime dependency.
+See [Legacy DirectX SDK Support](legacy-directx.md).
 
 ## Related Documents
 
 * [Tools and SDK Status](status.md)
 * [ECore CMake Port Inventory](ecore-inventory.md)
+* [Legacy DirectX SDK Support](legacy-directx.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)
