@@ -99,6 +99,10 @@ The local editor dependency search found ColorPicker and Boost 1.33.1
 candidates, but no ElPack, Borland/VCL installation, AlexMX control package, or
 complete MagicFM SDK. See
 [Local Editor Dependency Inventory](editor-dependencies.md).
+
+Opt-in ECore, EProps, and LevelEditor configurations now print a consolidated
+dependency summary. Missing or invalid ElPack remains a non-fatal configure
+warning and predicts the expected `ElTree.hpp` build-stop.
 * `xrParticles/CMakeLists.txt` for `xrParticles`.
 * `xrLUA/CMakeLists.txt` for `xrLUA`.
 * `xrNetServer/CMakeLists.txt` for `xrNetServer`.

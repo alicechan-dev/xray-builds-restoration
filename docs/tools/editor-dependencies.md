@@ -41,6 +41,24 @@ control headers referenced by the editor projects.
   compatibility.
 - Keep extracted game data and runtime archives outside the repository.
 
+## Configure Diagnostics
+
+When `BUILD_XR_ECORE`, `BUILD_XR_EPROPS`, or `BUILD_XR_LEVEL_EDITOR` is
+enabled, CMake prints one SDK/editor dependency summary. It lists the enabled
+targets and reports:
+
+- whether `XR_ELPACK_ROOT` is unset, valid, or invalid;
+- `XR_LEGACY_DX_ROOT` status for targets that use DirectX;
+- `XRAY_BOOST_ROOT` status when LevelEditor is enabled.
+
+Missing or invalid ElPack produces a warning but does not fail generation.
+The warning states that editor builds may stop at `ElTree.hpp`. A configured
+ElPack root is valid only when either `Code/Source/ElTree.hpp` or
+`ElTree.hpp` exists.
+
+No equivalent AlexMX or MagicFM cache variables are declared yet because no
+complete, ABI-matched local SDK packages were found.
+
 ## Next Probe
 
 The strongest available next dependency probe is Boost 1.33.1 through

@@ -43,6 +43,11 @@ cmake -S . -B build-elpack-root-check -G "Visual Studio 17 2022" -A Win32 `
 An invalid configured path produces an SDK-target warning. An unset path keeps
 configuration working and reports that `xrECore` remains blocked at ElPack.
 
+The validation is centralized in the SDK/editor dispatcher, so enabling
+multiple editor targets prints one dependency summary instead of repeating the
+same warning for each target. Validated include paths are then applied only to
+the enabled editor targets.
+
 Finding the headers does not prove MSVC compatibility. The historical
 `elpackB6.lib` is a Borland package library and may not be link-compatible with
 Visual Studio. The option exists for dependency research and an honest

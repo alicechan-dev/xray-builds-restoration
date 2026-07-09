@@ -177,6 +177,11 @@ current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 MagicFM SDK remain unavailable. Future `XR_ALEXMX_ROOT` and `XR_MAGICFM_ROOT`
 options should be added only after lawful, ABI-matched packages are found.
 
+The editor CMake dispatcher reports a consolidated dependency summary whenever
+ECore, EProps, or LevelEditor probes are enabled. External roots remain
+optional at configure time: invalid ElPack paths warn with the accepted layout,
+while builds remain free to stop honestly at the unresolved UI boundary.
+
 ## Related Documents
 
 * [Tools and SDK Status](status.md)

@@ -86,35 +86,12 @@ if(XRAY_BOOST_ROOT)
   target_include_directories(LevelEditor PRIVATE "${XRAY_BOOST_ROOT}")
 endif()
 
-if(XR_ELPACK_ROOT)
-  set(LEVEL_EDITOR_ELPACK_INCLUDE_DIR "")
-  foreach(candidate IN ITEMS
-      "${XR_ELPACK_ROOT}/Code/Source"
-      "${XR_ELPACK_ROOT}")
-    if(EXISTS "${candidate}/ElTree.hpp")
-      set(LEVEL_EDITOR_ELPACK_INCLUDE_DIR "${candidate}")
-      break()
-    endif()
-  endforeach()
-
-  if(LEVEL_EDITOR_ELPACK_INCLUDE_DIR)
-    target_include_directories(LevelEditor PRIVATE
-      "${LEVEL_EDITOR_ELPACK_INCLUDE_DIR}")
-    if(IS_DIRECTORY "${XR_ELPACK_ROOT}/Code")
-      target_link_directories(LevelEditor PRIVATE "${XR_ELPACK_ROOT}/Code")
-    endif()
-    message(STATUS
-      "LevelEditor: using external ElPack headers from "
-      "'${LEVEL_EDITOR_ELPACK_INCLUDE_DIR}'")
-  else()
-    message(WARNING
-      "LevelEditor: XR_ELPACK_ROOT='${XR_ELPACK_ROOT}' does not contain "
-      "Code/Source/ElTree.hpp or ElTree.hpp")
+if(XR_EDITOR_ELPACK_INCLUDE_DIR)
+  target_include_directories(LevelEditor PRIVATE
+    "${XR_EDITOR_ELPACK_INCLUDE_DIR}")
+  if(IS_DIRECTORY "${XR_ELPACK_ROOT}/Code")
+    target_link_directories(LevelEditor PRIVATE "${XR_ELPACK_ROOT}/Code")
   endif()
-else()
-  message(STATUS
-    "LevelEditor: ElPack is not configured; the dependency chain is expected "
-    "to stop at ElTree.hpp")
 endif()
 
 set(LEVEL_EDITOR_DXSDK_ROOT "${XR_LEGACY_DX_ROOT}")

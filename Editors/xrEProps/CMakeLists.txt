@@ -69,32 +69,11 @@ target_include_directories(xrEProps PRIVATE
   "${PROJECT_SOURCE_DIR}/cmake/compat/vcl"
 )
 
-if(XR_ELPACK_ROOT)
-  set(XREPROPS_ELPACK_INCLUDE_DIR "")
-  foreach(candidate IN ITEMS
-      "${XR_ELPACK_ROOT}/Code/Source"
-      "${XR_ELPACK_ROOT}")
-    if(EXISTS "${candidate}/ElTree.hpp")
-      set(XREPROPS_ELPACK_INCLUDE_DIR "${candidate}")
-      break()
-    endif()
-  endforeach()
-
-  if(XREPROPS_ELPACK_INCLUDE_DIR)
-    target_include_directories(xrEProps PRIVATE "${XREPROPS_ELPACK_INCLUDE_DIR}")
-    if(IS_DIRECTORY "${XR_ELPACK_ROOT}/Code")
-      target_link_directories(xrEProps PRIVATE "${XR_ELPACK_ROOT}/Code")
-    endif()
-    message(STATUS "xrEProps: using external ElPack headers from '${XREPROPS_ELPACK_INCLUDE_DIR}'")
-  else()
-    message(WARNING
-      "xrEProps: XR_ELPACK_ROOT='${XR_ELPACK_ROOT}' does not contain "
-      "Code/Source/ElTree.hpp or ElTree.hpp")
+if(XR_EDITOR_ELPACK_INCLUDE_DIR)
+  target_include_directories(xrEProps PRIVATE "${XR_EDITOR_ELPACK_INCLUDE_DIR}")
+  if(IS_DIRECTORY "${XR_ELPACK_ROOT}/Code")
+    target_link_directories(xrEProps PRIVATE "${XR_ELPACK_ROOT}/Code")
   endif()
-else()
-  message(STATUS
-    "xrEProps: ElPack is not configured; the build probe is expected to stop "
-    "at ElTree.hpp")
 endif()
 
 target_compile_definitions(xrEProps PRIVATE
