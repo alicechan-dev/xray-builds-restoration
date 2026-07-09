@@ -160,12 +160,18 @@ headers or exposing them to runtime targets. The option does not make Borland
 VCL widgets or `elpackB6.lib` inherently compatible with MSVC. See
 [ElPack Dependency](elpack-dependency.md).
 
+`Editors/xrEProps` now has an opt-in `xrEProps` CMake build probe behind
+`BUILD_XR_EPROPS`. It retains the complete historical DLL source and form set;
+configuration succeeds and compilation stops at the expected ElPack boundary.
+See [xrEProps CMake Port Inventory](xreprops-inventory.md).
+
 ## Related Documents
 
 * [Tools and SDK Status](status.md)
 * [ECore CMake Port Inventory](ecore-inventory.md)
 * [Legacy DirectX SDK Support](legacy-directx.md)
 * [ElPack Dependency](elpack-dependency.md)
+* [xrEProps CMake Port Inventory](xreprops-inventory.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)
