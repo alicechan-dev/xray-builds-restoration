@@ -97,3 +97,15 @@ assumptions in editor-local code, and the historical `ParticleSystem.h`
 
 Do not fake these blockers. `Classes.hpp` and form/application behavior belong
 to the Borland/VCL boundary, while `ElTree.hpp` belongs to the ElPack boundary.
+
+## Checkpoint
+
+The ParticleEditor CMake shell is complete for this dependency-discovery
+phase: the active Borland source/form ownership is represented, configuration
+succeeds, and direct compilation reaches the real VCL/ElPack/editor UI package
+boundary. This does not mean ParticleEditor builds or that its GUI has been
+ported.
+
+Do not fake `Classes.hpp`, `ElTree.hpp`, `RenderWindow.hpp`, AlexMX controls,
+or MagicFM SDK APIs. Resume only after lawful, compatible editor packages are
+available.

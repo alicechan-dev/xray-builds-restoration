@@ -100,3 +100,15 @@ Cannot open include file: 'Gradient.hpp'
 Do not fake these blockers. `Classes.hpp` and form/application behavior belong
 to the Borland/VCL boundary, `ElTree.hpp` belongs to the ElPack boundary, and
 `mxPlacemnt.hpp` / `Gradient.hpp` belong to missing editor control packages.
+
+## Checkpoint
+
+The ActorEditor CMake shell is complete for this dependency-discovery phase:
+the active Borland source/form ownership is represented, configuration
+succeeds, and direct compilation reaches the real VCL/ElPack/AlexMX/editor UI
+package boundary. This does not mean ActorEditor builds or that its GUI has
+been ported.
+
+Do not fake `Classes.hpp`, `ElTree.hpp`, AlexMX controls, `Gradient.hpp`, or
+MagicFM SDK APIs. Resume only after lawful, compatible editor packages are
+available.

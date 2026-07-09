@@ -229,8 +229,8 @@ probes; they do not vendor packages, fake headers, or prove compiler/linker
 compatibility.
 
 The editor CMake dispatcher reports a consolidated dependency summary whenever
-ECore, EProps, LevelEditor, LevelOptions, ShaderEditor, or ParticleEditor probes
-are enabled.
+ECore, EProps, LevelEditor, LevelOptions, ShaderEditor, ParticleEditor, or
+ActorEditor probes are enabled.
 External roots remain optional at configure time: invalid paths warn with the
 accepted layout or candidate-file expectations, while builds remain free to
 stop honestly at the unresolved UI boundary.
@@ -255,12 +255,29 @@ and historically `elpackB6.lib`). The value shim strategy ends here because
 forms, widgets, application services, and component packages have behavior and
 ABI contracts that cannot be represented honestly by placeholder types.
 
+Current editor-shell checkpoint:
+
+| Target | Option | Checkpoint result |
+|---|---|---|
+| `ETools` | `BUILD_XR_ETOOLS` | Builds as the first modern editor helper dependency. |
+| `xrECore` | `BUILD_XR_ECORE` | Configures and reaches the ElPack `ElTree.hpp` boundary. |
+| `xrEProps` | `BUILD_XR_EPROPS` | Configures and reaches `FolderLib.h` / ElPack `ElTree.hpp`. |
+| `LevelEditor` | `BUILD_XR_LEVEL_EDITOR` | Configures; dependency-aware builds stop through `xrECore` at ElPack. |
+| `LevelOptions` | `BUILD_XR_LEVEL_OPTIONS` | Configures; direct probe stops at `SceneProperties.h` / `ElTree.hpp`. |
+| `ShaderEditor` | `BUILD_XR_SHADER_EDITOR` | Configures; direct probe stops at missing `splash.h` and GUI package headers. |
+| `ParticleEditor` | `BUILD_XR_PARTICLE_EDITOR` | Configures; direct probe stops at `Classes.hpp`, `ElTree.hpp`, and editor GUI headers. |
+| `ActorEditor` | `BUILD_XR_ACTOR_EDITOR` | Configures; direct probe stops at `Classes.hpp`, `ElTree.hpp`, AlexMX, and missing editor controls. |
+
 Before resuming SDK GUI work, locate lawful copies of ElPack, a compatible
 Borland/VCL installation, the AlexMX controls, and matching MagicFM SDK
 headers. Never fake `ElTree.hpp` or VCL classes, and never vendor those
 third-party packages. If those dependencies remain unavailable, pause the GUI
 branch and continue archive tools, format validation, compiler inventories, or
 runtime bug restoration.
+
+Do not use runtime target changes to bypass SDK GUI blockers. The editor
+dependency roots are target-local diagnostics/probes, and the runtime-heavy
+targets should remain on their own restoration path.
 
 ## Related Documents
 

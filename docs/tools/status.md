@@ -131,8 +131,8 @@ Future options should remain explicit and opt-in where appropriate:
 
 1. Add synthetic archive fixtures and path-safety tests for `xr_unpack`.
 2. Start a small read-only LTX/config validator scaffold.
-3. Acquire and inventory lawful ElPack/Borland dependencies before continuing
-   ECore, EProps, or LevelEditor GUI work.
+3. Acquire and inventory lawful ElPack, Borland/VCL, AlexMX, and MagicFM SDK
+   dependencies before continuing SDK GUI work.
 4. Inventory `xrLC` and `xrAI` dependencies in more detail before attempting CMake restoration.
 5. Keep GUI editors and host plugins paused at the documented package boundary.
 
@@ -144,6 +144,19 @@ ShaderEditor, ParticleEditor, and ActorEditor dependency shells.
 Standalone contracts cover the audited non-GUI VCL value types:
 `AnsiString`, `TMsgDlgType`, `TMsgDlgButtons`, and `TShiftState`.
 
+Current checkpoint:
+
+| Target | Option | Current result | First blocker class |
+|---|---|---|---|
+| `ETools` | `BUILD_XR_ETOOLS` | Builds as the first modern editor helper target. | VIPM/xrQSlim source restoration remains deferred, but the partial target links. |
+| `xrECore` | `BUILD_XR_ECORE` | Configures and advances through audited value/compiler compatibility. | ElPack `ElTree.hpp` / `elpackB6.lib`. |
+| `xrEProps` | `BUILD_XR_EPROPS` | Configures with the historical source/form set retained. | ElPack `ElTree.hpp` from property-tree UI code. |
+| `LevelEditor` | `BUILD_XR_LEVEL_EDITOR` | Configures as a dependency/source shell. | Required `xrECore` dependency stops at ElPack; project also has missing `Splash.cpp` / `resource.res`. |
+| `LevelOptions` | `BUILD_XR_LEVEL_OPTIONS` | Configures as a dependency/source shell. | `SceneProperties.h` stops at ElPack `ElTree.hpp`; project also references missing `xrLC_OptionsEntry.cpp`. |
+| `ShaderEditor` | `BUILD_XR_SHADER_EDITOR` | Configures as a dependency/source shell. | Missing `splash.h`/`Splash.cpp`, plus ElPack/VCL/editor GUI package headers. |
+| `ParticleEditor` | `BUILD_XR_PARTICLE_EDITOR` | Configures as a dependency/source shell. | Borland/VCL `Classes.hpp`, ElPack `ElTree.hpp`, and editor GUI headers such as `RenderWindow.hpp`. |
+| `ActorEditor` | `BUILD_XR_ACTOR_EDITOR` | Configures as a dependency/source shell. | Borland/VCL `Classes.hpp`, ElPack `ElTree.hpp`, AlexMX `mxPlacemnt.hpp`, and missing editor controls such as `Gradient.hpp`. |
+
 This compatibility work stops deliberately before GUI behavior. ElPack tree
 widgets, VCL forms/application services, AlexMX controls, and MagicFM APIs are
 real external dependencies, not value types suitable for small shims.
@@ -153,6 +166,14 @@ requires a lawful ElPack and Borland/VCL installation, the AlexMX controls,
 and matching MagicFM SDK headers. Do not fake these APIs or vendor third-party
 packages. Until those dependencies are available, the recommended branch is
 archive/tooling work or focused runtime restoration.
+
+Explicitly prohibited for the SDK GUI branch:
+
+* fake `ElTree.hpp` or placeholder ElPack tree widgets;
+* fake `TForm`, `TFrame`, `Application`, `Classes.hpp`, or other VCL GUI
+  runtime behavior;
+* vendor third-party package files into this repository;
+* touch runtime targets to work around editor-only dependency gaps.
 
 ## Related Plans
 

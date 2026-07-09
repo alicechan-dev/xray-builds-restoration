@@ -84,3 +84,7 @@ Further work requires ElPack (`ElTree.hpp` and `elpackB6.lib`), a compatible
 Borland/VCL installation, AlexMX controls, and MagicFM SDK headers. Do not
 replace those packages with fake widgets or commit third-party files. Without
 them, pause this target and return to archive tools or runtime restoration.
+
+This target is part of the current SDK GUI CMake checkpoint: it configures as
+an honest shell, but it does not build and should not be advanced by faking
+ElPack, VCL GUI classes, AlexMX controls, or MagicFM APIs.

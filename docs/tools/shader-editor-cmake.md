@@ -89,3 +89,14 @@ Obtain and validate lawful ElPack, Borland/VCL, AlexMX, and MagicFM SDK
 dependencies before attempting a real GUI compile. If those packages remain
 unavailable, pause ShaderEditor and continue with archive tools, format
 validators, compiler inventories, or runtime restoration.
+
+## Checkpoint
+
+The ShaderEditor CMake shell is complete for this dependency-discovery phase:
+the active Borland source list is represented, configuration succeeds, and a
+direct probe reaches the real missing-source and GUI package boundaries. This
+does not mean ShaderEditor builds or that its GUI has been ported.
+
+Do not fake `splash.h`, ElPack, VCL form classes, AlexMX controls, or MagicFM
+SDK APIs. The next honest step is locating the matching historical source and
+lawful editor package dependencies.

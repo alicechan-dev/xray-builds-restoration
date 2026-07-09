@@ -85,3 +85,13 @@ Do not patch around the missing GUI packages. Locate lawful ElPack,
 Borland/VCL, AlexMX, and MagicFM SDK dependencies, then use the editor-only
 cache roots for target-local probes. If those packages remain unavailable,
 prefer archive tools, format validators, or runtime restoration work.
+
+## Checkpoint
+
+The LevelOptions CMake shell is complete for this dependency-discovery phase:
+the historical source/form ownership is represented, configuration succeeds,
+and direct compilation reaches the real ElPack/VCL UI boundary. This does not
+mean `xrLC_Options.dll` builds or that its GUI has been ported.
+
+Do not fake `ElTree.hpp`, AlexMX controls, VCL form classes, or the missing
+entry unit. Resume only after lawful, compatible editor packages are available.

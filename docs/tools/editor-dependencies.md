@@ -86,5 +86,6 @@ dependencies. The next acquisition set is:
 
 None may be replaced by fake headers or placeholder GUI classes, and none
 should be vendored into this repository. Until lawful, ABI-matched packages
-are available, pause ECore/EProps/LevelEditor GUI work and prefer archive
-tools, format research, or runtime restoration tasks.
+are available, pause ECore/EProps/LevelEditor/LevelOptions/ShaderEditor/
+ParticleEditor/ActorEditor GUI work and prefer archive tools, format research,
+or runtime restoration tasks.
