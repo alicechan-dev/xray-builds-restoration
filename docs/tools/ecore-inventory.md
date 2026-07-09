@@ -98,6 +98,8 @@ ownership can isolate them.
 
 No source was excluded in this probe. A global `AnsiString` or VCL type shim
 would be a broad compatibility layer and would hide the actual SDK boundary.
+The audited migration strategy is recorded in
+[ECore VCL Compatibility Strategy](vcl-compat-strategy.md).
 
 ## Recommended Next Step
 
