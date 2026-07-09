@@ -181,6 +181,19 @@ local Borland CRT compatibility issue and stops at `SceneProperties.h` missing
 `ElTree.hpp`. The historical project also references missing
 `xrLC_OptionsEntry.cpp`. See [LevelOptions CMake Shell](level-options-cmake.md).
 
+`Editors/ShaderEditor` now has an opt-in `ShaderEditor` CMake shell behind
+`BUILD_XR_SHADER_EDITOR`. It imports the active Borland C++ Builder 6 project
+source list, keeps the form metadata visible, and declares the existing
+ECore/EProps/ETools dependency chain. Configuration succeeds; builds are
+expected to stop through `xrECore` at the known ElPack boundary while
+`XR_ELPACK_ROOT` is unset. A direct ShaderEditor compile probe gets past the
+local Borland CRT aliases, DirectSound include ordering, and audited VCL value
+shims, then stops at missing `splash.h` from an absent `Splash.cpp` form plus
+real GUI/package dependencies such as `ElTree.hpp`, `Classes.hpp`, and
+`RenderWindow.hpp`. The older `Editor/ShaderEditor/Lib/MagicFM.lib` exists and
+is linked as a historical import-library candidate, but matching MagicFM SDK
+headers remain missing. See [ShaderEditor CMake Shell](shader-editor-cmake.md).
+
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
@@ -190,10 +203,10 @@ probes; they do not vendor packages, fake headers, or prove compiler/linker
 compatibility.
 
 The editor CMake dispatcher reports a consolidated dependency summary whenever
-ECore, EProps, LevelEditor, or LevelOptions probes are enabled. External roots
-remain optional at configure time: invalid paths warn with the accepted layout
-or candidate-file expectations, while builds remain free to stop honestly at
-the unresolved UI boundary.
+ECore, EProps, LevelEditor, LevelOptions, or ShaderEditor probes are enabled.
+External roots remain optional at configure time: invalid paths warn with the
+accepted layout or candidate-file expectations, while builds remain free to
+stop honestly at the unresolved UI boundary.
 
 ## SDK GUI Checkpoint
 
@@ -203,6 +216,7 @@ Completed CMake milestones:
 - `xrECore` and `xrEProps` configure as opt-in build probes;
 - `LevelEditor` configures as an opt-in dependency/source shell;
 - `LevelOptions` configures as an opt-in dependency/source shell;
+- `ShaderEditor` configures as an opt-in dependency/source shell;
 - non-GUI compatibility contracts cover `AnsiString`, `TMsgDlgType`,
   `TMsgDlgButtons`, and `TShiftState`;
 - editor-only DirectX and ElPack roots have validation diagnostics.
@@ -227,6 +241,7 @@ runtime bug restoration.
 * [ElPack Dependency](elpack-dependency.md)
 * [xrEProps CMake Port Inventory](xreprops-inventory.md)
 * [LevelEditor CMake Shell](level-editor-cmake.md)
+* [ShaderEditor CMake Shell](shader-editor-cmake.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
