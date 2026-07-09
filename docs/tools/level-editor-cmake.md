@@ -72,3 +72,15 @@ using `Application`, `TForm`, `TFrame`, `USEFORM`, and `.dfm` resources.
 Do not patch LevelEditor around its prerequisites. Obtain and assess lawful
 ElPack/VCL dependencies, or define a deliberate editor UI migration boundary,
 before attempting application-level compilation.
+
+## Checkpoint
+
+The LevelEditor CMake shell is complete for this dependency-discovery phase:
+the canonical source ownership and ECore/EProps/ETools chain are represented,
+configuration succeeds, and the build stops at the known ElPack prerequisite.
+This does not mean LevelEditor builds or that its GUI has been ported.
+
+Further work requires ElPack (`ElTree.hpp` and `elpackB6.lib`), a compatible
+Borland/VCL installation, AlexMX controls, and MagicFM SDK headers. Do not
+replace those packages with fake widgets or commit third-party files. Without
+them, pause this target and return to archive tools or runtime restoration.

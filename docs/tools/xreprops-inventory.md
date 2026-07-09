@@ -72,3 +72,15 @@ Obtain and inventory a lawful local ElPack/Borland package tree through
 `XR_ELPACK_ROOT`, then determine whether its generated C++ headers can be
 consumed by MSVC at all. Do not create substitute widgets or exclude the core
 property/list implementation to obtain a nominal DLL.
+
+## Checkpoint
+
+The xrEProps CMake scaffold faithfully retains the historical DLL source and
+form set, configures successfully, and stops at `FolderLib.h` requiring
+`ElTree.hpp`. That is the intended checkpoint: property and item-list APIs use
+real `TElTree`/`TElTreeItem` behavior throughout.
+
+Continuing requires ElPack and Borland/VCL plus the related AlexMX component
+set. Do not fake those types, strip out the property UI to claim a successful
+DLL, or vendor third-party packages. Work may resume after dependency
+acquisition, or remain paused while archive/runtime tasks continue.

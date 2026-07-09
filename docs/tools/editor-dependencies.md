@@ -67,3 +67,18 @@ against one isolated SDK target rather than enabled globally.
 
 ElPack remains the blocking dependency for `xrECore`, `xrEProps`, and the
 LevelEditor shell.
+
+## Dependency Checkpoint
+
+The SDK GUI chain cannot advance honestly with the currently available local
+dependencies. The next acquisition set is:
+
+- ElPack, including `ElTree.hpp` and the historical `elpackB6.lib`;
+- a compatible Borland C++ Builder/VCL installation;
+- the AlexMX control package;
+- MagicFM SDK headers matched to the available libraries/runtime DLLs.
+
+None may be replaced by fake headers or placeholder GUI classes, and none
+should be vendored into this repository. Until lawful, ABI-matched packages
+are available, pause ECore/EProps/LevelEditor GUI work and prefer archive
+tools, format research, or runtime restoration tasks.

@@ -182,6 +182,29 @@ ECore, EProps, or LevelEditor probes are enabled. External roots remain
 optional at configure time: invalid ElPack paths warn with the accepted layout,
 while builds remain free to stop honestly at the unresolved UI boundary.
 
+## SDK GUI Checkpoint
+
+Completed CMake milestones:
+
+- `ETools` builds as a modern target;
+- `xrECore` and `xrEProps` configure as opt-in build probes;
+- `LevelEditor` configures as an opt-in dependency/source shell;
+- non-GUI compatibility contracts cover `AnsiString`, `TMsgDlgType`,
+  `TMsgDlgButtons`, and `TShiftState`;
+- editor-only DirectX and ElPack roots have validation diagnostics.
+
+The shared first blocker is ElPack (`ElTree.hpp`, `TElTree`, `TElTreeItem`,
+and historically `elpackB6.lib`). The value shim strategy ends here because
+forms, widgets, application services, and component packages have behavior and
+ABI contracts that cannot be represented honestly by placeholder types.
+
+Before resuming SDK GUI work, locate lawful copies of ElPack, a compatible
+Borland/VCL installation, the AlexMX controls, and matching MagicFM SDK
+headers. Never fake `ElTree.hpp` or VCL classes, and never vendor those
+third-party packages. If those dependencies remain unavailable, pause the GUI
+branch and continue archive tools, format validation, compiler inventories, or
+runtime bug restoration.
+
 ## Related Documents
 
 * [Tools and SDK Status](status.md)

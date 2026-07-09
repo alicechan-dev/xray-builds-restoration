@@ -140,3 +140,16 @@ original VCL types. Treat ElPack restoration as a separate UI dependency. Do
 not continue excluding files opportunistically from `xrECore`.
 
 Do not proceed to `LevelEditor.exe` until `xrECore`, `xrEProps`, `ETools`, and the Borland/VCL package boundary are clearer.
+
+## Checkpoint
+
+The ECore probe has completed its safe compiler and non-GUI value-compatibility
+phase. It now passes the restored CRT/compiler assumptions, timestamp and STL
+compatibility fixes, and the tested `AnsiString`, `TMsgDlgType`,
+`TMsgDlgButtons`, and `TShiftState` contracts.
+
+The next boundary is intentionally not another shim: retained ECore APIs reach
+real ElPack tree widgets and VCL UI behavior. Resuming requires lawful ElPack
+headers/libraries, a compatible Borland/VCL environment, AlexMX controls, and
+matching MagicFM SDK headers. Do not fake `ElTree.hpp`, define placeholder GUI
+classes, or vendor the missing packages.

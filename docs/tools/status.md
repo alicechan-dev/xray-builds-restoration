@@ -119,9 +119,27 @@ Future options should remain explicit and opt-in where appropriate:
 
 1. Add synthetic archive fixtures and path-safety tests for `xr_unpack`.
 2. Start a small read-only LTX/config validator scaffold.
-3. Inventory `Editors/ECore` before any LevelEditor build attempt.
+3. Acquire and inventory lawful ElPack/Borland dependencies before continuing
+   ECore, EProps, or LevelEditor GUI work.
 4. Inventory `xrLC` and `xrAI` dependencies in more detail before attempting CMake restoration.
-5. Keep GUI editors and host plugins documented but deferred.
+5. Keep GUI editors and host plugins paused at the documented package boundary.
+
+## SDK GUI Checkpoint
+
+The modern CMake milestone now covers `ETools`, experimental `xrECore`,
+experimental `xrEProps`, and the experimental `LevelEditor` dependency shell.
+Standalone contracts cover the audited non-GUI VCL value types:
+`AnsiString`, `TMsgDlgType`, `TMsgDlgButtons`, and `TShiftState`.
+
+This compatibility work stops deliberately before GUI behavior. ElPack tree
+widgets, VCL forms/application services, AlexMX controls, and MagicFM APIs are
+real external dependencies, not value types suitable for small shims.
+
+The active blocker is `ElTree.hpp`/`elpackB6.lib`. Continuing the GUI path
+requires a lawful ElPack and Borland/VCL installation, the AlexMX controls,
+and matching MagicFM SDK headers. Do not fake these APIs or vendor third-party
+packages. Until those dependencies are available, the recommended branch is
+archive/tooling work or focused runtime restoration.
 
 ## Related Plans
 
