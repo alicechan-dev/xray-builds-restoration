@@ -154,11 +154,18 @@ generation named by the historical editor projects. Restored SDK targets may
 opt into it with `XR_LEGACY_DX_ROOT`; it is not a global runtime dependency.
 See [Legacy DirectX SDK Support](legacy-directx.md).
 
+ElPack is likewise an external editor-only dependency. `XR_ELPACK_ROOT`
+supports target-local probing of a lawful package archive without vendoring
+headers or exposing them to runtime targets. The option does not make Borland
+VCL widgets or `elpackB6.lib` inherently compatible with MSVC. See
+[ElPack Dependency](elpack-dependency.md).
+
 ## Related Documents
 
 * [Tools and SDK Status](status.md)
 * [ECore CMake Port Inventory](ecore-inventory.md)
 * [Legacy DirectX SDK Support](legacy-directx.md)
+* [ElPack Dependency](elpack-dependency.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)

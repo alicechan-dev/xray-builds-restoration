@@ -122,9 +122,10 @@ DirectX SDK tree. ElPack is therefore a Borland UI package dependency, not a
 candidate for the non-GUI VCL value compatibility layer.
 
 No source or include was guarded or excluded for this probe. A future ElPack
-root option would only be meaningful alongside a viable Borland-compatible UI
-toolchain; adding an include path alone would not make its VCL widgets usable
-by MSVC.
+root option is now available as `XR_ELPACK_ROOT`. It accepts the historical
+`Code/Source/ElTree.hpp` layout and is wired only to `xrECore`. Adding an
+include path alone does not make ElPack's VCL widgets or Borland package
+library usable by MSVC. See [ElPack Dependency](elpack-dependency.md).
 
 No source was excluded in this probe. The isolated `AnsiString` value shim does
 not provide or imply any VCL UI behavior.

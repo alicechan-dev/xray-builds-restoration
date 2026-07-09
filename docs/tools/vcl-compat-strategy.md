@@ -36,6 +36,11 @@ owner, while `UI_ToolsCustom.h` reaches the same dependency through
 Consequently, no fake `ElTree.hpp`, opportunistic include guard, or source
 exclusion belongs in the non-GUI compatibility strategy.
 
+The optional `XR_ELPACK_ROOT` cache path permits target-local dependency
+probing with a lawful external package archive. It does not add ElPack to the
+value compatibility layer and does not assert that Borland package libraries
+are link-compatible with MSVC. See [ElPack Dependency](elpack-dependency.md).
+
 ## Chosen Strategy
 
 Use a staged, narrow form of Strategy A for non-GUI value semantics only:

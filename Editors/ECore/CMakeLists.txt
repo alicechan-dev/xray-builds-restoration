@@ -69,6 +69,34 @@ target_include_directories(xrECore PRIVATE
   "${PROJECT_SOURCE_DIR}/cmake/compat/vcl"
 )
 
+if(XR_ELPACK_ROOT)
+  set(XRECORE_ELPACK_INCLUDE_DIR "")
+  foreach(candidate IN ITEMS
+      "${XR_ELPACK_ROOT}/Code/Source"
+      "${XR_ELPACK_ROOT}")
+    if(EXISTS "${candidate}/ElTree.hpp")
+      set(XRECORE_ELPACK_INCLUDE_DIR "${candidate}")
+      break()
+    endif()
+  endforeach()
+
+  if(XRECORE_ELPACK_INCLUDE_DIR)
+    target_include_directories(xrECore PRIVATE "${XRECORE_ELPACK_INCLUDE_DIR}")
+    if(IS_DIRECTORY "${XR_ELPACK_ROOT}/Code")
+      target_link_directories(xrECore PRIVATE "${XR_ELPACK_ROOT}/Code")
+    endif()
+    message(STATUS "xrECore: using external ElPack headers from '${XRECORE_ELPACK_INCLUDE_DIR}'")
+  else()
+    message(WARNING
+      "xrECore: XR_ELPACK_ROOT='${XR_ELPACK_ROOT}' does not contain "
+      "Code/Source/ElTree.hpp or ElTree.hpp")
+  endif()
+else()
+  message(STATUS
+    "xrECore: ElPack is not configured; set XR_ELPACK_ROOT to a lawful local "
+    "ElPack package root to continue probing the Borland UI dependency")
+endif()
+
 set(XRECORE_DXSDK_ROOT "${XR_LEGACY_DX_ROOT}")
 if(NOT XRECORE_DXSDK_ROOT)
   set(XRECORE_DXSDK_ROOT "${XRAY_EFFECTIVE_DXSDK_ROOT}")
