@@ -78,6 +78,16 @@ their declaration order. The compatibility header defines no button sets,
 modal results, dialog functions, or GUI behavior. Non-Borland `xrECore` builds
 consume only this enum; Borland builds continue to use the VCL declaration.
 
+## `TMsgDlgButtons` Contract
+
+Both legacy `gauss` trees confirm the button declaration order from `mbYes`
+through `mbHelp`. ECore uses the type only as a default-constructed value set,
+inserts buttons with chained `operator<<`, and passes the set by value.
+
+The isolated `vcl_msgdlg_buttons_contract` verifies the enum values, empty-set
+state, chained insertion, and membership. The compatibility type has no dialog
+function, modal result, window ownership, or display behavior.
+
 ## Explicit Non-Goals
 
 * No `TForm`, `TFrame`, `TComponent`, `TObject`, or `Application` placeholders.
@@ -102,7 +112,7 @@ temporary conversion lifetime. The ECore probe must continue one compatibility
 boundary at a time and must not extend this value-type layer into VCL UI
 behavior.
 
-`xrECore` remains an honest build probe; integrating `AnsiString` does not imply
-support for `TShiftState`, dialog button/result types, forms, `Application`,
+`xrECore` remains an honest build probe; integrating these value types does not
+imply support for `TShiftState`, modal result types, forms, `Application`,
 closures, or ElPack. The compatible `TMsgDlgType` enum is a message category
-only and does not change that boundary.
+only, and `TMsgDlgButtons` is metadata only; neither provides dialog behavior.
