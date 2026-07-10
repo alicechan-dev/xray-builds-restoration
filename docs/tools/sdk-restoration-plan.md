@@ -319,7 +319,7 @@ Current editor-shell checkpoint:
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. |
 | `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. |
 | `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Builds as a non-GUI detail-object lighting helper executable when pointed at an external MSVC x86 FreeImage import library generated outside the repo. |
-| `Gauss` | `BUILD_XR_GAUSS` | Configures and gets past an unused missing `clsid.h` include; build now stops at VC6 dependent iterator syntax in `_sphere.h`. |
+| `Gauss` | `BUILD_XR_GAUSS` | Configures and gets past the missing-header and `_sphere.h` dependent-type blockers; build now stops at removed `std::binary_function` usage. |
 
 Verified non-GUI binary shapes at this checkpoint:
 

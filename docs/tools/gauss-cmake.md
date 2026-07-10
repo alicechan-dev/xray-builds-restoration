@@ -67,11 +67,14 @@ orphan PCH include of an absent `clsid.h`; no project source uses its types or
 conversion functions, so that stale include was removed without importing an
 incompatible header or adding xrCore.
 
+The `_sphere.h` dependent-type blocker is fixed with source-local `typename`
+qualification on the `VectorList` iterator aliases and out-of-class nested-type
+return declarations. No algorithm or container behavior changed.
+
 The build now stops at the next VC6 language/library boundary:
 
-- `_sphere.h` declares dependent `VectorList::iterator` types without the
-  `typename` required by modern C++;
-- the same compile wave later reports removed `std::binary_function` usage;
+- `_stl_extensions.h` derives two predicates from the removed
+  `std::binary_function` base;
 - the PCH also retains absent `Log.h` and `Engine.h` includes.
 
 Those following issues are intentionally left for separate narrow passes. No
