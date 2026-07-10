@@ -77,8 +77,12 @@ The Gauss-local `_stl_extensions.h` no longer depends on removed
 leaving both string predicate call operators unchanged. The shared xrCore copy
 is not modified.
 
-The build now stops at the next snapshot/PCH boundary: the PCH retains absent
-`Log.h` and `Engine.h` includes.
+The stale `Log.h` and `Engine.h` PCH includes are removed. Neither header is in
+the canonical VC6 project, neither exists in its source folder, and no compiled
+Gauss source references their symbols.
+
+The build now stops at the next VC6 library-internal dependency:
+`_vector3d.h` calls the removed implementation detail `std::_cpp_max`.
 
 Those following issues are intentionally left for separate narrow passes. No
 `gauss.dll` output has been verified yet.

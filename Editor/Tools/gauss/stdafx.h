@@ -116,8 +116,6 @@ typedef TMsgDlgBtn TMsgDlgButtons[mbHelp];
 #include "fixedvector.h"
 #include "math.h"
 
-#include "Log.h"
-#include "Engine.h"
 // TODO: reference additional headers your program requires here
 
 #pragma comment( lib, "imagehlp.lib"	)
