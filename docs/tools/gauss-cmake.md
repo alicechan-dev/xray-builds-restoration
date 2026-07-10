@@ -71,11 +71,14 @@ The `_sphere.h` dependent-type blocker is fixed with source-local `typename`
 qualification on the `VectorList` iterator aliases and out-of-class nested-type
 return declarations. No algorithm or container behavior changed.
 
-The build now stops at the next VC6 language/library boundary:
+The Gauss-local `_stl_extensions.h` no longer depends on removed
+`std::binary_function`. A stateless local compatibility base preserves its
+`first_argument_type`, `second_argument_type`, and `result_type` aliases while
+leaving both string predicate call operators unchanged. The shared xrCore copy
+is not modified.
 
-- `_stl_extensions.h` derives two predicates from the removed
-  `std::binary_function` base;
-- the PCH also retains absent `Log.h` and `Engine.h` includes.
+The build now stops at the next snapshot/PCH boundary: the PCH retains absent
+`Log.h` and `Engine.h` includes.
 
 Those following issues are intentionally left for separate narrow passes. No
 `gauss.dll` output has been verified yet.

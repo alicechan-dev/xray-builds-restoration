@@ -1,12 +1,20 @@
 #ifndef _STL_EXT_internal
 #define _STL_EXT_internal
 
-struct pred_str		: public std::binary_function<char*, char*, bool> 
+template <class Arg1, class Arg2, class Result>
+struct gauss_binary_function
+{
+	typedef Arg1	first_argument_type;
+	typedef Arg2	second_argument_type;
+	typedef Result	result_type;
+};
+
+struct pred_str		: public gauss_binary_function<char*, char*, bool>
 {	
 	IC bool operator()(const char* x, const char* y) const
 	{	return strcmp(x,y)<0;	}
 };
-struct pred_stri	: public std::binary_function<char*, char*, bool> 
+struct pred_stri	: public gauss_binary_function<char*, char*, bool>
 {	
 	IC bool operator()(const char* x, const char* y) const
 	{	return strcmp(x,y)<0;	}
