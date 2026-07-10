@@ -92,6 +92,10 @@ void wxSDKEditorFrame::CreateWorkspace()
     treeSizer->Add(new wxStaticText(treePanel, wxID_ANY, "Scene / Objects"),
         0, wxALL, 8);
     editorTree_ = new wxEditorTree(treePanel);
+    editorTree_->Bind(wxEVT_KEY_DOWN,
+        &wxSDKEditorFrame::OnTreeKeyDown, this);
+    editorTree_->Bind(wxEVT_TREE_END_LABEL_EDIT,
+        &wxSDKEditorFrame::OnTreeEndLabelEdit, this);
     editorTree_->Bind(wxEVT_TREE_SEL_CHANGED,
         &wxSDKEditorFrame::OnTreeSelectionChanged, this);
     treeSizer->Add(editorTree_, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
@@ -182,6 +186,50 @@ void wxSDKEditorFrame::OnAdapterStatus(wxCommandEvent&)
     dialogService_.Info("Adapter Status",
         "IEditorTree is the first active SDK UI adapter boundary.\n\n"
         "The current scene tree and properties are demo placeholders only.");
+}
+
+void wxSDKEditorFrame::OnTreeEndLabelEdit(wxTreeEvent& event)
+{
+    if (event.IsEditCancelled())
+    {
+        event.Skip();
+        return;
+    }
+
+    auto* node = reinterpret_cast<EditorTreeNode*>(
+        editorTree_->GetItemUserData(event.GetItem()));
+    if (!node)
+    {
+        event.Veto();
+        return;
+    }
+
+    std::string reason;
+    const std::string previousLabel = node->Label();
+    if (!treeModel_.RenameNode(*node, event.GetLabel().ToStdString(), &reason))
+    {
+        event.Veto();
+        SetStatusText("Rename rejected: " + reason);
+        CallAfter([this, reason]() {
+            dialogService_.Warning("Rename rejected", reason.c_str());
+            UpdateSelectionProperties();
+        });
+        return;
+    }
+
+    SetStatusText("Renamed '" + previousLabel + "' to '" + node->Label() + "'.");
+    UpdateSelectionProperties();
+    event.Skip();
+}
+
+void wxSDKEditorFrame::OnTreeKeyDown(wxKeyEvent& event)
+{
+    if (event.GetKeyCode() == WXK_F2)
+    {
+        editorTree_->BeginEditSelectedLabel();
+        return;
+    }
+    event.Skip();
 }
 
 void wxSDKEditorFrame::OnTreeSelectionChanged(wxTreeEvent& event)

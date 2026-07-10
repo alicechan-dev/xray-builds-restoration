@@ -22,7 +22,7 @@ wxString FromUtf8(const char* text)
 
 wxEditorTree::wxEditorTree(wxWindow* parent) :
     wxTreeCtrl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-        wxTR_DEFAULT_STYLE | wxTR_HIDE_ROOT)
+        wxTR_DEFAULT_STYLE | wxTR_HIDE_ROOT | wxTR_EDIT_LABELS)
 {
 }
 
@@ -66,10 +66,15 @@ void wxEditorTree::SetItemUserData(ItemHandle item, UserData userData)
 IEditorTree::UserData wxEditorTree::GetSelectedUserData() const
 {
     const wxTreeItemId selected = GetSelection();
-    if (!selected.IsOk())
+    return GetItemUserData(selected);
+}
+
+IEditorTree::UserData wxEditorTree::GetItemUserData(const wxTreeItemId& item) const
+{
+    if (!item.IsOk())
         return 0;
 
-    const auto* data = dynamic_cast<EditorTreeItemData*>(GetItemData(selected));
+    const auto* data = dynamic_cast<EditorTreeItemData*>(GetItemData(item));
     return data ? data->Value() : 0;
 }
 
@@ -83,6 +88,13 @@ void wxEditorTree::SelectFirst()
     const auto firstItem = items_.find(firstHandle_);
     if (firstItem != items_.end())
         SelectItem(firstItem->second);
+}
+
+void wxEditorTree::BeginEditSelectedLabel()
+{
+    const wxTreeItemId selected = GetSelection();
+    if (selected.IsOk())
+        EditLabel(selected);
 }
 
 IEditorTree::ItemHandle wxEditorTree::StoreItem(const wxTreeItemId& item)

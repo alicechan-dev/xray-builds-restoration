@@ -8,6 +8,7 @@
 #include <wx/frame.h>
 
 class wxEditorTree;
+class wxKeyEvent;
 class wxPropertyPanel;
 class wxTreeEvent;
 
@@ -27,6 +28,8 @@ private:
     void OnExit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnAdapterStatus(wxCommandEvent& event);
+    void OnTreeEndLabelEdit(wxTreeEvent& event);
+    void OnTreeKeyDown(wxKeyEvent& event);
     void OnTreeSelectionChanged(wxTreeEvent& event);
 
     wxEditorTree* editorTree_ = nullptr;

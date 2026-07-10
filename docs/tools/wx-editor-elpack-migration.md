@@ -84,6 +84,13 @@ reproduce ElPack fields. Further migration still requires a precise audit of
 historical path normalization and callback behavior before extending the
 model.
 
+F2 label editing now exercises this seam end to end. wx supplies the proposed
+label, the model accepts or rejects it, and only accepted changes reach the
+view and selection-driven property display. Empty and case-insensitive
+duplicate sibling labels are vetoed with a reason from the model. This is a
+prototype of `NameAfterEdit()`-style behavior, not a port of that function;
+the preserved `xrEProps` files remain untouched.
+
 `FolderLib` is the second seam, after the model exists. Its pure path and
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx

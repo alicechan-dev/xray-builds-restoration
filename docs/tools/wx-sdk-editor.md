@@ -41,6 +41,12 @@ hierarchy. Selecting an entry shows its model label, category, path, and a
 placeholder-only notice in the property panel. No historical editor logic has
 been copied into the shell.
 
+Pressing F2 on a selected visible item starts wx label editing. The completed
+edit is sent to `EditorTreeModel::RenameNode()` before wx may commit it.
+Accepted edits refresh the property panel and status bar from model state.
+Rejected empty or duplicate sibling names are vetoed, keep the old label and
+path, and report the model's reason through `IDialogService`.
+
 ## Adapter Boundary
 
 The first interfaces are deliberately independent of wxWidgets so later work
@@ -76,6 +82,10 @@ reason without showing UI, and refresh paths recursively. Quiet startup checks
 cover duplicate rejection, successful unique rename, path refresh, and empty
 name rejection.
 
+This is the first active prototype of the historical
+`ItemListHelper::NameAfterEdit()` responsibility without `TElTreeItem`. It
+does not compile, call, or modify the old `xrEProps` implementation.
+
 The historical ElPack usage map is documented in [wx Editor ElPack Migration
 Map](wx-editor-elpack-migration.md). The map identifies `xrEProps` item-list
 model/rename logic as the first extraction candidate and keeps the much larger
@@ -102,3 +112,7 @@ passes a model-driven no-data launch smoke check. Because the historical root re
 standard exception handling for runtime compatibility, the wx target restores
 `/EHsc` and `/GR` locally to match the external wxWidgets binary without
 changing runtime targets. Generated build output remains outside commits.
+
+The rename-enabled Release target also passes a startup smoke check. Rename
+acceptance and rejection remain covered by the quiet model self-check; full
+interactive GUI automation is future test infrastructure.

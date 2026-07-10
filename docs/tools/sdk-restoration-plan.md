@@ -175,6 +175,13 @@ state. Startup self-checks cover empty and duplicate rename rejection plus a
 successful path-refreshing rename. Old `xrEProps` sources remain unchanged and
 unlinked.
 
+The wx tree now exposes F2 label editing through this model. The edit event is
+vetoed unless `RenameNode()` accepts it; successful edits refresh the selected
+label and path in the property panel, while failures retain old state and use
+`IDialogService` for the returned reason. This proves the first
+`NameAfterEdit()`-like flow without importing `TElTreeItem` or altering
+`ItemListHelper`.
+
 ## Recommended First Practical Target
 
 After the current inventory, the safest next target is still the archive/tooling path:

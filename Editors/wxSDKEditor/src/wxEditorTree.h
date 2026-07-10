@@ -20,6 +20,9 @@ public:
     UserData GetSelectedUserData() const override;
     void ExpandAllItems() override;
     void SelectFirst() override;
+    void BeginEditSelectedLabel() override;
+
+    UserData GetItemUserData(const wxTreeItemId& item) const;
 
 private:
     ItemHandle StoreItem(const wxTreeItemId& item);
