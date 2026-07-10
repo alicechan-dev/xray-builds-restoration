@@ -8,6 +8,7 @@ class IEditorTree
 {
 public:
     using ItemHandle = std::uintptr_t;
+    using UserData = std::uintptr_t;
     static const ItemHandle InvalidItem = 0;
 
     virtual ~IEditorTree() = default;
@@ -16,6 +17,10 @@ public:
     virtual ItemHandle AddRoot(const char* label) = 0;
     virtual ItemHandle AddChild(ItemHandle parent, const char* label) = 0;
     virtual std::string GetSelectedLabel() const = 0;
+    virtual void SetItemUserData(ItemHandle item, UserData userData) = 0;
+    virtual UserData GetSelectedUserData() const = 0;
+    virtual void ExpandAllItems() = 0;
+    virtual void SelectFirst() = 0;
 };
 
 #endif

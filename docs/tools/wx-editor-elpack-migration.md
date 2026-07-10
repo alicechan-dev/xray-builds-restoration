@@ -1,0 +1,96 @@
+# wx Editor ElPack Migration Map
+
+This document maps the historical ElPack tree dependency to the experimental
+wxWidgets editor boundary. It is an analysis artifact, not a port: the old
+Borland/VCL code remains unchanged and `wxSDKEditor` still uses demo-only data.
+
+## Dependency Shape
+
+The active Borland projects link `elpackB6.lib` and name an ElPack source root
+containing `ElTree.hpp`. Direct use is concentrated in `xrEProps` and then
+consumed by LevelEditor and the other GUI editors. The code relies on more than
+tree rendering: `TElTreeItem` stores data/tag pointers, parent/child topology,
+selection, checkbox state, sort state, custom height/drawing, inline editing,
+and drag/drop state.
+
+`IEditorTree` is therefore only the view/navigation seam. It must not grow into
+a source-compatible imitation of `TElTree`. Hierarchy, identity, item type,
+rename rules, and selection should move into a future GUI-independent
+`IEditorTreeModel` (name provisional), while drawing and events stay in the wx
+view adapter.
+
+## Classification
+
+Categories used below:
+
+* **A** - tree display/navigation
+* **B** - property/item-list helper
+* **C** - material/object browser
+* **D** - scene/object hierarchy
+* **E** - dialog/form-only usage
+* **F** - unclear, indirect, or not actually a tree seam
+
+| Historical file(s) | Old dependency and apparent role | Class | Suggested future boundary |
+|---|---|---:|---|
+| `Editors/xrEProps/ItemListTypes.h`, `ItemListHelper.h/.cpp` | `ListItem` vector operations are mostly model-like; `NameAfterEdit()` reaches through `ListItem::Item()` to `TElTreeItem` for sibling uniqueness, text update, and path rename. | B | First extract rename/path/sibling rules into a GUI-independent tree model. Present results through `IEditorTree`. |
+| `Editors/xrEProps/FolderLib.h/.cpp` | Central `TElTree` hierarchy helper: folder/object creation, path lookup, generated names, rename/remove, selection restore, expansion, drag/drop, popup menus, dialogs, and Win32 thumbnail drawing. | A/B/C | Split later. Path and hierarchy rules belong in `IEditorTreeModel`; selection/expansion in `IEditorTree`; confirmation in `IDialogService`. Drag/drop and drawing remain wx view work. Do not port this class wholesale. |
+| `Editors/xrEProps/ItemList.h/.cpp` | Full VCL form over `TElTree`, advanced inline editor, menus, form storage, multi-select, checkboxes, thumbnails, sorting, and callbacks. | A/B/E | Model data should feed `IEditorTreeModel`; display/navigation uses `IEditorTree`. Form persistence, drawing, and editing need explicit wx implementations. Real ElPack/VCL is required for the historical path. |
+| `Editors/xrEProps/PropertiesList.h/.cpp`, `PropertiesListTypes.h` | Property grid implemented with `TElTreeItem` tags, columns, owner drawing, inline number/text editors, chooser/color/vector actions, sorting, and focus callbacks. | B/E | Future `IPropertyPanel` model and editor contracts. It is not an `IEditorTree` port and currently requires ElPack/VCL. |
+| `Editors/xrEProps/ChoseForm.*` | VCL chooser dialog backed by item/tree helpers. | C/E | Future browser model plus `IEditorTree`; modal behavior through a future dialog/controller boundary. Historical form still requires VCL/ElPack. |
+| `Editors/ECore/Engine/GameMtlLib.h/.cpp` | Material data and serialization are mostly independent, but `_EDITOR` includes `ElTree.hpp` and adds property/editor operations. | C | Preserve the material model separately; expose materials through a future browser/tree model and properties through `IPropertyPanel`. Do not make the data library depend on a tree widget. |
+| `Editors/ECore/Editor/SoundEditor.*`, `ImageEditor.*` | Asset browsers/forms with direct or helper-mediated tree selection. | C/E | Future asset-browser model plus `IEditorTree`; dialogs remain separate. Historical code requires real editor packages. |
+| `Editors/LevelEditor/ObjectList.h/.cpp` | Builds folders from `EObjClass`, stores object pointers in tree items, supports multi-selection, search, visibility, locking, and scene selection. | A/D/E | Strong later consumer of a scene tree model. Use `IEditorTreeModel` for object identity/state and `IEditorTree` for presentation after scene data is decoupled. |
+| `Editors/LevelEditor/EditLibrary.*`, `EditLightAnim.*` | Object/library and light-animation browsers using `TElTreeItem` selection plus item-list helpers. | A/C/E | Browser-specific models presented through `IEditorTree`; property editing through `IPropertyPanel`. |
+| `Editors/LevelEditor/DOOneColor.*`, `DOShuffle.*`, `FrameAIMap.*` | Specialized forms with direct iteration, lookup, tags, selection, and drag/drop on `TElTree`. | D/E | Not a first seam. Define domain models before adding wx views; historical behavior still needs ElPack/VCL. |
+| `Editors/LevelEditor/SceneProperties.*` and `Editors/LevelOptions/Editor/SceneProperties.*` | Build-options form represented as a tree with item callbacks. | B/E | Future options/property model and `IPropertyPanel`; not scene navigation. |
+| `Editors/ActorEditor/BonePart.*`, `ClipEditor.*`, `LeftBar.*` | Multiple trees, multi-select, item data, and drag/drop for bones/clips plus navigation. | A/C/E | Domain models first, then `IEditorTree`; do not emulate `TElTreeDragObject`. |
+| `Editors/ShaderEditor/LeftBar.*`, `SHToolsInterface.*`, `SHEngineToolsProperties.cpp` | Shader/material browser selection and property synchronization. | A/C | Material/shader browser model plus `IEditorTree` and `IPropertyPanel`. |
+| `Editors/ParticleEditor/LeftBar.*`, `UI_ParticleTools.cpp` | Particle browser selection through item-list/tree helpers. | A/C | Particle browser model plus `IEditorTree`; no direct historical wiring yet. |
+| `Editors/ECore/Editor/SceneClassList.h` | Object-class IDs and pick-query structures; no `TElTree` API despite being included near scene UI code. | F | Potential vocabulary/input for a later scene model, but not an ElPack adapter seam. |
+| `Editors/ECore/Editor/UI_ToolsCustom.h/.cpp` | Includes `eltree.hpp` and item helpers, but owns tool actions, input, device callbacks, rendering, and property refresh rather than a tree. | F | Audit/remove transitive dependency only during a later old-code decomposition. Tool/controller interfaces are separate from `IEditorTree`. |
+
+Duplicate generations under `Editor/` and `Editors/!old/` repeat much of this
+surface. They are historical comparison sources, not additional migration
+targets. The active `Editors/` generation should remain the primary map unless
+a missing-file investigation proves otherwise.
+
+## First Seam Candidate
+
+The recommended first old-code seam is
+`Editors/xrEProps/ItemListHelper.h/.cpp`, together with the data shape in
+`ItemListTypes.h`.
+
+Why this seam comes first:
+
+* `FindItem()` and `CreateItem()` already operate on `ListItemsVec` without a
+  widget;
+* the ElPack leak is narrow and visible in `NameAfterEdit()`;
+* the leaked behavior is domain logic worth preserving: normalized names,
+  sibling uniqueness, and hierarchical path replacement;
+* it is central to item, object, shader, particle, and asset browsers;
+* it can be characterized with synthetic names and hierarchy data without
+  compiling VCL, loading levels, or linking `xrECore`.
+
+`EditorTreeModel` now establishes the first tiny owned-node model for labels,
+categories, paths, and parent/child relationships. Its rename operation
+rejects empty names and case-insensitive sibling duplicates, returns failure
+reasons without invoking GUI code, and refreshes descendant paths. The current
+implementation is inspired by the identified `NameAfterEdit()` needs but does
+not modify, compile, or call `xrEProps`.
+
+`wxEditorTree` renders model state through `IEditorTree` and carries only an
+opaque reference to each stable model node. It does not own the model or
+reproduce ElPack fields. Further migration still requires a precise audit of
+historical path normalization and callback behavior before extending the
+model.
+
+`FolderLib` is the second seam, after the model exists. Its pure path and
+hierarchy operations can migrate incrementally; its drag/drop, popup menu,
+thumbnail drawing, and dialog behavior must be redesigned against explicit wx
+view and service interfaces.
+
+## Explicit Non-Goals
+
+This map does not add ElPack headers, package libraries, VCL shims, real level
+loading, or old editor calls. It does not alter the preserved Borland sources.
+The model-driven demo tree in `wxSDKEditor` remains placeholder-only.

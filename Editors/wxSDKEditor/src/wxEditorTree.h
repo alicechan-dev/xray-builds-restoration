@@ -16,11 +16,16 @@ public:
     ItemHandle AddRoot(const char* label) override;
     ItemHandle AddChild(ItemHandle parent, const char* label) override;
     std::string GetSelectedLabel() const override;
+    void SetItemUserData(ItemHandle item, UserData userData) override;
+    UserData GetSelectedUserData() const override;
+    void ExpandAllItems() override;
+    void SelectFirst() override;
 
 private:
     ItemHandle StoreItem(const wxTreeItemId& item);
 
     ItemHandle nextHandle_ = 1;
+    ItemHandle firstHandle_ = InvalidItem;
     std::unordered_map<ItemHandle, wxTreeItemId> items_;
 };
 

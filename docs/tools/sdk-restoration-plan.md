@@ -149,9 +149,31 @@ dialog contracts independent of wxWidgets.
 
 The experiment should advance one audited interface at a time. It must not
 emulate VCL forms, ElPack controls, AlexMX, MagicFM, `.dfm` loading, or old
-editor behavior with placeholders. The first validation milestone is only a
-no-data shell launch; historical data models and commands remain future work.
-See [Experimental wxWidgets SDK Editor](wx-sdk-editor.md).
+editor behavior with placeholders. `IEditorTree` is now the first active
+boundary: the shell populates an explicit demo hierarchy through the neutral
+interface and mirrors selection into placeholder properties. It still loads
+no real level, asset, or runtime data.
+
+Next, clean up the tree contract from proven needs, map old `TElTree` usage,
+and define a GUI-independent scene model. Real SDK/editor logic should connect
+only after that model exists and is tested. See [Experimental wxWidgets SDK
+Editor](wx-sdk-editor.md).
+
+The first ElPack ownership audit is now recorded in the [wx Editor ElPack
+Migration Map](wx-editor-elpack-migration.md). It selects
+`xrEProps/ItemListHelper` as the first model seam: most list creation/search is
+already widget-independent, while rename validation has one contained
+`TElTreeItem` leak. `FolderLib` follows only after a tree model exists because
+it mixes hierarchy rules with ElPack selection, drag/drop, drawing, menus, and
+dialogs.
+
+`EditorTreeModel` now supplies that first GUI-independent foundation inside
+`wxSDKEditor` only. Demo nodes own their children and expose labels,
+categories, paths, lookup, and reason-returning rename validation. The frame
+projects this model through `IEditorTree`; the wx control does not own domain
+state. Startup self-checks cover empty and duplicate rename rejection plus a
+successful path-refreshing rename. Old `xrEProps` sources remain unchanged and
+unlinked.
 
 ## Recommended First Practical Target
 

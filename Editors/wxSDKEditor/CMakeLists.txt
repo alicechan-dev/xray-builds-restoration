@@ -1,5 +1,6 @@
 set(XR_WX_SDK_EDITOR_SOURCES
   src/App.cpp
+  src/editor_model/EditorTreeModel.cpp
   src/MainFrame.cpp
   src/wxDialogService.cpp
   src/wxEditorTree.cpp
@@ -10,6 +11,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   include/editor_ui/IDialogService.h
   include/editor_ui/IEditorTree.h
   include/editor_ui/IPropertyPanel.h
+  include/editor_model/EditorTreeModel.h
   src/MainFrame.h
   src/wxDialogService.h
   src/wxEditorTree.h
@@ -89,5 +91,7 @@ foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel Mixed)
 endforeach()
 
 if(MSVC)
-  target_compile_options(wxSDKEditor PRIVATE /W4 /permissive-)
+  # The historical root removes /EHsc for runtime compatibility. wxWidgets is
+  # built with standard C++ exceptions and RTTI, so restore them locally.
+  target_compile_options(wxSDKEditor PRIVATE /W4 /permissive- /EHsc /GR)
 endif()
