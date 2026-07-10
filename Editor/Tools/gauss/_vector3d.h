@@ -53,7 +53,7 @@ public:
 	IC	void	invert()								{ x=-x; y=-y; z=-z;					}
 	IC	void	invert(const _vector<T> &a)				{ x=-a.x; y=-a.y; z=-a.z;			}
 
-	IC	void	min(const _vector<T> &v)				{ x = std::_cpp_min(x,v.x);	y = std::_cpp_min(y,v.y);	z = std::_cpp_min(z,v.z);	}
+	IC	void	min(const _vector<T> &v)				{ x = (std::min)(x,v.x);	y = (std::min)(y,v.y);	z = (std::min)(z,v.z);	}
 	IC	void	max(const _vector<T> &v)				{ x = (std::max)(x,v.x);	y = (std::max)(y,v.y);	z = (std::max)(z,v.z);	}
 
 	IC	void	abs(const _vector<T> &v)				{ x = _abs(v.x); y=_abs(v.y); z=_abs(v.z);	}

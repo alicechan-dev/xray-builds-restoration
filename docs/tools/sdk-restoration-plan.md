@@ -319,7 +319,7 @@ Current editor-shell checkpoint:
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. |
 | `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. |
 | `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Builds as a non-GUI detail-object lighting helper executable when pointed at an external MSVC x86 FreeImage import library generated outside the repo. |
-| `Gauss` | `BUILD_XR_GAUSS` | Configures and replaces removed `std::_cpp_max` with `std::max`; build now stops at the adjacent `std::_cpp_min` dependency in `_vector3d.h`. |
+| `Gauss` | `BUILD_XR_GAUSS` | Configures and replaces removed `_cpp_min`/`_cpp_max` internals with standard helpers; build now stops at `Msg(...)` logging calls absent from the canonical snapshot. |
 
 Verified non-GUI binary shapes at this checkpoint:
 

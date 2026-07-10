@@ -77,17 +77,20 @@ The Gauss-local `_stl_extensions.h` no longer depends on removed
 leaving both string predicate call operators unchanged. The shared xrCore copy
 is not modified.
 
-The stale `Log.h` and `Engine.h` PCH includes are removed. Neither header is in
-the canonical VC6 project, neither exists in its source folder, and no compiled
-Gauss source references their symbols.
+The absent `Log.h` and `Engine.h` PCH includes were removed because neither
+header is in the canonical VC6 project or source folder. A later compile stage
+shows that logging itself is not entirely unused: `_math.cpp` and `FS.cpp`
+still call the free `Msg(...)` function.
 
-The `_vector3d.h` maximum operation now uses macro-safe `(std::max)(...)`
-calls instead of the removed VC6 STL implementation detail `std::_cpp_max`.
-`NOMINMAX` and `<algorithm>` were already present, and the component-wise
-comparison behavior is unchanged.
+The `_vector3d.h` component-wise minimum and maximum operations now use
+macro-safe `(std::min)(...)` and `(std::max)(...)` calls instead of removed VC6
+STL implementation details. `NOMINMAX` and `<algorithm>` were already present,
+and comparison behavior is unchanged.
 
-The build now stops at the adjacent, separate `std::_cpp_min` dependency in
-the vector minimum operation.
+The build now stops because `_math.cpp` and `FS.cpp` call `Msg(...)`, whose
+declaration and implementation are absent from the canonical VC6 snapshot. A
+newer sibling snapshot contains logging code, but ownership and dependency
+compatibility must be assessed in a separate pass rather than imported here.
 
 Those following issues are intentionally left for separate narrow passes. No
 `gauss.dll` output has been verified yet.
