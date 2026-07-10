@@ -258,7 +258,9 @@ only in-repo `Editor/ShaderEditor/Lib/FreeImage.lib` is not accepted by MSVC;
 `XR_FREEIMAGE_ROOT` or `XR_DO_LIGHT_FREEIMAGE_LIB` can point at a lawful
 MSVC-compatible import library in a later pass. The local runtime
 `FreeImage.dll` is a 32-bit PE DLL, but no matching MSVC-compatible import
-library was found. See [xrDO_Light CMake Shell](xrdolight-cmake.md).
+library was found. A helper script can generate a local import library outside
+the repo from that DLL. See [xrDO_Light CMake Shell](xrdolight-cmake.md) and
+[FreeImage Dependency](freeimage-dependency.md).
 
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost

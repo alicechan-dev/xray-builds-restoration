@@ -46,6 +46,9 @@ library currently found in this source snapshot. The CMake target exposes
 FreeImage import library can be supplied later without changing runtime targets
 or vendoring binaries.
 
+See [FreeImage Dependency](freeimage-dependency.md) for the current
+classification and an optional local import-library generation workflow.
+
 Expected `XR_FREEIMAGE_ROOT` layouts include:
 
 - `<root>/include/FreeImage.h`
@@ -101,4 +104,6 @@ Current probe result:
   COFF import library;
 - `D:\Projects\Github\stalker-dream\FreeImage.dll` exists and is a 32-bit PE
   DLL exporting `_FreeImage_*@N` functions, but no matching MSVC-compatible
-  import library was found locally.
+  import library was found locally;
+- a local import library can be generated outside the repo from that DLL and
+  passed through `XR_DO_LIGHT_FREEIMAGE_LIB`.
