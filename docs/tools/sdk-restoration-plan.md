@@ -139,6 +139,20 @@ Planned option families:
 
 Large options should default to `OFF` until the dependency and legal/test story is clear.
 
+### Parallel wxWidgets UI Experiment
+
+`Editors/wxSDKEditor` provides an opt-in `wxSDKEditor` shell behind
+`BUILD_XR_WX_SDK_EDITOR`. This is a parallel portability experiment, not a
+claim that the historical LevelEditor has been ported. The target uses an
+external Win32/x86 wxWidgets package and keeps its initial tree, property, and
+dialog contracts independent of wxWidgets.
+
+The experiment should advance one audited interface at a time. It must not
+emulate VCL forms, ElPack controls, AlexMX, MagicFM, `.dfm` loading, or old
+editor behavior with placeholders. The first validation milestone is only a
+no-data shell launch; historical data models and commands remain future work.
+See [Experimental wxWidgets SDK Editor](wx-sdk-editor.md).
+
 ## Recommended First Practical Target
 
 After the current inventory, the safest next target is still the archive/tooling path:
