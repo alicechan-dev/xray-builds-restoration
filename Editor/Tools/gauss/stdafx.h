@@ -115,6 +115,7 @@ typedef TMsgDlgBtn TMsgDlgButtons[mbHelp];
 #include "vector.h"
 #include "fixedvector.h"
 #include "math.h"
+#include "GaussLog.h"
 
 // TODO: reference additional headers your program requires here
 

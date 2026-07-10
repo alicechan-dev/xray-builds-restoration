@@ -11,6 +11,7 @@ set(XR_GAUSS_SOURCES
   "${XR_GAUSS_DIR}/cpuid.cpp"
   "${XR_GAUSS_DIR}/FS.cpp"
   "${XR_GAUSS_DIR}/Gauss.cpp"
+  "${XR_GAUSS_DIR}/GaussLog.cpp"
   "${XR_GAUSS_DIR}/LzHuf.cpp"
   "${XR_GAUSS_DIR}/StdAfx.cpp"
 )

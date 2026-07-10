@@ -87,10 +87,20 @@ macro-safe `(std::min)(...)` and `(std::max)(...)` calls instead of removed VC6
 STL implementation details. `NOMINMAX` and `<algorithm>` were already present,
 and comparison behavior is unchanged.
 
-The build now stops because `_math.cpp` and `FS.cpp` call `Msg(...)`, whose
-declaration and implementation are absent from the canonical VC6 snapshot. A
-newer sibling snapshot contains logging code, but ownership and dependency
-compatibility must be assessed in a separate pass rather than imported here.
+The newer sibling's `Msg(...)` implementation is not imported because it routes
+through global `CLog` state and carries editor splash, dialog, plugin, and file
+logging dependencies. The modern target instead owns a bounded variadic
+`GaussLog` helper with the same call contract and debugger-only output.
 
-Those following issues are intentionally left for separate narrow passes. No
-`gauss.dll` output has been verified yet.
+Release now builds and produces:
+
+- `build-gauss-check/bin/gauss.dll`;
+- `build-gauss-check/lib/gauss.lib`;
+- `build-gauss-check/lib/gauss.exp`.
+
+`dumpbin` verification reports:
+
+- PE machine type `14C` (x86), PE32 DLL;
+- exports `gauss`, `ip_BuildKernel`, and `ip_ProcessKernel`;
+- dependencies `KERNEL32.dll`, `VCRUNTIME140.dll`, and the Universal CRT
+  runtime API set.

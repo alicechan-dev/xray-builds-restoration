@@ -319,7 +319,7 @@ Current editor-shell checkpoint:
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. |
 | `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. |
 | `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Builds as a non-GUI detail-object lighting helper executable when pointed at an external MSVC x86 FreeImage import library generated outside the repo. |
-| `Gauss` | `BUILD_XR_GAUSS` | Configures and replaces removed `_cpp_min`/`_cpp_max` internals with standard helpers; build now stops at `Msg(...)` logging calls absent from the canonical snapshot. |
+| `Gauss` | `BUILD_XR_GAUSS` | Release builds as an x86 image-filter DLL exporting `gauss`, `ip_BuildKernel`, and `ip_ProcessKernel`; diagnostics use a bounded Gauss-local debugger logger. |
 
 Verified non-GUI binary shapes at this checkpoint:
 
@@ -331,6 +331,8 @@ Verified non-GUI binary shapes at this checkpoint:
 - `xrDO_Light.exe` is an x86 Windows GUI-subsystem helper and links when
   `XR_DO_LIGHT_FREEIMAGE_LIB` selects an external generated MSVC import
   library; the executable depends on `FreeImage.dll` at runtime.
+- `gauss.dll` is x86 and exports `gauss`, `ip_BuildKernel`, and
+  `ip_ProcessKernel`.
 
 Build trees, logs, extracted data, generated FreeImage `.lib`/`.def` files,
 and external dependency binaries are local verification artifacts and must not
