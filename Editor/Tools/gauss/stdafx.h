@@ -112,7 +112,6 @@ typedef TMsgDlgBtn TMsgDlgButtons[mbHelp];
 
 #define	AnsiString string
 
-#include "clsid.h"
 #include "vector.h"
 #include "fixedvector.h"
 #include "math.h"

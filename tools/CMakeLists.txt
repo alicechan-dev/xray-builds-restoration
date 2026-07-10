@@ -13,6 +13,7 @@ option(BUILD_XR_DXT "Build the experimental historical DXT texture helper" OFF)
 option(BUILD_XR_HEMISPHERE "Build the experimental historical hemisphere sampling helper" OFF)
 option(BUILD_XR_CLOSE "Build the experimental historical xrLC close helper" OFF)
 option(BUILD_XR_DO_LIGHT "Build the experimental historical xrLC detail-object light helper" OFF)
+option(BUILD_XR_GAUSS "Build the experimental historical Gauss image-filter helper" OFF)
 option(BUILD_XR_VCL_COMPAT_TESTS "Build isolated non-GUI VCL compatibility contract tests" OFF)
 set(XR_LEGACY_DX_ROOT "" CACHE PATH "Optional DirectX SDK root used only by restored SDK/editor targets")
 set(XR_ELPACK_ROOT "" CACHE PATH "Optional local ElPack root used only by restored SDK/editor targets")
@@ -266,6 +267,10 @@ endif()
 
 if(BUILD_XR_DO_LIGHT)
   add_subdirectory("${PROJECT_SOURCE_DIR}/xrLC/xrDO_Light" "${CMAKE_BINARY_DIR}/xrLC/xrDO_Light")
+endif()
+
+if(BUILD_XR_GAUSS)
+  add_subdirectory("${PROJECT_SOURCE_DIR}/Editor/Tools/gauss" "${CMAKE_BINARY_DIR}/Editor/Tools/gauss")
 endif()
 
 if(BUILD_XR_VCL_COMPAT_TESTS)

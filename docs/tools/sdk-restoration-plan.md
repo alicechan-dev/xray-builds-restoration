@@ -261,6 +261,12 @@ library outside the repo from the local runtime `FreeImage.dll`. With
 `FreeImage.dll` at runtime. See [xrDO_Light CMake Shell](xrdolight-cmake.md)
 and [FreeImage Dependency](freeimage-dependency.md).
 
+`Editor/Tools/gauss` now has an opt-in non-GUI `Gauss` CMake shell behind
+`BUILD_XR_GAUSS`. The complete VC6 project is used because the later
+`Editors/Tools/gauss` snapshot lacks its filter entry source and several listed
+headers while containing unrelated editor scaffolding. The target keeps its
+DirectX 8-era dependency paths local. See [Gauss CMake Shell](gauss-cmake.md).
+
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
@@ -313,6 +319,7 @@ Current editor-shell checkpoint:
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. |
 | `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. |
 | `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Builds as a non-GUI detail-object lighting helper executable when pointed at an external MSVC x86 FreeImage import library generated outside the repo. |
+| `Gauss` | `BUILD_XR_GAUSS` | Configures and gets past an unused missing `clsid.h` include; build now stops at VC6 dependent iterator syntax in `_sphere.h`. |
 
 Verified non-GUI binary shapes at this checkpoint:
 
@@ -359,6 +366,7 @@ targets should remain on their own restoration path.
 * [close CMake Shell](close-cmake.md)
 * [xrDO_Light CMake Shell](xrdolight-cmake.md)
 * [FreeImage Dependency](freeimage-dependency.md)
+* [Gauss CMake Shell](gauss-cmake.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
