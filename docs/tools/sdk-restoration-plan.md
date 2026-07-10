@@ -248,6 +248,16 @@ executable from the level-compiler tree without pulling in the full `xrLC`
 toolchain. The Release target builds as a 32-bit Windows subsystem executable.
 See [close CMake Shell](close-cmake.md).
 
+`xrLC/xrDO_Light` now has an opt-in non-GUI `xrDO_Light` CMake shell behind
+`BUILD_XR_DO_LIGHT`. It represents the historical detail-object lighting helper
+and keeps the source list scoped to `xrDO_Light.vcproj`. The target links the
+real restored `xrCore`, `xrCDB`, and `xrHemisphere` targets plus a target-local
+FreeImage import library instead of honoring stale `X:\...` pragma library
+paths. The current build probe reaches link and stops at `LNK1136` because the
+only in-repo `Editor/ShaderEditor/Lib/FreeImage.lib` is not accepted by MSVC;
+`XR_DO_LIGHT_FREEIMAGE_LIB` can point at a lawful MSVC-compatible import library
+in a later pass. See [xrDO_Light CMake Shell](xrdolight-cmake.md).
+
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
@@ -299,6 +309,7 @@ Current editor-shell checkpoint:
 | `DXT` | `BUILD_XR_DXT` | Builds as a non-GUI DDS/DXT texture compression helper DLL. |
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. |
 | `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. |
+| `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Experimental non-GUI detail-object lighting helper probe; currently blocked at MSVC-incompatible FreeImage import library. |
 
 Before resuming SDK GUI work, locate lawful copies of ElPack, a compatible
 Borland/VCL installation, the AlexMX controls, and matching MagicFM SDK
