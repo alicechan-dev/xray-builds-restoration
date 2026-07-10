@@ -331,8 +331,10 @@ Verified non-GUI binary shapes at this checkpoint:
 - `xrDO_Light.exe` is an x86 Windows GUI-subsystem helper and links when
   `XR_DO_LIGHT_FREEIMAGE_LIB` selects an external generated MSVC import
   library; the executable depends on `FreeImage.dll` at runtime.
-- `gauss.dll` is x86 and exports `gauss`, `ip_BuildKernel`, and
-  `ip_ProcessKernel`.
+- `gauss.dll` is x86 PE32, exports `gauss`, `ip_BuildKernel`, and
+  `ip_ProcessKernel`, and depends only on `KERNEL32`, the MSVC runtime, and the
+  UCRT runtime API set. A separate Win32 load-only smoke target remains future
+  work.
 
 Build trees, logs, extracted data, generated FreeImage `.lib`/`.def` files,
 and external dependency binaries are local verification artifacts and must not

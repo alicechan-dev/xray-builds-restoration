@@ -101,6 +101,13 @@ Release now builds and produces:
 `dumpbin` verification reports:
 
 - PE machine type `14C` (x86), PE32 DLL;
+- output path `build-gauss-check/bin/gauss.dll`;
 - exports `gauss`, `ip_BuildKernel`, and `ip_ProcessKernel`;
 - dependencies `KERNEL32.dll`, `VCRUNTIME140.dll`, and the Universal CRT
   runtime API set.
+
+A separate `LoadLibrary` smoke-test target is not added at this checkpoint. A
+reliable loader probe must itself be Win32, and adding another executable would
+provide little additional coverage beyond the successful x86 link and import
+inspection. A future isolated synthetic contract can load the DLL before any
+exported image-processing function is exercised.
