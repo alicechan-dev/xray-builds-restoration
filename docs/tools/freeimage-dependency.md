@@ -109,11 +109,17 @@ With the generated import library at
 `xrDO_Light` build links successfully. `dumpbin /dependents` on the resulting
 `xrDO_Light.exe` confirms `FreeImage.dll` is a runtime dependency.
 
+This is the verified checkpoint configuration, not a repository dependency.
+The generated `.def` and `.lib` remain local toolchain artifacts, and the DLL
+remains in the user's lawful runtime/dependency location.
+
 ## Policy
 
 - Do not vendor FreeImage into this repository.
 - Do not replace the bundled historical import library with generated output.
 - Do not commit `FreeImage.lib`, `FreeImage.exp`, `FreeImage.def`, or
   `FreeImage.dll`.
+- Do not commit build folders, logs, or extracted data produced while testing
+  the dependent tools.
 - Keep FreeImage paths opt-in and target-local to the SDK/tool targets that
   actually need them.

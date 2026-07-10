@@ -23,7 +23,7 @@ No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks
 |---|---|---|---|---|---|---|---|---|---|
 | Filesystem/archive library | `xrFS/` | Library/tooling code | Historical filesystem, locator, archive, LZHUF, and LZO support. | Source and `.vcproj` present; not restored to modern CMake. | Win32, archive/compression helpers. | Unknown. | High-value archive format reference. | High | Inventory before moving into tools. |
 | Level compiler | `xrLC/` | Compiler tool | Builds geometry, collision, lightmaps, sectors, portals, and visibility data. | Legacy projects/source present; not restored. | DirectX 9-era SDK, FreeImage, QSlim/OpenMesh/NVIDIA geometry code, `xrDXTC`, `xrCore`. | Unknown. | Required for full level modding workflow. | High | Large dependency surface; inventory first. |
-| Level compiler helper tools | `xrLC/close/`, `xrLC/xrDO_Light/`, `xrLC/xrHemisphere/` | Helper CLIs | Auxiliary level/light/hemisphere compilation support. | Legacy project files present; the smallest helpers now have opt-in CMake shells. | Same family as `xrLC`. | `close` and `xrHemisphere` build; `xrDO_Light` has an experimental probe behind `BUILD_XR_DO_LIGHT`. | Supports compiler workflow. | Medium | Restore one helper at a time. |
+| Level compiler helper tools | `xrLC/close/`, `xrLC/xrDO_Light/`, `xrLC/xrHemisphere/` | Helper CLIs | Auxiliary level/light/hemisphere compilation support. | Legacy project files present; the smallest helpers now have opt-in CMake shells. | Same family as `xrLC`; `xrDO_Light` additionally requires a local MSVC x86 FreeImage import library. | `close` and `xrHemisphere` build. `xrDO_Light` also builds when `XR_DO_LIGHT_FREEIMAGE_LIB` points at an external generated import library. | Supports compiler workflow. | Medium | Restore one helper at a time. |
 | AI / game graph compiler | `xrAI/` | Compiler tool | Builds AI maps, level graphs, game graphs, spawn/ALife graph data. | Legacy `.vcproj` present; not restored. | Runtime graph code, `xrSE_Factory` concepts, Lua/Luabind/Boost-era code, MagicFM-style library. | Unknown. | Required for spawn and AI-compatible mods. | High | Must match restored serialization formats. |
 | Level editor | `Editors/LevelEditor/` plus historical generations | GUI editor | Historical level/world editing workflow. | Experimental opt-in `LevelEditor` CMake shell added behind `BUILD_XR_LEVEL_EDITOR`; sources are imported from the canonical Borland project without porting forms. | `xrECore`, `xrEProps`, `ETools`, runtime-style libraries, DirectX 9, Borland VCL/packages, ElPack/AlexMX, MagicFM, Boost 1.30.x. | Configure passes; target build stops in required `xrECore` at missing `ElTree.hpp`. Canonical project also references absent `Splash.cpp` and `resource.res`. | Dependency and source-ownership probe only. | Medium | See [Level Editor Inventory](level-editor-inventory.md) and [LevelEditor CMake Shell](level-editor-cmake.md). |
 | Actor/model editor | `Editors/ActorEditor/`, older `Editor/ActorEditor/`, `Editors/!old/ActorEditor/` | GUI editor | Edits models, skeletons, motions, materials, and export metadata. | Experimental opt-in `ActorEditor` CMake shell added behind `BUILD_XR_ACTOR_EDITOR`; source/form ownership is imported from the active Borland project without porting VCL forms. | `xrECore`, `xrEProps`, `ETools`, `xrParticles`, runtime-style libraries, DirectX 9, ElPack, AlexMX controls, Borland/VCL, MagicFM SDK headers/import library. | Configure passes. A direct ActorEditor compile probe gets past local Borland CRT aliases, DirectSound include ordering, and audited VCL value shims, then stops at real package/UI dependencies (`Classes.hpp`, `ElTree.hpp`). `MagicFMDLLB.lib` and matching MagicFM SDK headers remain missing. | Important for model modding. | Medium | See [ActorEditor CMake Shell](actor-editor-cmake.md). |
@@ -168,6 +168,7 @@ Current checkpoint:
 | `DXT` | `BUILD_XR_DXT` | Builds as a non-GUI DDS/DXT texture compression helper DLL. | Needs asset-free or synthetic compression smoke tests. |
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. | Needs asset-free callback contract smoke tests. |
 | `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. | Needs integration context before runtime use. |
+| `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Builds as a non-GUI detail-object lighting helper executable with an external MSVC x86 FreeImage import library. | Requires `XR_DO_LIGHT_FREEIMAGE_LIB`; `FreeImage.dll` remains a runtime dependency. |
 
 This compatibility work stops deliberately before GUI behavior. ElPack tree
 widgets, VCL forms/application services, AlexMX controls, and MagicFM APIs are
@@ -178,6 +179,11 @@ requires a lawful ElPack and Borland/VCL installation, the AlexMX controls,
 and matching MagicFM SDK headers. Do not fake these APIs or vendor third-party
 packages. Until those dependencies are available, the recommended branch is
 archive/tooling work or focused runtime restoration.
+
+Repository hygiene at this checkpoint is strict: do not commit build folders,
+logs, extracted data, generated FreeImage `.lib`/`.def` files, or external
+DLLs/libraries. Keep generated import libraries and all third-party binaries in
+local toolchain/runtime folders outside the repository.
 
 Explicitly prohibited for the SDK GUI branch:
 
@@ -199,5 +205,7 @@ Explicitly prohibited for the SDK GUI branch:
 * [DXT CMake Shell](dxt-cmake.md)
 * [xrHemisphere CMake Shell](xrhemisphere-cmake.md)
 * [close CMake Shell](close-cmake.md)
+* [xrDO_Light CMake Shell](xrdolight-cmake.md)
+* [FreeImage Dependency](freeimage-dependency.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)

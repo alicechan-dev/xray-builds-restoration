@@ -73,3 +73,6 @@ Current verification result:
 
 The decorated export name matches the target's historical `__stdcall` calling
 convention.
+
+This checkpoint verifies the helper DLL shape and export. Do not commit the
+build directory, generated import library, logs, or generated sample data.

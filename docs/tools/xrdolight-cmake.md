@@ -111,3 +111,7 @@ Current probe result:
 - `dumpbin /dependents` confirms the executable depends on `FreeImage.dll` at
   runtime, along with `xrCore.dll`, `xrCDB.dll`, Win32 system DLLs, and the MSVC
   runtime.
+
+At this checkpoint the target is considered build-restored only with the
+explicit external FreeImage import-library input. Do not commit the generated
+`.lib`/`.def`, `FreeImage.dll`, build directory, logs, or tool output data.

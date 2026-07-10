@@ -74,6 +74,44 @@ cmake --build build-lwo-check --config Release `
 This target remains non-GUI and does not use the Borland/VCL editor package
 stack.
 
+## Output Verification
+
+The Release build currently produces:
+
+- `build-lwo-check/bin/LWO.dll`
+- `build-lwo-check/lib/LWO.lib`
+- `build-lwo-check/lib/LWO.exp`
+
+Use Visual Studio `dumpbin` to inspect the generated DLL:
+
+```powershell
+& "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\<version>\bin\Hostx64\x86\dumpbin.exe" `
+  /exports build-lwo-check\bin\LWO.dll
+
+& "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\<version>\bin\Hostx64\x86\dumpbin.exe" `
+  /headers build-lwo-check\bin\LWO.dll
+
+& "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\<version>\bin\Hostx64\x86\dumpbin.exe" `
+  /dependents build-lwo-check\bin\LWO.dll
+```
+
+Current verification result:
+
+- PE machine type: `14C machine (x86)` / 32-bit DLL.
+- exports:
+  - `_LWO_CloseFile@4`
+  - `_LWO_ImportObject@8`
+- dependents:
+  - `VCRUNTIME140.dll`
+  - Universal CRT API-set DLLs for stdio/heap/math/runtime
+  - `KERNEL32.dll`
+
+The decorated export names match the target's historical `__stdcall` calling
+convention.
+
+This verifies the binary shape only. Keep `build-lwo-check`, logs, import
+libraries, and any test model/output data out of the repository.
+
 ## Next Honest Step
 
 Next, validate the exported `LWO_ImportObject` and `LWO_CloseFile` entrypoints

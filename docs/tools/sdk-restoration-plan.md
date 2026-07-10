@@ -314,6 +314,23 @@ Current editor-shell checkpoint:
 | `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. |
 | `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Builds as a non-GUI detail-object lighting helper executable when pointed at an external MSVC x86 FreeImage import library generated outside the repo. |
 
+Verified non-GUI binary shapes at this checkpoint:
+
+- `LWO.dll` is x86 and exports `_LWO_CloseFile@4` and
+  `_LWO_ImportObject@8`;
+- `DXT.dll` is x86 and exports `DXTCompress`;
+- `xrHemisphere.dll` is x86 and exports `_xrHemisphereBuild@24`;
+- `close.exe` is an x86 Windows GUI-subsystem helper;
+- `xrDO_Light.exe` is an x86 Windows GUI-subsystem helper and links when
+  `XR_DO_LIGHT_FREEIMAGE_LIB` selects an external generated MSVC import
+  library; the executable depends on `FreeImage.dll` at runtime.
+
+Build trees, logs, extracted data, generated FreeImage `.lib`/`.def` files,
+and external dependency binaries are local verification artifacts and must not
+be committed. The next safe restoration pass should select another small
+non-GUI helper or return to a focused runtime bug. GUI SDK work remains paused
+until lawful Borland/VCL, ElPack, AlexMX, and MagicFM SDK packages are found.
+
 Before resuming SDK GUI work, locate lawful copies of ElPack, a compatible
 Borland/VCL installation, the AlexMX controls, and matching MagicFM SDK
 headers. Never fake `ElTree.hpp` or VCL classes, and never vendor those
@@ -340,6 +357,8 @@ targets should remain on their own restoration path.
 * [DXT CMake Shell](dxt-cmake.md)
 * [xrHemisphere CMake Shell](xrhemisphere-cmake.md)
 * [close CMake Shell](close-cmake.md)
+* [xrDO_Light CMake Shell](xrdolight-cmake.md)
+* [FreeImage Dependency](freeimage-dependency.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)

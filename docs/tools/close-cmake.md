@@ -67,3 +67,6 @@ Current verification result:
   - `ADVAPI32.dll`
   - `VCRUNTIME140.dll`
   - Universal CRT API-set DLLs for string/stdio/runtime/math/locale/heap
+
+This checkpoint verifies the executable shape only. Do not commit the build
+directory, logs, or generated tool output.

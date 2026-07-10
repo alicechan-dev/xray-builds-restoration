@@ -101,3 +101,7 @@ Current verification result:
   - `VCRUNTIME140.dll`
   - Universal CRT API-set DLLs for heap/stdio/runtime/math/utility
   - `KERNEL32.dll`
+
+This checkpoint verifies the helper DLL shape and export, not texture-output
+compatibility. Do not commit build folders, logs, converted textures, or other
+generated test data.
