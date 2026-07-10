@@ -38,6 +38,7 @@ No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks
 | LWO tool | `Editors/Tools/LWO/` plus older `Editor/Tools/LWO/` reader sources | Converter/helper DLL | LightWave object/envelope handling utility. | Experimental opt-in `LWO` CMake shell added behind `BUILD_XR_LWO`; active project source ownership is represented and missing reader entries are resolved from the older generation when present. | LightWave object parsing code. | Configure passes; Release `LWO` target builds and exports `_LWO_CloseFile@4` / `_LWO_ImportObject@8` from a 32-bit `LWO.dll`. | Import/export pipeline support. | Medium | See [LWO CMake Shell](lwo-cmake.md). |
 | Gauss tool | `Editors/Tools/gauss/` | Utility | Legacy utility with filesystem/math/log scaffolding. | Legacy project present. | Win32/editor-style helpers. | Unknown. | Unclear. | Low | Purpose needs source-level confirmation. |
 | xrHemisphere | `xrLC/xrHemisphere/` | Helper DLL | Hemisphere sample generation for level compiler lighting workflows. | Experimental opt-in `xrHemisphere` CMake shell added behind `BUILD_XR_HEMISPHERE`; source ownership is limited to the historical helper DLL. | `xrCore`. | Configure passes; Release `xrHemisphere` target builds and exports `_xrHemisphereBuild@24` from a 32-bit `xrHemisphere.dll`. | Supports future level compiler restoration. | Medium | See [xrHemisphere CMake Shell](xrhemisphere-cmake.md). |
+| close helper | `xrLC/close/` | Helper executable | Tiny Win32 mailslot helper from the level-compiler tree. | Experimental opt-in `close` CMake shell added behind `BUILD_XR_CLOSE`; source ownership is limited to the historical helper executable. | `xrCore`. | Configure passes; Release `close` target builds as a 32-bit Windows subsystem executable. | Low-level compiler workflow helper. | Low | See [close CMake Shell](close-cmake.md). |
 | 3ds Max / LightWave plugins | `Plugins/`, `samples/xskinexp/` | Host plugins | Exporters/import helpers for models, skins, keys, shaders, and editor formats. | Source/project files present. | Host SDKs such as 3ds Max or LightWave. | Unknown. | Valuable but legally/toolchain-sensitive. | Low | Restore only after clean format docs. |
 | Lua compiler utility | `Dima/xrLuaCompiler/` | CLI/helper | Lua/script compiler or validation utility. | Legacy project present. | Lua, Luabind-era code, Boost-compatible headers. | Unknown. | Candidate for script tooling. | Medium | Compare with runtime Lua version first. |
 | Script debug IDE | `xr_3da/xrScriptDebugIde/` | GUI tool | Script debugging/editor support. | Legacy project present. | MFC, CJ60Lib, SciLexer/Scintilla. | Unknown. | Developer-only helper. | Low | Defer until script runtime stabilizes. |
@@ -96,6 +97,7 @@ Current local target ownership includes:
 * `Editors/Tools/LWO/CMakeLists.txt` for experimental `LWO`.
 * `Editor/Tools/DXT/CMakeLists.txt` for experimental `DXT`.
 * `xrLC/xrHemisphere/CMakeLists.txt` for experimental `xrHemisphere`.
+* `xrLC/close/CMakeLists.txt` for experimental `close`.
 * `xrXMLParser/CMakeLists.txt` for `xrXMLParser`.
 * `xr_3da/xrCDB/CMakeLists.txt` for `xrCDB`.
 
@@ -164,6 +166,7 @@ Current checkpoint:
 | `LWO` | `BUILD_XR_LWO` | Builds as a non-GUI LightWave object helper DLL. | Needs asset-free export/load smoke tests. |
 | `DXT` | `BUILD_XR_DXT` | Builds as a non-GUI DDS/DXT texture compression helper DLL. | Needs asset-free or synthetic compression smoke tests. |
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. | Needs asset-free callback contract smoke tests. |
+| `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. | Needs integration context before runtime use. |
 
 This compatibility work stops deliberately before GUI behavior. ElPack tree
 widgets, VCL forms/application services, AlexMX controls, and MagicFM APIs are
@@ -194,5 +197,6 @@ Explicitly prohibited for the SDK GUI branch:
 * [LWO CMake Shell](lwo-cmake.md)
 * [DXT CMake Shell](dxt-cmake.md)
 * [xrHemisphere CMake Shell](xrhemisphere-cmake.md)
+* [close CMake Shell](close-cmake.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)

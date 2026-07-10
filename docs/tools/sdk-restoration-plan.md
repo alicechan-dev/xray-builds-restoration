@@ -242,6 +242,12 @@ helper DLL without pulling in the full `xrLC` toolchain. The Release target
 builds as a 32-bit DLL exporting `_xrHemisphereBuild@24`. See [xrHemisphere
 CMake Shell](xrhemisphere-cmake.md).
 
+`xrLC/close` now has an opt-in non-GUI `close` CMake shell behind
+`BUILD_XR_CLOSE`. It represents the tiny historical Win32 mailslot helper
+executable from the level-compiler tree without pulling in the full `xrLC`
+toolchain. The Release target builds as a 32-bit Windows subsystem executable.
+See [close CMake Shell](close-cmake.md).
+
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
@@ -292,6 +298,7 @@ Current editor-shell checkpoint:
 | `LWO` | `BUILD_XR_LWO` | Builds as a non-GUI LightWave object helper DLL. |
 | `DXT` | `BUILD_XR_DXT` | Builds as a non-GUI DDS/DXT texture compression helper DLL. |
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. |
+| `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. |
 
 Before resuming SDK GUI work, locate lawful copies of ElPack, a compatible
 Borland/VCL installation, the AlexMX controls, and matching MagicFM SDK
@@ -318,6 +325,7 @@ targets should remain on their own restoration path.
 * [LWO CMake Shell](lwo-cmake.md)
 * [DXT CMake Shell](dxt-cmake.md)
 * [xrHemisphere CMake Shell](xrhemisphere-cmake.md)
+* [close CMake Shell](close-cmake.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)

@@ -11,6 +11,7 @@ option(BUILD_XR_ACTOR_EDITOR "Build the experimental historical ActorEditor shel
 option(BUILD_XR_LWO "Build the experimental historical LightWave object helper" OFF)
 option(BUILD_XR_DXT "Build the experimental historical DXT texture helper" OFF)
 option(BUILD_XR_HEMISPHERE "Build the experimental historical hemisphere sampling helper" OFF)
+option(BUILD_XR_CLOSE "Build the experimental historical xrLC close helper" OFF)
 option(BUILD_XR_VCL_COMPAT_TESTS "Build isolated non-GUI VCL compatibility contract tests" OFF)
 set(XR_LEGACY_DX_ROOT "" CACHE PATH "Optional DirectX SDK root used only by restored SDK/editor targets")
 set(XR_ELPACK_ROOT "" CACHE PATH "Optional local ElPack root used only by restored SDK/editor targets")
@@ -256,6 +257,10 @@ endif()
 
 if(BUILD_XR_HEMISPHERE)
   add_subdirectory("${PROJECT_SOURCE_DIR}/xrLC/xrHemisphere" "${CMAKE_BINARY_DIR}/xrLC/xrHemisphere")
+endif()
+
+if(BUILD_XR_CLOSE)
+  add_subdirectory("${PROJECT_SOURCE_DIR}/xrLC/close" "${CMAKE_BINARY_DIR}/xrLC/close")
 endif()
 
 if(BUILD_XR_VCL_COMPAT_TESTS)
