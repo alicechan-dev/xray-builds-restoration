@@ -54,7 +54,7 @@ public:
 	IC	void	invert(const _vector<T> &a)				{ x=-a.x; y=-a.y; z=-a.z;			}
 
 	IC	void	min(const _vector<T> &v)				{ x = std::_cpp_min(x,v.x);	y = std::_cpp_min(y,v.y);	z = std::_cpp_min(z,v.z);	}
-	IC	void	max(const _vector<T> &v)				{ x = std::_cpp_max(x,v.x);	y = std::_cpp_max(y,v.y);	z = std::_cpp_max(z,v.z);	}
+	IC	void	max(const _vector<T> &v)				{ x = (std::max)(x,v.x);	y = (std::max)(y,v.y);	z = (std::max)(z,v.z);	}
 
 	IC	void	abs(const _vector<T> &v)				{ x = _abs(v.x); y=_abs(v.y); z=_abs(v.z);	}
 	IC  BOOL	similar(const _vector<T> &v, T E=EPS_L)	{ return _abs(x-v.x)<E && _abs(y-v.y)<E && _abs(z-v.z)<E;};

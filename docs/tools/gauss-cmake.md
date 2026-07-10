@@ -81,8 +81,13 @@ The stale `Log.h` and `Engine.h` PCH includes are removed. Neither header is in
 the canonical VC6 project, neither exists in its source folder, and no compiled
 Gauss source references their symbols.
 
-The build now stops at the next VC6 library-internal dependency:
-`_vector3d.h` calls the removed implementation detail `std::_cpp_max`.
+The `_vector3d.h` maximum operation now uses macro-safe `(std::max)(...)`
+calls instead of the removed VC6 STL implementation detail `std::_cpp_max`.
+`NOMINMAX` and `<algorithm>` were already present, and the component-wise
+comparison behavior is unchanged.
+
+The build now stops at the adjacent, separate `std::_cpp_min` dependency in
+the vector minimum operation.
 
 Those following issues are intentionally left for separate narrow passes. No
 `gauss.dll` output has been verified yet.
