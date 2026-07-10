@@ -31,7 +31,7 @@ original VC2003 project did not compile them.
 - DirectX 9 `d3dx9.h` / `d3dx9.lib`
 - historical FreeImage import library:
   `Editor/ShaderEditor/Lib/FreeImage.lib`, or an MSVC-compatible replacement
-  supplied through `XR_DO_LIGHT_FREEIMAGE_LIB`
+  supplied through `XR_FREEIMAGE_ROOT` / `XR_DO_LIGHT_FREEIMAGE_LIB`
 - Win32 libraries: `comctl32`, `winmm`, and standard system libraries
 
 The target uses `XR_LEGACY_DX_ROOT` first, then the existing DirectX SDK
@@ -42,8 +42,21 @@ stale default-library requests.
 
 The bundled `Editor/ShaderEditor/Lib/FreeImage.lib` is the only FreeImage import
 library currently found in this source snapshot. The CMake target exposes
-`XR_DO_LIGHT_FREEIMAGE_LIB` so a lawful MSVC-compatible FreeImage import library
-can be supplied later without changing runtime targets or vendoring binaries.
+`XR_FREEIMAGE_ROOT` and `XR_DO_LIGHT_FREEIMAGE_LIB` so a lawful MSVC-compatible
+FreeImage import library can be supplied later without changing runtime targets
+or vendoring binaries.
+
+Expected `XR_FREEIMAGE_ROOT` layouts include:
+
+- `<root>/include/FreeImage.h`
+- `<root>/lib/FreeImage.lib`
+- optional `<root>/bin/FreeImage.dll`
+
+Direct legacy layouts are also accepted:
+
+- `<root>/FreeImage.h`
+- `<root>/FreeImage.lib`
+- optional `<root>/FreeImage.dll`
 
 ## Build Probe
 
@@ -85,4 +98,7 @@ Current probe result:
   in the helper PCH;
 - Release linking currently stops at `LNK1136` because the in-repo
   `Editor/ShaderEditor/Lib/FreeImage.lib` is not accepted by MSVC as a valid
-  COFF import library.
+  COFF import library;
+- `D:\Projects\Github\stalker-dream\FreeImage.dll` exists and is a 32-bit PE
+  DLL exporting `_FreeImage_*@N` functions, but no matching MSVC-compatible
+  import library was found locally.

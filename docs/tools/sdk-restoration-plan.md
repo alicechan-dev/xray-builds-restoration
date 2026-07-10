@@ -255,8 +255,10 @@ real restored `xrCore`, `xrCDB`, and `xrHemisphere` targets plus a target-local
 FreeImage import library instead of honoring stale `X:\...` pragma library
 paths. The current build probe reaches link and stops at `LNK1136` because the
 only in-repo `Editor/ShaderEditor/Lib/FreeImage.lib` is not accepted by MSVC;
-`XR_DO_LIGHT_FREEIMAGE_LIB` can point at a lawful MSVC-compatible import library
-in a later pass. See [xrDO_Light CMake Shell](xrdolight-cmake.md).
+`XR_FREEIMAGE_ROOT` or `XR_DO_LIGHT_FREEIMAGE_LIB` can point at a lawful
+MSVC-compatible import library in a later pass. The local runtime
+`FreeImage.dll` is a 32-bit PE DLL, but no matching MSVC-compatible import
+library was found. See [xrDO_Light CMake Shell](xrdolight-cmake.md).
 
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost

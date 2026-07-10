@@ -1,8 +1,81 @@
 set(XR_DO_LIGHT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(XR_DO_LIGHT_BUNDLED_FREEIMAGE_LIB
+  "${PROJECT_SOURCE_DIR}/Editor/ShaderEditor/Lib/FreeImage.lib")
+set(XR_FREEIMAGE_ROOT
+  ""
+  CACHE PATH
+  "Optional FreeImage SDK root used only by restored SDK/tool targets")
 set(XR_DO_LIGHT_FREEIMAGE_LIB
-  "${PROJECT_SOURCE_DIR}/Editor/ShaderEditor/Lib/FreeImage.lib"
+  ""
   CACHE FILEPATH
-  "Optional MSVC-compatible FreeImage import library for xrDO_Light")
+  "Optional direct MSVC-compatible FreeImage import library for xrDO_Light")
+set(XR_DO_LIGHT_FREEIMAGE_INCLUDE_DIR "")
+
+if(XR_FREEIMAGE_ROOT)
+  foreach(candidate IN ITEMS
+      "${XR_FREEIMAGE_ROOT}/include"
+      "${XR_FREEIMAGE_ROOT}/Include"
+      "${XR_FREEIMAGE_ROOT}")
+    if(EXISTS "${candidate}/FreeImage.h")
+      set(XR_DO_LIGHT_FREEIMAGE_INCLUDE_DIR "${candidate}")
+      break()
+    endif()
+  endforeach()
+
+  set(XR_DO_LIGHT_FREEIMAGE_ROOT_LIB "")
+  foreach(candidate IN ITEMS
+      "${XR_FREEIMAGE_ROOT}/lib/FreeImage.lib"
+      "${XR_FREEIMAGE_ROOT}/Lib/FreeImage.lib"
+      "${XR_FREEIMAGE_ROOT}/lib/x86/FreeImage.lib"
+      "${XR_FREEIMAGE_ROOT}/Lib/x86/FreeImage.lib"
+      "${XR_FREEIMAGE_ROOT}/FreeImage.lib")
+    if(EXISTS "${candidate}")
+      set(XR_DO_LIGHT_FREEIMAGE_ROOT_LIB "${candidate}")
+      break()
+    endif()
+  endforeach()
+
+  set(XR_DO_LIGHT_FREEIMAGE_ROOT_DLL "")
+  foreach(candidate IN ITEMS
+      "${XR_FREEIMAGE_ROOT}/bin/FreeImage.dll"
+      "${XR_FREEIMAGE_ROOT}/Bin/FreeImage.dll"
+      "${XR_FREEIMAGE_ROOT}/FreeImage.dll")
+    if(EXISTS "${candidate}")
+      set(XR_DO_LIGHT_FREEIMAGE_ROOT_DLL "${candidate}")
+      break()
+    endif()
+  endforeach()
+
+  if(XR_DO_LIGHT_FREEIMAGE_INCLUDE_DIR AND XR_DO_LIGHT_FREEIMAGE_ROOT_LIB)
+    message(STATUS
+      "xrDO_Light FreeImage root: include='${XR_DO_LIGHT_FREEIMAGE_INCLUDE_DIR}', "
+      "lib='${XR_DO_LIGHT_FREEIMAGE_ROOT_LIB}'")
+    if(XR_DO_LIGHT_FREEIMAGE_ROOT_DLL)
+      message(STATUS "xrDO_Light FreeImage runtime DLL candidate: ${XR_DO_LIGHT_FREEIMAGE_ROOT_DLL}")
+    else()
+      message(STATUS "xrDO_Light FreeImage root has no bin/FreeImage.dll candidate")
+    endif()
+    if(NOT XR_DO_LIGHT_FREEIMAGE_LIB)
+      set(XR_DO_LIGHT_FREEIMAGE_LIB "${XR_DO_LIGHT_FREEIMAGE_ROOT_LIB}")
+    endif()
+  else()
+    message(WARNING
+      "XR_FREEIMAGE_ROOT='${XR_FREEIMAGE_ROOT}' is set, but expected "
+      "FreeImage.h and FreeImage.lib were not found. Expected layouts include "
+      "include/FreeImage.h plus lib/FreeImage.lib, or direct root files. "
+      "xrDO_Light will fall back to XR_DO_LIGHT_FREEIMAGE_LIB or the bundled "
+      "legacy import library.")
+  endif()
+endif()
+
+if(NOT XR_DO_LIGHT_FREEIMAGE_LIB)
+  set(XR_DO_LIGHT_FREEIMAGE_LIB "${XR_DO_LIGHT_BUNDLED_FREEIMAGE_LIB}")
+  message(WARNING
+    "xrDO_Light is using the bundled legacy FreeImage import library. "
+    "MSVC link currently rejects this file as invalid format; set "
+    "XR_FREEIMAGE_ROOT or XR_DO_LIGHT_FREEIMAGE_LIB to a lawful "
+    "MSVC-compatible FreeImage import library.")
+endif()
 
 # Experimental CMake shell for the historical detail-object light compiler
 # helper. The source list mirrors xrDO_Light.vcproj and intentionally avoids
@@ -83,6 +156,11 @@ target_include_directories(xrDO_Light PRIVATE
   "${PROJECT_SOURCE_DIR}/xr_3da/xrCDB"
   "${PROJECT_SOURCE_DIR}/cmake/compat/msvc"
 )
+
+if(XR_DO_LIGHT_FREEIMAGE_INCLUDE_DIR)
+  target_include_directories(xrDO_Light PRIVATE
+    "${XR_DO_LIGHT_FREEIMAGE_INCLUDE_DIR}")
+endif()
 
 set(XR_DO_LIGHT_DX_ROOT "")
 foreach(candidate IN ITEMS "${XR_LEGACY_DX_ROOT}" "${XRAY_EFFECTIVE_DXSDK_ROOT}")
