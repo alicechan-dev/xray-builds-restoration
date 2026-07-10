@@ -137,11 +137,13 @@ Future options should remain explicit and opt-in where appropriate:
 
 ## Recommended Next Actions
 
-1. Add synthetic archive fixtures and path-safety tests for `xr_unpack`.
-2. Start a small read-only LTX/config validator scaffold.
-3. Acquire and inventory lawful ElPack, Borland/VCL, AlexMX, and MagicFM SDK
+1. Continue with one small isolated non-GUI helper, or return to a focused
+   runtime investigation such as pickup/use interaction, the trader crash, or
+   shader `CConstant` startup initialization.
+2. Add synthetic archive fixtures and path-safety tests for `xr_unpack`.
+3. Start a small read-only LTX/config validator scaffold.
+4. Acquire and inventory lawful ElPack, Borland/VCL, AlexMX, and MagicFM SDK
    dependencies before continuing SDK GUI work.
-4. Inventory `xrLC` and `xrAI` dependencies in more detail before attempting CMake restoration.
 5. Keep GUI editors and host plugins paused at the documented package boundary.
 
 ## SDK GUI Checkpoint
@@ -153,6 +155,12 @@ Standalone contracts cover the audited non-GUI VCL value types:
 `AnsiString`, `TMsgDlgType`, `TMsgDlgButtons`, and `TShiftState`.
 
 Current checkpoint:
+
+The currently building non-GUI set is `ETools`, `LWO`, `DXT`,
+`xrHemisphere`, `close`, `xrDO_Light` with its explicit external FreeImage
+import library, and `Gauss`. Verified binary exports and dependency conditions
+are recorded below and in each target's linked page. GUI/editor rows remain
+configuration probes only.
 
 | Target | Option | Current result | First blocker class |
 |---|---|---|---|

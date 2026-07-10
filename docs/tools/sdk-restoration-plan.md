@@ -339,8 +339,10 @@ Verified non-GUI binary shapes at this checkpoint:
 Build trees, logs, extracted data, generated FreeImage `.lib`/`.def` files,
 and external dependency binaries are local verification artifacts and must not
 be committed. The next safe restoration pass should select another small
-non-GUI helper or return to a focused runtime bug. GUI SDK work remains paused
-until lawful Borland/VCL, ElPack, AlexMX, and MagicFM SDK packages are found.
+non-GUI helper or return to a focused runtime investigation such as pickup/use
+interaction, the trader crash, or shader `CConstant` startup initialization.
+GUI SDK work remains paused until lawful Borland/VCL, ElPack, AlexMX, and
+MagicFM SDK packages are found.
 
 Before resuming SDK GUI work, locate lawful copies of ElPack, a compatible
 Borland/VCL installation, the AlexMX controls, and matching MagicFM SDK
