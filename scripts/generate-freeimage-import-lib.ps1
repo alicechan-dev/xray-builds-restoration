@@ -88,8 +88,15 @@ if (!$exports) {
 $defPath = Join-Path $resolvedOut "FreeImage.def"
 $libPath = Join-Path $resolvedOut "FreeImage.lib"
 
-@('LIBRARY "FreeImage.dll"', 'EXPORTS') +
-    ($exports | ForEach-Object { "    `"$($_)`"" }) |
+$defExports = $exports | ForEach-Object {
+    if ($_ -match '^_(.+@\d+)$') {
+        "    $($Matches[1])=$_"
+    } else {
+        "    $_"
+    }
+}
+
+@('LIBRARY "FreeImage.dll"', 'EXPORTS') + $defExports |
     Set-Content -Path $defPath -Encoding ASCII
 
 & $lib "/def:$defPath" /machine:x86 "/out:$libPath"

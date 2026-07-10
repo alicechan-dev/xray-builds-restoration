@@ -253,14 +253,13 @@ See [close CMake Shell](close-cmake.md).
 and keeps the source list scoped to `xrDO_Light.vcproj`. The target links the
 real restored `xrCore`, `xrCDB`, and `xrHemisphere` targets plus a target-local
 FreeImage import library instead of honoring stale `X:\...` pragma library
-paths. The current build probe reaches link and stops at `LNK1136` because the
-only in-repo `Editor/ShaderEditor/Lib/FreeImage.lib` is not accepted by MSVC;
-`XR_FREEIMAGE_ROOT` or `XR_DO_LIGHT_FREEIMAGE_LIB` can point at a lawful
-MSVC-compatible import library in a later pass. The local runtime
-`FreeImage.dll` is a 32-bit PE DLL, but no matching MSVC-compatible import
-library was found. A helper script can generate a local import library outside
-the repo from that DLL. See [xrDO_Light CMake Shell](xrdolight-cmake.md) and
-[FreeImage Dependency](freeimage-dependency.md).
+paths. The in-repo `Editor/ShaderEditor/Lib/FreeImage.lib` is still not
+accepted by MSVC, but a helper script can generate a local MSVC x86 import
+library outside the repo from the local runtime `FreeImage.dll`. With
+`XR_DO_LIGHT_FREEIMAGE_LIB` pointed at that generated library, Release
+`xrDO_Light` builds as a 32-bit Windows GUI executable and depends on
+`FreeImage.dll` at runtime. See [xrDO_Light CMake Shell](xrdolight-cmake.md)
+and [FreeImage Dependency](freeimage-dependency.md).
 
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
@@ -313,7 +312,7 @@ Current editor-shell checkpoint:
 | `DXT` | `BUILD_XR_DXT` | Builds as a non-GUI DDS/DXT texture compression helper DLL. |
 | `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. |
 | `close` | `BUILD_XR_CLOSE` | Builds as a non-GUI xrLC mailslot helper executable. |
-| `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Experimental non-GUI detail-object lighting helper probe; currently blocked at MSVC-incompatible FreeImage import library. |
+| `xrDO_Light` | `BUILD_XR_DO_LIGHT` | Builds as a non-GUI detail-object lighting helper executable when pointed at an external MSVC x86 FreeImage import library generated outside the repo. |
 
 Before resuming SDK GUI work, locate lawful copies of ElPack, a compatible
 Borland/VCL installation, the AlexMX controls, and matching MagicFM SDK

@@ -62,9 +62,14 @@ example:
 ```def
 LIBRARY "FreeImage.dll"
 EXPORTS
-    "_FreeImage_Allocate@24"
-    "_FreeImage_Free@4"
+    FreeImage_Allocate@24=_FreeImage_Allocate@24
+    FreeImage_Free@4=_FreeImage_Free@4
 ```
+
+Do not quote the decorated names. The public side of each alias intentionally
+drops the leading underscore so MSVC `lib.exe` creates import symbols such as
+`__imp__FreeImage_Free@4`, while the right-hand side still names the DLL export
+`_FreeImage_Free@4`.
 
 and runs:
 
@@ -98,6 +103,11 @@ Alternatively, use `XR_FREEIMAGE_ROOT` with this layout:
 
 The DLL must still be available next to `xrDO_Light.exe` or on `PATH` when the
 tool runs. The generated import library only satisfies the link step.
+
+With the generated import library at
+`D:\Projects\Toolchains\freeimage-msvc-x86\lib\FreeImage.lib`, the Release
+`xrDO_Light` build links successfully. `dumpbin /dependents` on the resulting
+`xrDO_Light.exe` confirms `FreeImage.dll` is a runtime dependency.
 
 ## Policy
 

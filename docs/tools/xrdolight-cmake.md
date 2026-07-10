@@ -66,7 +66,8 @@ Direct legacy layouts are also accepted:
 ```powershell
 cmake -S . -B build-xrdolight-check -G "Visual Studio 17 2022" -A Win32 `
   -DBUILD_XR_DO_LIGHT=ON `
-  -DXR_LEGACY_DX_ROOT=D:\Projects\Others\DXGarbage
+  -DXR_LEGACY_DX_ROOT=D:\Projects\Others\DXGarbage `
+  -DXR_DO_LIGHT_FREEIMAGE_LIB=D:\Projects\Toolchains\freeimage-msvc-x86\lib\FreeImage.lib
 
 cmake --build build-xrdolight-check --config Release `
   --target xrDO_Light -- /m:1 /v:minimal /clp:ErrorsOnly
@@ -99,11 +100,14 @@ Current probe result:
   helper PCH;
 - the source gets past the Windows `min` macro collision by defining `NOMINMAX`
   in the helper PCH;
-- Release linking currently stops at `LNK1136` because the in-repo
-  `Editor/ShaderEditor/Lib/FreeImage.lib` is not accepted by MSVC as a valid
-  COFF import library;
 - `D:\Projects\Github\stalker-dream\FreeImage.dll` exists and is a 32-bit PE
-  DLL exporting `_FreeImage_*@N` functions, but no matching MSVC-compatible
-  import library was found locally;
+  DLL exporting `_FreeImage_*@N` functions;
 - a local import library can be generated outside the repo from that DLL and
-  passed through `XR_DO_LIGHT_FREEIMAGE_LIB`.
+  passed through `XR_DO_LIGHT_FREEIMAGE_LIB`;
+- Release `xrDO_Light` builds when pointed at that generated MSVC x86 import
+  library;
+- the verified output is `build-xrdolight-freeimage-check\bin\xrDO_Light.exe`,
+  an x86 / 32-bit Windows GUI executable;
+- `dumpbin /dependents` confirms the executable depends on `FreeImage.dll` at
+  runtime, along with `xrCore.dll`, `xrCDB.dll`, Win32 system DLLs, and the MSVC
+  runtime.
