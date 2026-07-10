@@ -37,6 +37,7 @@ No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks
 | Editor tools library | `Editors/Tools/ETools/` | Shared tool DLL | D3DX wrapper, editor helper exports, ray-triangle tests, and VIPM/progressive-mesh support. | Opt-in CMake target `ETools` added as a partial port. VIPM/xrQSlim sources are excluded until `xrQSlim` is restored. | `xrCore`, DirectX 9/D3DX, ColorPicker import library, future `xrQSlim`. | Configure passes with `BUILD_XR_ETOOLS=ON`; partial Release target builds after linking the matching historical `Editor/Tools/ETools/ColorPicker.lib` import library. | Early LevelEditor dependency and safer than full VCL GUI port. | High | See [ETools CMake Port Inventory](etools-inventory.md). Runtime use of the color picker export may still need the matching `ColorPicker.dll`. |
 | LWO tool | `Editors/Tools/LWO/` plus older `Editor/Tools/LWO/` reader sources | Converter/helper DLL | LightWave object/envelope handling utility. | Experimental opt-in `LWO` CMake shell added behind `BUILD_XR_LWO`; active project source ownership is represented and missing reader entries are resolved from the older generation when present. | LightWave object parsing code. | Configure passes; Release `LWO` target builds and exports `_LWO_CloseFile@4` / `_LWO_ImportObject@8` from a 32-bit `LWO.dll`. | Import/export pipeline support. | Medium | See [LWO CMake Shell](lwo-cmake.md). |
 | Gauss tool | `Editors/Tools/gauss/` | Utility | Legacy utility with filesystem/math/log scaffolding. | Legacy project present. | Win32/editor-style helpers. | Unknown. | Unclear. | Low | Purpose needs source-level confirmation. |
+| xrHemisphere | `xrLC/xrHemisphere/` | Helper DLL | Hemisphere sample generation for level compiler lighting workflows. | Experimental opt-in `xrHemisphere` CMake shell added behind `BUILD_XR_HEMISPHERE`; source ownership is limited to the historical helper DLL. | `xrCore`. | Configure passes; Release `xrHemisphere` target builds and exports `_xrHemisphereBuild@24` from a 32-bit `xrHemisphere.dll`. | Supports future level compiler restoration. | Medium | See [xrHemisphere CMake Shell](xrhemisphere-cmake.md). |
 | 3ds Max / LightWave plugins | `Plugins/`, `samples/xskinexp/` | Host plugins | Exporters/import helpers for models, skins, keys, shaders, and editor formats. | Source/project files present. | Host SDKs such as 3ds Max or LightWave. | Unknown. | Valuable but legally/toolchain-sensitive. | Low | Restore only after clean format docs. |
 | Lua compiler utility | `Dima/xrLuaCompiler/` | CLI/helper | Lua/script compiler or validation utility. | Legacy project present. | Lua, Luabind-era code, Boost-compatible headers. | Unknown. | Candidate for script tooling. | Medium | Compare with runtime Lua version first. |
 | Script debug IDE | `xr_3da/xrScriptDebugIde/` | GUI tool | Script debugging/editor support. | Legacy project present. | MFC, CJ60Lib, SciLexer/Scintilla. | Unknown. | Developer-only helper. | Low | Defer until script runtime stabilizes. |
@@ -94,6 +95,7 @@ Current local target ownership includes:
 * `Editors/ActorEditor/CMakeLists.txt` for experimental `ActorEditor`.
 * `Editors/Tools/LWO/CMakeLists.txt` for experimental `LWO`.
 * `Editor/Tools/DXT/CMakeLists.txt` for experimental `DXT`.
+* `xrLC/xrHemisphere/CMakeLists.txt` for experimental `xrHemisphere`.
 * `xrXMLParser/CMakeLists.txt` for `xrXMLParser`.
 * `xr_3da/xrCDB/CMakeLists.txt` for `xrCDB`.
 
@@ -161,6 +163,7 @@ Current checkpoint:
 | `ActorEditor` | `BUILD_XR_ACTOR_EDITOR` | Configures as a dependency/source shell. | Borland/VCL `Classes.hpp`, ElPack `ElTree.hpp`, AlexMX `mxPlacemnt.hpp`, and missing editor controls such as `Gradient.hpp`. |
 | `LWO` | `BUILD_XR_LWO` | Builds as a non-GUI LightWave object helper DLL. | Needs asset-free export/load smoke tests. |
 | `DXT` | `BUILD_XR_DXT` | Builds as a non-GUI DDS/DXT texture compression helper DLL. | Needs asset-free or synthetic compression smoke tests. |
+| `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. | Needs asset-free callback contract smoke tests. |
 
 This compatibility work stops deliberately before GUI behavior. ElPack tree
 widgets, VCL forms/application services, AlexMX controls, and MagicFM APIs are
@@ -190,5 +193,6 @@ Explicitly prohibited for the SDK GUI branch:
 * [LevelOptions CMake Shell](level-options-cmake.md)
 * [LWO CMake Shell](lwo-cmake.md)
 * [DXT CMake Shell](dxt-cmake.md)
+* [xrHemisphere CMake Shell](xrhemisphere-cmake.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)

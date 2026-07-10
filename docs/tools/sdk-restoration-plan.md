@@ -236,6 +236,12 @@ compatibility needed by the bundled NVIDIA library, and does not touch the GUI
 editor dependency stack. The Release target builds as a 32-bit DLL exporting
 `DXTCompress`. See [DXT CMake Shell](dxt-cmake.md).
 
+`xrLC/xrHemisphere` now has an opt-in non-GUI `xrHemisphere` CMake shell behind
+`BUILD_XR_HEMISPHERE`. It represents the small level-compiler hemisphere sample
+helper DLL without pulling in the full `xrLC` toolchain. The Release target
+builds as a 32-bit DLL exporting `_xrHemisphereBuild@24`. See [xrHemisphere
+CMake Shell](xrhemisphere-cmake.md).
+
 The [Local Editor Dependency Inventory](editor-dependencies.md) records the
 current machine-level search. DirectX Summer 2004, ColorPicker, and Boost
 1.33.1 candidates exist. ElPack, Borland/VCL, AlexMX controls, and a complete
@@ -285,6 +291,7 @@ Current editor-shell checkpoint:
 | `ActorEditor` | `BUILD_XR_ACTOR_EDITOR` | Configures; direct probe stops at `Classes.hpp`, `ElTree.hpp`, AlexMX, and missing editor controls. |
 | `LWO` | `BUILD_XR_LWO` | Builds as a non-GUI LightWave object helper DLL. |
 | `DXT` | `BUILD_XR_DXT` | Builds as a non-GUI DDS/DXT texture compression helper DLL. |
+| `xrHemisphere` | `BUILD_XR_HEMISPHERE` | Builds as a non-GUI hemisphere sampling helper DLL. |
 
 Before resuming SDK GUI work, locate lawful copies of ElPack, a compatible
 Borland/VCL installation, the AlexMX controls, and matching MagicFM SDK
@@ -310,6 +317,7 @@ targets should remain on their own restoration path.
 * [ActorEditor CMake Shell](actor-editor-cmake.md)
 * [LWO CMake Shell](lwo-cmake.md)
 * [DXT CMake Shell](dxt-cmake.md)
+* [xrHemisphere CMake Shell](xrhemisphere-cmake.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)

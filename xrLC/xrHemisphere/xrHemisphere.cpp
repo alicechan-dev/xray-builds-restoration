@@ -416,7 +416,8 @@ extern "C"
 		
 		// Calculate energy
 		float total = 0;
-		for (int i=0; i<h_count; i++)
+		int i;
+		for (i=0; i<h_count; i++)
 		{
 			float y		=	-float(hemi[i][h_table[1]]);
 			float E		=	(y<0)?ground_scale:1;
