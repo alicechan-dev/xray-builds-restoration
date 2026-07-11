@@ -54,6 +54,25 @@ Selected. Creation uses model-generated case-insensitive unique sibling names
 owned node storage. After either operation, the wx tree is rebuilt entirely
 from `EditorTreeModel` and selects the new node or surviving parent.
 
+The File menu provides Save Demo Snapshot and Load Demo Snapshot. These
+commands use a dependency-free, development-only `.wx_tree_snapshot` format;
+they do not read or write X-Ray level data. Loading parses into a temporary
+model and replaces the current model only after every record validates, then
+rebuilds the wx tree and property selection.
+
+Snapshot v1 begins with:
+
+```text
+# wxSDKEditor tree snapshot v1
+```
+
+Each following line stores depth plus quoted label, category, and diagnostic
+path fields. Quotes, backslashes, tabs, and line breaks are escaped. Paths are
+regenerated from hierarchy during load and compared with the stored diagnostic
+value. The parser rejects malformed records, invalid depth, empty labels,
+case-insensitive duplicate siblings, path mismatches, multiple roots, empty
+trees, and files larger than 8 MiB.
+
 ## Adapter Boundary
 
 The first interfaces are deliberately independent of wxWidgets so later work
@@ -132,3 +151,7 @@ interactive GUI automation is future test infrastructure.
 Model self-checks now also cover unique child-name generation,
 case-insensitive lookup, root-delete rejection, child deletion, and removal
 from path lookup.
+
+Snapshot self-checks serialize and deserialize the demo hierarchy entirely in
+memory, verify a known path, and reject duplicate-sibling and malformed input.
+No snapshot is written during startup.

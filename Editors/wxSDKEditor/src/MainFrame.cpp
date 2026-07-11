@@ -1,8 +1,12 @@
 #include "MainFrame.h"
 
+#include "editor_model/EditorTreeSnapshot.h"
 #include "wxEditorTree.h"
 #include "wxPropertyPanel.h"
 
+#include <filesystem>
+#include <utility>
+#include <wx/filedlg.h>
 #include <wx/menu.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
@@ -18,8 +22,13 @@ enum
     IdAdapterStatus = wxID_HIGHEST + 1,
     IdAddDemoObject,
     IdAddDemoGroup,
-    IdDeleteSelected
+    IdDeleteSelected,
+    IdSaveSnapshot,
+    IdLoadSnapshot
 };
+
+const char* SnapshotWildcard =
+    "wxSDKEditor snapshots (*.wx_tree_snapshot)|*.wx_tree_snapshot|All files (*.*)|*.*";
 
 wxPanel* CreateViewportPanel(wxWindow* parent)
 {
@@ -43,6 +52,8 @@ wxSDKEditorFrame::wxSDKEditorFrame() :
     std::string selfCheckFailure;
     if (!RunEditorTreeModelSelfCheck(&selfCheckFailure))
         dialogService_.Error("Editor tree model self-check failed", selfCheckFailure.c_str());
+    if (!RunEditorTreeSnapshotSelfCheck(&selfCheckFailure))
+        dialogService_.Error("Editor tree snapshot self-check failed", selfCheckFailure.c_str());
     CreateStatusBar();
     SetStatusText("wxSDKEditor experimental shell");
     Centre();
@@ -53,6 +64,9 @@ void wxSDKEditorFrame::CreateMenus()
     auto* menuBar = new wxMenuBar();
 
     auto* fileMenu = new wxMenu();
+    fileMenu->Append(IdSaveSnapshot, "&Save Demo Snapshot...");
+    fileMenu->Append(IdLoadSnapshot, "&Load Demo Snapshot...");
+    fileMenu->AppendSeparator();
     fileMenu->Append(wxID_EXIT, "E&xit\tAlt-X");
     menuBar->Append(fileMenu, "&File");
 
@@ -86,6 +100,8 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoGroup, this, IdAddDemoGroup);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnDeleteSelected, this, IdDeleteSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAdapterStatus, this, IdAdapterStatus);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveSnapshot, this, IdSaveSnapshot);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnLoadSnapshot, this, IdLoadSnapshot);
 }
 
 void wxSDKEditorFrame::CreateWorkspace()
@@ -269,6 +285,50 @@ void wxSDKEditorFrame::OnDeleteSelected(wxCommandEvent&)
 
     RebuildTree(parent ? parent : treeModel_.Root());
     SetStatusText("Deleted '" + label + "'.");
+}
+
+void wxSDKEditorFrame::OnLoadSnapshot(wxCommandEvent&)
+{
+    wxFileDialog dialog(this, "Load demo tree snapshot", wxEmptyString,
+        wxEmptyString, SnapshotWildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    EditorTreeModel loaded;
+    std::string reason;
+    const std::filesystem::path path(dialog.GetPath().ToStdWstring());
+    if (!LoadEditorTreeSnapshot(loaded, path, &reason))
+    {
+        dialogService_.Error("Snapshot load failed", reason.c_str());
+        SetStatusText("Snapshot load failed: " + reason);
+        return;
+    }
+
+    editorTree_->Clear();
+    treeModel_ = std::move(loaded);
+    RebuildTree(nullptr);
+    editorTree_->SelectFirst();
+    UpdateSelectionProperties();
+    SetStatusText("Loaded demo tree snapshot.");
+}
+
+void wxSDKEditorFrame::OnSaveSnapshot(wxCommandEvent&)
+{
+    wxFileDialog dialog(this, "Save demo tree snapshot", wxEmptyString,
+        "demo.wx_tree_snapshot", SnapshotWildcard,
+        wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    std::string reason;
+    const std::filesystem::path path(dialog.GetPath().ToStdWstring());
+    if (!SaveEditorTreeSnapshot(treeModel_, path, &reason))
+    {
+        dialogService_.Error("Snapshot save failed", reason.c_str());
+        SetStatusText("Snapshot save failed: " + reason);
+        return;
+    }
+    SetStatusText("Saved demo tree snapshot.");
 }
 
 void wxSDKEditorFrame::OnTreeEndLabelEdit(wxTreeEvent& event)

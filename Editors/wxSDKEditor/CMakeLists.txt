@@ -1,6 +1,7 @@
 set(XR_WX_SDK_EDITOR_SOURCES
   src/App.cpp
   src/editor_model/EditorTreeModel.cpp
+  src/editor_model/EditorTreeSnapshot.cpp
   src/MainFrame.cpp
   src/wxDialogService.cpp
   src/wxEditorTree.cpp
@@ -12,6 +13,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   include/editor_ui/IEditorTree.h
   include/editor_ui/IPropertyPanel.h
   include/editor_model/EditorTreeModel.h
+  include/editor_model/EditorTreeSnapshot.h
   src/MainFrame.h
   src/wxDialogService.h
   src/wxEditorTree.h

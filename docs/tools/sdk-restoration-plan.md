@@ -189,6 +189,12 @@ surviving parent. This is only the first small `FolderLib`-like hierarchy
 prototype. Drag/drop, thumbnails, popup menus, VCL forms, and real SDK data
 remain outside the wx path.
 
+The model seam now includes dependency-free `.wx_tree_snapshot` v1
+persistence. Save/load is explicit through File menu dialogs, stores only the
+development hierarchy/labels/categories, and atomically replaces the model
+after strict validation. It is not a historical SDK format and creates no
+files during startup. Real level and editor-library loading remains deferred.
+
 ## Recommended First Practical Target
 
 After the current inventory, the safest next target is still the archive/tooling path:

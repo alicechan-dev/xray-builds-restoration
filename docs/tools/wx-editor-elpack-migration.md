@@ -98,6 +98,12 @@ rebuilt after mutation, so it cannot retain item data for deleted nodes. This
 prototypes a small subset of `ItemListHelper`/`FolderLib` responsibility
 without copying their ElPack drag/drop, drawing, menu, or form behavior.
 
+The same model now has a versioned `.wx_tree_snapshot` development format.
+Persistence operates on model hierarchy, labels, and categories without
+serializing wx or ElPack item state. Atomic load and strict duplicate/path
+validation make it useful for testing the independent seam, but it is not an
+X-Ray level, library, or SDK asset format and must not be treated as one.
+
 `FolderLib` is the second seam, after the model exists. Its pure path and
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx

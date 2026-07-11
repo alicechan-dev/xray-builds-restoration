@@ -34,6 +34,8 @@ private:
     void OnAddDemoObject(wxCommandEvent& event);
     void OnAdapterStatus(wxCommandEvent& event);
     void OnDeleteSelected(wxCommandEvent& event);
+    void OnLoadSnapshot(wxCommandEvent& event);
+    void OnSaveSnapshot(wxCommandEvent& event);
     void OnTreeEndLabelEdit(wxTreeEvent& event);
     void OnTreeKeyDown(wxKeyEvent& event);
     void OnTreeSelectionChanged(wxTreeEvent& event);
