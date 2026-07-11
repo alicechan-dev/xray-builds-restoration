@@ -109,6 +109,13 @@ without wxWidgets, ElPack, VCL, `xrEProps`, or runtime data. This gives the
 create/rename/delete/path and malformed-snapshot behavior a repeatable contract
 before any historical editor data importer is considered.
 
+The model also has a dependency-free `.wx_tree_paths` development importer.
+It creates hierarchy and leaf categories from simple logical paths, with
+implicit groups and atomic validation, without compiling or calling
+`ItemListHelper`, `FolderLib`, ElPack, VCL, or runtime code. This gives future
+path-rule extraction a small test surface; it is not a historical SDK importer
+and does not read levels or game data.
+
 `FolderLib` is the second seam, after the model exists. Its pure path and
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx

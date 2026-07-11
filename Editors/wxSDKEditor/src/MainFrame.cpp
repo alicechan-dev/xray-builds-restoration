@@ -1,10 +1,13 @@
 #include "MainFrame.h"
 
 #include "editor_model/EditorTreeSnapshot.h"
+#include "editor_model/EditorTreePathListImport.h"
 #include "wxEditorTree.h"
 #include "wxPropertyPanel.h"
 
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <utility>
 #include <wx/filedlg.h>
 #include <wx/menu.h>
@@ -24,11 +27,14 @@ enum
     IdAddDemoGroup,
     IdDeleteSelected,
     IdSaveSnapshot,
-    IdLoadSnapshot
+    IdLoadSnapshot,
+    IdImportPathList
 };
 
 const char* SnapshotWildcard =
     "wxSDKEditor snapshots (*.wx_tree_snapshot)|*.wx_tree_snapshot|All files (*.*)|*.*";
+const char* PathListWildcard =
+    "wxSDKEditor path lists (*.wx_tree_paths)|*.wx_tree_paths|Text files (*.txt)|*.txt|All files (*.*)|*.*";
 
 wxPanel* CreateViewportPanel(wxWindow* parent)
 {
@@ -66,6 +72,7 @@ void wxSDKEditorFrame::CreateMenus()
     auto* fileMenu = new wxMenu();
     fileMenu->Append(IdSaveSnapshot, "&Save Demo Snapshot...");
     fileMenu->Append(IdLoadSnapshot, "&Load Demo Snapshot...");
+    fileMenu->Append(IdImportPathList, "&Import Demo Path List...");
     fileMenu->AppendSeparator();
     fileMenu->Append(wxID_EXIT, "E&xit\tAlt-X");
     menuBar->Append(fileMenu, "&File");
@@ -102,6 +109,7 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAdapterStatus, this, IdAdapterStatus);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveSnapshot, this, IdSaveSnapshot);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnLoadSnapshot, this, IdLoadSnapshot);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnImportPathList, this, IdImportPathList);
 }
 
 void wxSDKEditorFrame::CreateWorkspace()
@@ -136,12 +144,12 @@ void wxSDKEditorFrame::CreateWorkspace()
     workspaceSplitter->SetMinimumPaneSize(180);
     workspaceSplitter->SplitVertically(treePanel, contentSplitter, 250);
 
-    auto* output = new wxTextCtrl(outerSplitter, wxID_ANY,
+    output_ = new wxTextCtrl(outerSplitter, wxID_ANY,
         "wxSDKEditor experimental shell ready.", wxDefaultPosition,
         wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
     outerSplitter->SetMinimumPaneSize(100);
     outerSplitter->SetSashGravity(1.0);
-    outerSplitter->SplitHorizontally(workspaceSplitter, output, 680);
+    outerSplitter->SplitHorizontally(workspaceSplitter, output_, 680);
 
     PopulateDemoTree();
     CallAfter([this]() { editorTree_->SelectFirst(); });
@@ -310,6 +318,40 @@ void wxSDKEditorFrame::OnLoadSnapshot(wxCommandEvent&)
     editorTree_->SelectFirst();
     UpdateSelectionProperties();
     SetStatusText("Loaded demo tree snapshot.");
+}
+
+void wxSDKEditorFrame::OnImportPathList(wxCommandEvent&)
+{
+    wxFileDialog dialog(this, "Import demo path list", wxEmptyString,
+        wxEmptyString, PathListWildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    const std::filesystem::path path(dialog.GetPath().ToStdWstring());
+    std::ifstream input(path, std::ios::binary);
+    if (!input)
+    {
+        dialogService_.Error("Path-list import failed", "Could not open the selected file.");
+        SetStatusText("Path-list import failed: could not open file.");
+        return;
+    }
+
+    const std::string text{
+        std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
+    std::string reason;
+    if (!ImportEditorTreePathList(treeModel_, text, &reason))
+    {
+        dialogService_.Error("Path-list import failed", reason.c_str());
+        SetStatusText("Path-list import failed: " + reason);
+        return;
+    }
+
+    RebuildTree(nullptr);
+    editorTree_->SelectFirst();
+    UpdateSelectionProperties();
+    output_->AppendText(wxString::Format(
+        "\nImported development path list: %s\n", dialog.GetPath()));
+    SetStatusText("Imported development path list.");
 }
 
 void wxSDKEditorFrame::OnSaveSnapshot(wxCommandEvent&)

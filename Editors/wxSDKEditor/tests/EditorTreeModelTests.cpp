@@ -1,4 +1,5 @@
 #include "editor_model/EditorTreeModel.h"
+#include "editor_model/EditorTreePathListImport.h"
 #include "editor_model/EditorTreeSnapshot.h"
 
 #include <iostream>
@@ -109,6 +110,48 @@ int main()
     Check(RejectsSnapshot(preserved, std::string(Header) +
         "node depth=0 label=\"Root\" category=\"root\" path=\"Wrong\"\n"),
         "stored path mismatch rejected");
+
+    const std::string pathList =
+        "# wxSDKEditor path list v1\n"
+        "\n"
+        "/Scene/Objects/actor | demo scene object\n"
+        "/Scene/Objects/level_changer\n"
+        "/Scene/Lights/sun | demo light\n";
+    EditorTreeModel imported;
+    Check(ImportEditorTreePathList(imported, pathList, &reason),
+        "path-list import succeeds");
+    Check(imported.Root() && imported.Root()->Label() == "Scene",
+        "path-list root created from first component");
+    EditorTreeNode* importedObjects = imported.FindByPath("Scene/Objects");
+    Check(importedObjects && importedObjects->Category() == "imported group",
+        "implicit group uses imported group category");
+    EditorTreeNode* defaultCategory =
+        imported.FindByPath("Scene/Objects/level_changer");
+    Check(defaultCategory && defaultCategory->Category() == "imported item",
+        "missing category uses imported item default");
+    Check(imported.FindByPath("Scene/Lights/sun") != nullptr,
+        "comments and blank lines are ignored");
+
+    std::string importedSnapshot;
+    EditorTreeModel importedRoundTrip;
+    Check(SerializeEditorTreeSnapshot(imported, importedSnapshot, &reason) &&
+        DeserializeEditorTreeSnapshot(importedRoundTrip, importedSnapshot, &reason),
+        "imported model survives snapshot round trip");
+    Check(importedRoundTrip.FindByPath("Scene/Lights/sun") != nullptr,
+        "imported path survives snapshot round trip");
+
+    EditorTreeModel importPreserved = EditorTreeModel::CreateDemoScene();
+    Check(!ImportEditorTreePathList(importPreserved,
+        "/Scene/Objects/actor\n/scene/objects/ACTOR\n", &reason),
+        "case-insensitive duplicate full path rejected");
+    Check(importPreserved.FindByPath("Scene (demo data)/Objects/actor") != nullptr,
+        "failed path-list import preserves existing model");
+    Check(!ImportEditorTreePathList(importPreserved,
+        "Scene/Objects/actor\n", &reason),
+        "relative path rejected");
+    Check(!ImportEditorTreePathList(importPreserved,
+        "/Scene//actor\n", &reason),
+        "empty path component rejected");
 
     if (failures)
     {

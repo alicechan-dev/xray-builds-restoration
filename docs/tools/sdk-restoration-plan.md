@@ -197,10 +197,13 @@ files during startup. Real level and editor-library loading remains deferred.
 
 `BUILD_XR_WX_SDK_EDITOR_MODEL_TESTS` adds the headless
 `wxSDKEditorModelTests` executable. It compiles only the independent model and
-snapshot sources, requires no wxWidgets package, and covers hierarchy mutation,
-path propagation, rename/delete rules, snapshot round trips, escaping, malformed
-input, duplicates, and atomic failed loads. No proprietary or runtime data is
-used.
+snapshot/import sources, requires no wxWidgets package, and covers hierarchy
+mutation, path propagation, rename/delete rules, path-list parsing, snapshot
+round trips, escaping, malformed input, duplicates, and atomic failed loads.
+The `.wx_tree_paths` importer creates a model from logical development paths
+and implicit groups. It prepares an audited seam for later `ItemListHelper` and
+`FolderLib` migration; it is not a level or game-data loader, and the preserved
+`xrEProps` code remains untouched. No proprietary or runtime data is used.
 
 ## Recommended First Practical Target
 

@@ -33,8 +33,8 @@ cmake --build build-wx-model-tests-check --config Release \
 ./build-wx-model-tests-check/bin/wxSDKEditorModelTests.exe
 ```
 
-`wxSDKEditorModelTests` compiles only `EditorTreeModel` and
-`EditorTreeSnapshot`; it does not discover, include, or link wxWidgets. Both
+`wxSDKEditorModelTests` compiles only `EditorTreeModel`, the path-list importer,
+and `EditorTreeSnapshot`; it does not discover, include, or link wxWidgets. Both
 wx options default to OFF, so normal configuration remains unchanged.
 
 ## Current Shell
@@ -86,6 +86,24 @@ regenerated from hierarchy during load and compared with the stored diagnostic
 value. The parser rejects malformed records, invalid depth, empty labels,
 case-insensitive duplicate siblings, path mismatches, multiple roots, empty
 trees, and files larger than 8 MiB.
+
+The File menu also provides **Import Demo Path List** for dependency-free model
+experiments. Its `.wx_tree_paths` text format accepts one absolute-style logical
+path per line, with an optional category after `|`:
+
+```text
+# wxSDKEditor path list v1
+/Scene/Objects/actor | demo scene object
+/Scene/Objects/level_changer
+/Scene/Lights/sun | demo light
+```
+
+Blank lines and comments are ignored. Missing categories become `imported item`,
+and intermediate nodes are created as `imported group`. All entries must share
+one root component; relative paths, empty components, empty explicit categories,
+and case-insensitive duplicate paths are rejected with a line-numbered reason.
+Import parses into a temporary model, so failure leaves the visible model
+unchanged. This is a development format, not an X-Ray level or SDK format.
 
 ## Adapter Boundary
 
@@ -140,8 +158,8 @@ model/rename logic as the first extraction candidate and keeps the much larger
 
 The next safe sequence is:
 
-1. keep the current model contract small and add focused model tests;
-2. map `ItemListHelper::NameAfterEdit()` inputs and path rules precisely;
+1. keep the current model and path-list contracts small and tested;
+2. map `ItemListHelper` and `FolderLib` path rules precisely against them;
 3. add model commands only for behavior proven by that audit;
 4. connect old SDK/editor logic only after those commands are tested.
 
@@ -173,7 +191,9 @@ No snapshot is written during startup.
 The headless tests provide broader, explicit coverage without launching a GUI.
 Model checks cover demo paths, add/unique-name behavior, case-insensitive
 lookup, accepted/rejected rename, descendant path refresh, root protection,
-and subtree deletion. Snapshot checks cover in-memory round trips, escaped
+and subtree deletion. Import checks cover comments, implicit groups, default
+categories, duplicate and malformed paths, atomic failure, and a snapshot
+round trip. Snapshot checks cover in-memory round trips, escaped
 fields, malformed headers and records, invalid depth, empty labels, duplicate
 siblings, path mismatch, and atomic preservation after failed loads. Tests use
 no real assets, runtime data, or generated snapshot files.

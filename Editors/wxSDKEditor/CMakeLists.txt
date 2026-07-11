@@ -1,10 +1,12 @@
 set(XR_WX_SDK_EDITOR_MODEL_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeModel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreePathListImport.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeSnapshot.cpp"
 )
 
 set(XR_WX_SDK_EDITOR_MODEL_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreeModel.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreePathListImport.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreeSnapshot.h"
 )
 

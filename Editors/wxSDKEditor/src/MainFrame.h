@@ -10,6 +10,7 @@
 class wxEditorTree;
 class wxKeyEvent;
 class wxPropertyPanel;
+class wxTextCtrl;
 class wxTreeEvent;
 
 class wxSDKEditorFrame final : public wxFrame
@@ -34,6 +35,7 @@ private:
     void OnAddDemoObject(wxCommandEvent& event);
     void OnAdapterStatus(wxCommandEvent& event);
     void OnDeleteSelected(wxCommandEvent& event);
+    void OnImportPathList(wxCommandEvent& event);
     void OnLoadSnapshot(wxCommandEvent& event);
     void OnSaveSnapshot(wxCommandEvent& event);
     void OnTreeEndLabelEdit(wxTreeEvent& event);
@@ -42,6 +44,7 @@ private:
 
     wxEditorTree* editorTree_ = nullptr;
     wxPropertyPanel* propertyPanel_ = nullptr;
+    wxTextCtrl* output_ = nullptr;
     wxDialogService dialogService_;
     EditorTreeModel treeModel_;
 };
