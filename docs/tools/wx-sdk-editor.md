@@ -23,6 +23,20 @@ wxWidgets config-package discovery and then the standard CMake
 `FindwxWidgets` module. A missing dependency produces a focused diagnostic
 with the required `x86-windows` triplet.
 
+The GUI-independent model has a separate opt-in console test target:
+
+```bash
+cmake -S . -B build-wx-model-tests-check -G "Visual Studio 17 2022" -A Win32 \
+  -DBUILD_XR_WX_SDK_EDITOR_MODEL_TESTS=ON
+cmake --build build-wx-model-tests-check --config Release \
+  --target wxSDKEditorModelTests -- //m:1 //v:minimal //clp:ErrorsOnly
+./build-wx-model-tests-check/bin/wxSDKEditorModelTests.exe
+```
+
+`wxSDKEditorModelTests` compiles only `EditorTreeModel` and
+`EditorTreeSnapshot`; it does not discover, include, or link wxWidgets. Both
+wx options default to OFF, so normal configuration remains unchanged.
+
 ## Current Shell
 
 The first shell contains only infrastructure:
@@ -155,3 +169,11 @@ from path lookup.
 Snapshot self-checks serialize and deserialize the demo hierarchy entirely in
 memory, verify a known path, and reject duplicate-sibling and malformed input.
 No snapshot is written during startup.
+
+The headless tests provide broader, explicit coverage without launching a GUI.
+Model checks cover demo paths, add/unique-name behavior, case-insensitive
+lookup, accepted/rejected rename, descendant path refresh, root protection,
+and subtree deletion. Snapshot checks cover in-memory round trips, escaped
+fields, malformed headers and records, invalid depth, empty labels, duplicate
+siblings, path mismatch, and atomic preservation after failed loads. Tests use
+no real assets, runtime data, or generated snapshot files.

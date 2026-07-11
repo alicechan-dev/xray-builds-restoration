@@ -195,6 +195,13 @@ development hierarchy/labels/categories, and atomically replaces the model
 after strict validation. It is not a historical SDK format and creates no
 files during startup. Real level and editor-library loading remains deferred.
 
+`BUILD_XR_WX_SDK_EDITOR_MODEL_TESTS` adds the headless
+`wxSDKEditorModelTests` executable. It compiles only the independent model and
+snapshot sources, requires no wxWidgets package, and covers hierarchy mutation,
+path propagation, rename/delete rules, snapshot round trips, escaping, malformed
+input, duplicates, and atomic failed loads. No proprietary or runtime data is
+used.
+
 ## Recommended First Practical Target
 
 After the current inventory, the safest next target is still the archive/tooling path:

@@ -104,6 +104,11 @@ serializing wx or ElPack item state. Atomic load and strict duplicate/path
 validation make it useful for testing the independent seam, but it is not an
 X-Ray level, library, or SDK asset format and must not be treated as one.
 
+`wxSDKEditorModelTests` now exercises this model/snapshot seam headlessly,
+without wxWidgets, ElPack, VCL, `xrEProps`, or runtime data. This gives the
+create/rename/delete/path and malformed-snapshot behavior a repeatable contract
+before any historical editor data importer is considered.
+
 `FolderLib` is the second seam, after the model exists. Its pure path and
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx

@@ -1,7 +1,24 @@
+set(XR_WX_SDK_EDITOR_MODEL_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeModel.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeSnapshot.cpp"
+)
+
+set(XR_WX_SDK_EDITOR_MODEL_HEADERS
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreeModel.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreeSnapshot.h"
+)
+
+if(BUILD_XR_WX_SDK_EDITOR_MODEL_TESTS)
+  add_subdirectory(tests)
+endif()
+
+if(NOT BUILD_XR_WX_SDK_EDITOR)
+  return()
+endif()
+
 set(XR_WX_SDK_EDITOR_SOURCES
   src/App.cpp
-  src/editor_model/EditorTreeModel.cpp
-  src/editor_model/EditorTreeSnapshot.cpp
+  ${XR_WX_SDK_EDITOR_MODEL_SOURCES}
   src/MainFrame.cpp
   src/wxDialogService.cpp
   src/wxEditorTree.cpp
@@ -12,8 +29,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   include/editor_ui/IDialogService.h
   include/editor_ui/IEditorTree.h
   include/editor_ui/IPropertyPanel.h
-  include/editor_model/EditorTreeModel.h
-  include/editor_model/EditorTreeSnapshot.h
+  ${XR_WX_SDK_EDITOR_MODEL_HEADERS}
   src/MainFrame.h
   src/wxDialogService.h
   src/wxEditorTree.h
