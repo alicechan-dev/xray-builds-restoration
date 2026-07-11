@@ -91,6 +91,13 @@ duplicate sibling labels are vetoed with a reason from the model. This is a
 prototype of `NameAfterEdit()`-style behavior, not a port of that function;
 the preserved `xrEProps` files remain untouched.
 
+Model-backed Add Demo Object, Add Demo Group, and Delete Selected actions now
+exercise the next narrow hierarchy seam. The model generates unique sibling
+names, rejects root deletion, and owns descendant destruction. The wx tree is
+rebuilt after mutation, so it cannot retain item data for deleted nodes. This
+prototypes a small subset of `ItemListHelper`/`FolderLib` responsibility
+without copying their ElPack drag/drop, drawing, menu, or form behavior.
+
 `FolderLib` is the second seam, after the model exists. Its pure path and
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx

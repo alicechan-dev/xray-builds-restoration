@@ -30,6 +30,7 @@ void wxEditorTree::Clear()
 {
     DeleteAllItems();
     items_.clear();
+    userItems_.clear();
     nextHandle_ = 1;
     firstHandle_ = InvalidItem;
 }
@@ -60,7 +61,10 @@ void wxEditorTree::SetItemUserData(ItemHandle item, UserData userData)
 {
     const auto storedItem = items_.find(item);
     if (storedItem != items_.end())
+    {
         SetItemData(storedItem->second, new EditorTreeItemData(userData));
+        userItems_[userData] = storedItem->second;
+    }
 }
 
 IEditorTree::UserData wxEditorTree::GetSelectedUserData() const
@@ -95,6 +99,13 @@ void wxEditorTree::BeginEditSelectedLabel()
     const wxTreeItemId selected = GetSelection();
     if (selected.IsOk())
         EditLabel(selected);
+}
+
+void wxEditorTree::SelectByUserData(UserData userData)
+{
+    const auto item = userItems_.find(userData);
+    if (item != userItems_.end())
+        SelectItem(item->second);
 }
 
 IEditorTree::ItemHandle wxEditorTree::StoreItem(const wxTreeItemId& item)

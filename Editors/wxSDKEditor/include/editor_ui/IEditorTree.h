@@ -22,6 +22,7 @@ public:
     virtual void ExpandAllItems() = 0;
     virtual void SelectFirst() = 0;
     virtual void BeginEditSelectedLabel() = 0;
+    virtual void SelectByUserData(UserData userData) = 0;
 };
 
 #endif

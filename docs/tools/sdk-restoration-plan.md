@@ -182,6 +182,13 @@ label and path in the property panel, while failures retain old state and use
 `NameAfterEdit()`-like flow without importing `TElTreeItem` or altering
 `ItemListHelper`.
 
+Model-backed demo create/delete commands now follow the same rule. Unique
+child names and root-delete rejection live in `EditorTreeModel`; the wx tree
+is rebuilt as a view after each mutation and selects the created node or
+surviving parent. This is only the first small `FolderLib`-like hierarchy
+prototype. Drag/drop, thumbnails, popup menus, VCL forms, and real SDK data
+remain outside the wx path.
+
 ## Recommended First Practical Target
 
 After the current inventory, the safest next target is still the archive/tooling path:

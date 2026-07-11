@@ -47,6 +47,13 @@ Accepted edits refresh the property panel and status bar from model state.
 Rejected empty or duplicate sibling names are vetoed, keep the old label and
 path, and report the model's reason through `IDialogService`.
 
+The Tools menu also provides Add Demo Object, Add Demo Group, and Delete
+Selected. Creation uses model-generated case-insensitive unique sibling names
+(`new_object`, `new_object_1`, and so on). Deletion is confirmed through
+`IDialogService`, rejects the model root, and destroys descendants through
+owned node storage. After either operation, the wx tree is rebuilt entirely
+from `EditorTreeModel` and selects the new node or surviving parent.
+
 ## Adapter Boundary
 
 The first interfaces are deliberately independent of wxWidgets so later work
@@ -86,6 +93,11 @@ This is the first active prototype of the historical
 `ItemListHelper::NameAfterEdit()` responsibility without `TElTreeItem`. It
 does not compile, call, or modify the old `xrEProps` implementation.
 
+Together, model-backed create, delete, and rename are the first prototype of
+the hierarchy responsibilities historically mixed across `ItemListHelper` and
+`FolderLib`. The wx control remains a disposable view rather than the owner of
+tree data.
+
 The historical ElPack usage map is documented in [wx Editor ElPack Migration
 Map](wx-editor-elpack-migration.md). The map identifies `xrEProps` item-list
 model/rename logic as the first extraction candidate and keeps the much larger
@@ -116,3 +128,7 @@ changing runtime targets. Generated build output remains outside commits.
 The rename-enabled Release target also passes a startup smoke check. Rename
 acceptance and rejection remain covered by the quiet model self-check; full
 interactive GUI automation is future test infrastructure.
+
+Model self-checks now also cover unique child-name generation,
+case-insensitive lookup, root-delete rejection, child deletion, and removal
+from path lookup.

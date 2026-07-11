@@ -13,6 +13,7 @@ public:
     void Info(const char* title, const char* message) override;
     void Warning(const char* title, const char* message) override;
     void Error(const char* title, const char* message) override;
+    bool Confirm(const char* title, const char* message) override;
 
 private:
     void Show(const char* title, const char* message, long style);

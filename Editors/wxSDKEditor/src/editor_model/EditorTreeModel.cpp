@@ -78,6 +78,31 @@ EditorTreeNode* EditorTreeModel::FindByLabel(const std::string& label)
     return FindNode(root_.get(), label, &EditorTreeNode::Label);
 }
 
+EditorTreeNode* EditorTreeModel::FindChildCaseInsensitive(
+    EditorTreeNode& parent, const std::string& label)
+{
+    for (const auto& child : parent.children_)
+    {
+        if (EqualIgnoringCase(child->label_, label))
+            return child.get();
+    }
+    return nullptr;
+}
+
+std::string EditorTreeModel::MakeUniqueChildName(
+    EditorTreeNode& parent, const std::string& baseName)
+{
+    if (!FindChildCaseInsensitive(parent, baseName))
+        return baseName;
+
+    for (unsigned int suffix = 1;; ++suffix)
+    {
+        const std::string candidate = baseName + "_" + std::to_string(suffix);
+        if (!FindChildCaseInsensitive(parent, candidate))
+            return candidate;
+    }
+}
+
 bool EditorTreeModel::RenameNode(
     EditorTreeNode& node, std::string newName, std::string* reason)
 {
@@ -95,6 +120,43 @@ bool EditorTreeModel::RenameNode(
 
     node.label_ = std::move(newName);
     node.RefreshPath();
+    if (reason)
+        reason->clear();
+    return true;
+}
+
+bool EditorTreeModel::CanDeleteNode(
+    const EditorTreeNode& node, std::string* reason) const
+{
+    if (&node == root_.get())
+        return Fail(reason, "The root node cannot be deleted.");
+    if (!node.parent_)
+        return Fail(reason, "The node is not attached to this model.");
+
+    const auto& siblings = node.parent_->children_;
+    const auto owned = std::find_if(siblings.begin(), siblings.end(),
+        [&node](const std::unique_ptr<EditorTreeNode>& candidate) {
+            return candidate.get() == &node;
+        });
+    if (owned == siblings.end())
+        return Fail(reason, "The node is not owned by this model.");
+
+    if (reason)
+        reason->clear();
+    return true;
+}
+
+bool EditorTreeModel::DeleteNode(EditorTreeNode& node, std::string* reason)
+{
+    if (!CanDeleteNode(node, reason))
+        return false;
+
+    auto& siblings = node.parent_->children_;
+    const auto owned = std::find_if(siblings.begin(), siblings.end(),
+        [&node](const std::unique_ptr<EditorTreeNode>& candidate) {
+            return candidate.get() == &node;
+        });
+    siblings.erase(owned);
     if (reason)
         reason->clear();
     return true;
@@ -136,6 +198,29 @@ bool RunEditorTreeModelSelfCheck(std::string* failureReason)
         return Fail(failureReason, "Unique rename did not refresh the node path.");
     if (model.RenameNode(*actor, "", failureReason))
         return Fail(failureReason, "Empty rename was accepted.");
+
+    EditorTreeNode* objects = model.FindByPath("Scene (demo data)/Objects");
+    if (!objects)
+        return Fail(failureReason, "Demo objects group was not found.");
+    const std::string firstName = model.MakeUniqueChildName(*objects, "new_object");
+    EditorTreeNode& first = model.AddChild(*objects, firstName, "demo scene object");
+    if (first.Label() != "new_object" ||
+        first.Path() != "Scene (demo data)/Objects/new_object")
+        return Fail(failureReason, "First generated child name or path is invalid.");
+    const std::string secondName = model.MakeUniqueChildName(*objects, "new_object");
+    if (secondName != "new_object_1")
+        return Fail(failureReason, "Duplicate child name was not made unique.");
+    EditorTreeNode& second = model.AddChild(*objects, secondName, "demo scene object");
+    if (model.FindChildCaseInsensitive(*objects, "NEW_OBJECT_1") != &second)
+        return Fail(failureReason, "Case-insensitive child lookup failed.");
+
+    if (model.DeleteNode(*model.Root(), failureReason))
+        return Fail(failureReason, "Root deletion was accepted.");
+    const std::string deletedPath = second.Path();
+    if (!model.DeleteNode(second, failureReason))
+        return false;
+    if (model.FindByPath(deletedPath))
+        return Fail(failureReason, "Deleted child remains in path lookup.");
 
     if (failureReason)
         failureReason->clear();

@@ -9,6 +9,7 @@ public:
     virtual void Info(const char* title, const char* message) = 0;
     virtual void Warning(const char* title, const char* message) = 0;
     virtual void Error(const char* title, const char* message) = 0;
+    virtual bool Confirm(const char* title, const char* message) = 0;
 };
 
 #endif

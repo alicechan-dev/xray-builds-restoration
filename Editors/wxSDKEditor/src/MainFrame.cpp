@@ -15,7 +15,10 @@ namespace
 {
 enum
 {
-    IdAdapterStatus = wxID_HIGHEST + 1
+    IdAdapterStatus = wxID_HIGHEST + 1,
+    IdAddDemoObject,
+    IdAddDemoGroup,
+    IdDeleteSelected
 };
 
 wxPanel* CreateViewportPanel(wxWindow* parent)
@@ -63,6 +66,10 @@ void wxSDKEditorFrame::CreateMenus()
     menuBar->Append(viewMenu, "&View");
 
     auto* toolsMenu = new wxMenu();
+    toolsMenu->Append(IdAddDemoObject, "Add Demo &Object");
+    toolsMenu->Append(IdAddDemoGroup, "Add Demo &Group");
+    toolsMenu->Append(IdDeleteSelected, "&Delete Selected");
+    toolsMenu->AppendSeparator();
     toolsMenu->Append(IdAdapterStatus, "&Adapter Status");
     toolsMenu->AppendSeparator();
     toolsMenu->Append(wxID_PREFERENCES, "&Options")->Enable(false);
@@ -75,6 +82,9 @@ void wxSDKEditorFrame::CreateMenus()
     SetMenuBar(menuBar);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnExit, this, wxID_EXIT);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAbout, this, wxID_ABOUT);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoObject, this, IdAddDemoObject);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoGroup, this, IdAddDemoGroup);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnDeleteSelected, this, IdDeleteSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAdapterStatus, this, IdAdapterStatus);
 }
 
@@ -129,11 +139,22 @@ wxSDKEditorFrame::~wxSDKEditorFrame()
 
 void wxSDKEditorFrame::PopulateDemoTree()
 {
+    treeModel_ = EditorTreeModel::CreateDemoScene();
+    RebuildTree(nullptr);
+}
+
+void wxSDKEditorFrame::RebuildTree(EditorTreeNode* selectedNode)
+{
     IEditorTree& tree = *editorTree_;
     tree.Clear();
-    treeModel_ = EditorTreeModel::CreateDemoScene();
     PopulateTreeNode(*treeModel_.Root(), IEditorTree::InvalidItem);
     tree.ExpandAllItems();
+    if (selectedNode)
+    {
+        tree.SelectByUserData(
+            reinterpret_cast<IEditorTree::UserData>(selectedNode));
+        UpdateSelectionProperties();
+    }
 }
 
 void wxSDKEditorFrame::PopulateTreeNode(
@@ -148,6 +169,23 @@ void wxSDKEditorFrame::PopulateTreeNode(
 
     for (const auto& child : node.ChildrenView())
         PopulateTreeNode(*child, item);
+}
+
+EditorTreeNode* wxSDKEditorFrame::GetSelectedModelNode() const
+{
+    return reinterpret_cast<EditorTreeNode*>(editorTree_->GetSelectedUserData());
+}
+
+void wxSDKEditorFrame::AddDemoNode(const char* baseName, const char* category)
+{
+    EditorTreeNode* parent = GetSelectedModelNode();
+    if (!parent)
+        parent = treeModel_.Root();
+
+    const std::string name = treeModel_.MakeUniqueChildName(*parent, baseName);
+    EditorTreeNode& added = treeModel_.AddChild(*parent, name, category);
+    RebuildTree(&added);
+    SetStatusText("Added '" + added.Label() + "' under '" + parent->Label() + "'.");
 }
 
 void wxSDKEditorFrame::UpdateSelectionProperties()
@@ -181,11 +219,56 @@ void wxSDKEditorFrame::OnAbout(wxCommandEvent&)
         "No real level editing or game-data loading is implemented yet.");
 }
 
+void wxSDKEditorFrame::OnAddDemoGroup(wxCommandEvent&)
+{
+    AddDemoNode("new_group", "demo group");
+}
+
+void wxSDKEditorFrame::OnAddDemoObject(wxCommandEvent&)
+{
+    AddDemoNode("new_object", "demo scene object");
+}
+
 void wxSDKEditorFrame::OnAdapterStatus(wxCommandEvent&)
 {
     dialogService_.Info("Adapter Status",
         "IEditorTree is the first active SDK UI adapter boundary.\n\n"
         "The current scene tree and properties are demo placeholders only.");
+}
+
+void wxSDKEditorFrame::OnDeleteSelected(wxCommandEvent&)
+{
+    EditorTreeNode* selected = GetSelectedModelNode();
+    if (!selected)
+    {
+        dialogService_.Warning("Delete rejected", "No tree node is selected.");
+        return;
+    }
+
+    std::string reason;
+    if (!treeModel_.CanDeleteNode(*selected, &reason))
+    {
+        dialogService_.Warning("Delete rejected", reason.c_str());
+        SetStatusText("Delete rejected: " + reason);
+        return;
+    }
+
+    const std::string label = selected->Label();
+    const std::string prompt = "Delete '" + label + "' and all of its children?";
+    if (!dialogService_.Confirm("Delete demo node", prompt.c_str()))
+        return;
+
+    EditorTreeNode* parent = selected->Parent();
+    editorTree_->Clear();
+    if (!treeModel_.DeleteNode(*selected, &reason))
+    {
+        RebuildTree(selected);
+        dialogService_.Warning("Delete rejected", reason.c_str());
+        return;
+    }
+
+    RebuildTree(parent ? parent : treeModel_.Root());
+    SetStatusText("Deleted '" + label + "'.");
 }
 
 void wxSDKEditorFrame::OnTreeEndLabelEdit(wxTreeEvent& event)

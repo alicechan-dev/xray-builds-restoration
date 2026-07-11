@@ -21,6 +21,7 @@ public:
     void ExpandAllItems() override;
     void SelectFirst() override;
     void BeginEditSelectedLabel() override;
+    void SelectByUserData(UserData userData) override;
 
     UserData GetItemUserData(const wxTreeItemId& item) const;
 
@@ -30,6 +31,7 @@ private:
     ItemHandle nextHandle_ = 1;
     ItemHandle firstHandle_ = InvalidItem;
     std::unordered_map<ItemHandle, wxTreeItemId> items_;
+    std::unordered_map<UserData, wxTreeItemId> userItems_;
 };
 
 #endif

@@ -13,6 +13,7 @@ public:
     const std::string& Label() const { return label_; }
     const std::string& Category() const { return category_; }
     const std::string& Path() const { return path_; }
+    EditorTreeNode* Parent() { return parent_; }
     const EditorTreeNode* Parent() const { return parent_; }
     const Children& ChildrenView() const { return children_; }
 
@@ -40,8 +41,15 @@ public:
     const EditorTreeNode* Root() const { return root_.get(); }
     EditorTreeNode* FindByPath(const std::string& path);
     EditorTreeNode* FindByLabel(const std::string& label);
+    EditorTreeNode* FindChildCaseInsensitive(
+        EditorTreeNode& parent, const std::string& label);
+    std::string MakeUniqueChildName(
+        EditorTreeNode& parent, const std::string& baseName);
     bool RenameNode(EditorTreeNode& node, std::string newName,
         std::string* reason = nullptr);
+    bool CanDeleteNode(const EditorTreeNode& node,
+        std::string* reason = nullptr) const;
+    bool DeleteNode(EditorTreeNode& node, std::string* reason = nullptr);
 
     static EditorTreeModel CreateDemoScene();
 

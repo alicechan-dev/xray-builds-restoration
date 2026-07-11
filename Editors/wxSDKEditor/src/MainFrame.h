@@ -22,12 +22,18 @@ private:
     void CreateMenus();
     void CreateWorkspace();
     void PopulateDemoTree();
+    void RebuildTree(EditorTreeNode* selectedNode);
     void PopulateTreeNode(const EditorTreeNode& node,
         IEditorTree::ItemHandle parentItem);
+    EditorTreeNode* GetSelectedModelNode() const;
+    void AddDemoNode(const char* baseName, const char* category);
     void UpdateSelectionProperties();
     void OnExit(wxCommandEvent& event);
     void OnAbout(wxCommandEvent& event);
+    void OnAddDemoGroup(wxCommandEvent& event);
+    void OnAddDemoObject(wxCommandEvent& event);
     void OnAdapterStatus(wxCommandEvent& event);
+    void OnDeleteSelected(wxCommandEvent& event);
     void OnTreeEndLabelEdit(wxTreeEvent& event);
     void OnTreeKeyDown(wxKeyEvent& event);
     void OnTreeSelectionChanged(wxTreeEvent& event);
