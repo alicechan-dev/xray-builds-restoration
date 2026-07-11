@@ -182,6 +182,13 @@ label and path in the property panel, while failures retain old state and use
 `NameAfterEdit()`-like flow without importing `TElTreeItem` or altering
 `ItemListHelper`.
 
+`EditorTreePresenter` is now the model-centered application seam. It owns the
+model and coordinates tree projection, property refresh, dialogs, mutation,
+snapshot handoff, and path-list import through neutral interfaces and callbacks.
+`MainFrame` retains only wx layout, event translation, and file-dialog/file-read
+work. This prepares later audited `ItemListHelper`/`FolderLib` migration without
+modifying or linking the historical `xrEProps` implementation.
+
 Model-backed demo create/delete commands now follow the same rule. Unique
 child names and root-delete rejection live in `EditorTreeModel`; the wx tree
 is rebuilt as a view after each mutation and selects the created node or

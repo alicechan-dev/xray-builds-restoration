@@ -1,14 +1,13 @@
 #include "MainFrame.h"
 
+#include "editor_app/EditorTreePresenter.h"
 #include "editor_model/EditorTreeSnapshot.h"
-#include "editor_model/EditorTreePathListImport.h"
 #include "wxEditorTree.h"
 #include "wxPropertyPanel.h"
 
 #include <filesystem>
 #include <fstream>
 #include <iterator>
-#include <utility>
 #include <wx/filedlg.h>
 #include <wx/menu.h>
 #include <wx/panel.h>
@@ -151,84 +150,16 @@ void wxSDKEditorFrame::CreateWorkspace()
     outerSplitter->SetSashGravity(1.0);
     outerSplitter->SplitHorizontally(workspaceSplitter, output_, 680);
 
-    PopulateDemoTree();
-    CallAfter([this]() { editorTree_->SelectFirst(); });
+    treePresenter_ = std::make_unique<EditorTreePresenter>(
+        *editorTree_, *propertyPanel_, dialogService_,
+        [this](const std::string& message) { SetStatusText(message); },
+        [this](const std::string& message) {
+            output_->AppendText("\n" + wxString::FromUTF8(message) + "\n");
+        });
+    treePresenter_->InitializeDemo();
 }
 
-wxSDKEditorFrame::~wxSDKEditorFrame()
-{
-    if (editorTree_)
-        editorTree_->Clear();
-}
-
-void wxSDKEditorFrame::PopulateDemoTree()
-{
-    treeModel_ = EditorTreeModel::CreateDemoScene();
-    RebuildTree(nullptr);
-}
-
-void wxSDKEditorFrame::RebuildTree(EditorTreeNode* selectedNode)
-{
-    IEditorTree& tree = *editorTree_;
-    tree.Clear();
-    PopulateTreeNode(*treeModel_.Root(), IEditorTree::InvalidItem);
-    tree.ExpandAllItems();
-    if (selectedNode)
-    {
-        tree.SelectByUserData(
-            reinterpret_cast<IEditorTree::UserData>(selectedNode));
-        UpdateSelectionProperties();
-    }
-}
-
-void wxSDKEditorFrame::PopulateTreeNode(
-    const EditorTreeNode& node, IEditorTree::ItemHandle parentItem)
-{
-    IEditorTree& tree = *editorTree_;
-    const auto item = parentItem == IEditorTree::InvalidItem
-        ? tree.AddRoot(node.Label().c_str())
-        : tree.AddChild(parentItem, node.Label().c_str());
-    tree.SetItemUserData(item,
-        reinterpret_cast<IEditorTree::UserData>(&node));
-
-    for (const auto& child : node.ChildrenView())
-        PopulateTreeNode(*child, item);
-}
-
-EditorTreeNode* wxSDKEditorFrame::GetSelectedModelNode() const
-{
-    return reinterpret_cast<EditorTreeNode*>(editorTree_->GetSelectedUserData());
-}
-
-void wxSDKEditorFrame::AddDemoNode(const char* baseName, const char* category)
-{
-    EditorTreeNode* parent = GetSelectedModelNode();
-    if (!parent)
-        parent = treeModel_.Root();
-
-    const std::string name = treeModel_.MakeUniqueChildName(*parent, baseName);
-    EditorTreeNode& added = treeModel_.AddChild(*parent, name, category);
-    RebuildTree(&added);
-    SetStatusText("Added '" + added.Label() + "' under '" + parent->Label() + "'.");
-}
-
-void wxSDKEditorFrame::UpdateSelectionProperties()
-{
-    const auto* node = reinterpret_cast<const EditorTreeNode*>(
-        editorTree_->GetSelectedUserData());
-    if (!node)
-    {
-        propertyPanel_->Clear();
-        return;
-    }
-
-    const std::string text = "Selected: " + node->Label() +
-        "\nType: " + node->Category() +
-        "\nPath: " + node->Path() +
-        "\nProperties: placeholder only"
-        "\n\nNo real SDK data is loaded.";
-    propertyPanel_->ShowPlaceholder(text.c_str());
-}
+wxSDKEditorFrame::~wxSDKEditorFrame() = default;
 
 void wxSDKEditorFrame::OnExit(wxCommandEvent&)
 {
@@ -245,12 +176,12 @@ void wxSDKEditorFrame::OnAbout(wxCommandEvent&)
 
 void wxSDKEditorFrame::OnAddDemoGroup(wxCommandEvent&)
 {
-    AddDemoNode("new_group", "demo group");
+    treePresenter_->AddDemoNode("new_group", "demo group");
 }
 
 void wxSDKEditorFrame::OnAddDemoObject(wxCommandEvent&)
 {
-    AddDemoNode("new_object", "demo scene object");
+    treePresenter_->AddDemoNode("new_object", "demo scene object");
 }
 
 void wxSDKEditorFrame::OnAdapterStatus(wxCommandEvent&)
@@ -262,37 +193,7 @@ void wxSDKEditorFrame::OnAdapterStatus(wxCommandEvent&)
 
 void wxSDKEditorFrame::OnDeleteSelected(wxCommandEvent&)
 {
-    EditorTreeNode* selected = GetSelectedModelNode();
-    if (!selected)
-    {
-        dialogService_.Warning("Delete rejected", "No tree node is selected.");
-        return;
-    }
-
-    std::string reason;
-    if (!treeModel_.CanDeleteNode(*selected, &reason))
-    {
-        dialogService_.Warning("Delete rejected", reason.c_str());
-        SetStatusText("Delete rejected: " + reason);
-        return;
-    }
-
-    const std::string label = selected->Label();
-    const std::string prompt = "Delete '" + label + "' and all of its children?";
-    if (!dialogService_.Confirm("Delete demo node", prompt.c_str()))
-        return;
-
-    EditorTreeNode* parent = selected->Parent();
-    editorTree_->Clear();
-    if (!treeModel_.DeleteNode(*selected, &reason))
-    {
-        RebuildTree(selected);
-        dialogService_.Warning("Delete rejected", reason.c_str());
-        return;
-    }
-
-    RebuildTree(parent ? parent : treeModel_.Root());
-    SetStatusText("Deleted '" + label + "'.");
+    treePresenter_->DeleteSelected();
 }
 
 void wxSDKEditorFrame::OnLoadSnapshot(wxCommandEvent&)
@@ -302,22 +203,8 @@ void wxSDKEditorFrame::OnLoadSnapshot(wxCommandEvent&)
     if (dialog.ShowModal() != wxID_OK)
         return;
 
-    EditorTreeModel loaded;
-    std::string reason;
     const std::filesystem::path path(dialog.GetPath().ToStdWstring());
-    if (!LoadEditorTreeSnapshot(loaded, path, &reason))
-    {
-        dialogService_.Error("Snapshot load failed", reason.c_str());
-        SetStatusText("Snapshot load failed: " + reason);
-        return;
-    }
-
-    editorTree_->Clear();
-    treeModel_ = std::move(loaded);
-    RebuildTree(nullptr);
-    editorTree_->SelectFirst();
-    UpdateSelectionProperties();
-    SetStatusText("Loaded demo tree snapshot.");
+    treePresenter_->LoadSnapshot(path);
 }
 
 void wxSDKEditorFrame::OnImportPathList(wxCommandEvent&)
@@ -338,20 +225,7 @@ void wxSDKEditorFrame::OnImportPathList(wxCommandEvent&)
 
     const std::string text{
         std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
-    std::string reason;
-    if (!ImportEditorTreePathList(treeModel_, text, &reason))
-    {
-        dialogService_.Error("Path-list import failed", reason.c_str());
-        SetStatusText("Path-list import failed: " + reason);
-        return;
-    }
-
-    RebuildTree(nullptr);
-    editorTree_->SelectFirst();
-    UpdateSelectionProperties();
-    output_->AppendText(wxString::Format(
-        "\nImported development path list: %s\n", dialog.GetPath()));
-    SetStatusText("Imported development path list.");
+    treePresenter_->ImportPathList(text, dialog.GetPath().ToStdString());
 }
 
 void wxSDKEditorFrame::OnSaveSnapshot(wxCommandEvent&)
@@ -362,15 +236,8 @@ void wxSDKEditorFrame::OnSaveSnapshot(wxCommandEvent&)
     if (dialog.ShowModal() != wxID_OK)
         return;
 
-    std::string reason;
     const std::filesystem::path path(dialog.GetPath().ToStdWstring());
-    if (!SaveEditorTreeSnapshot(treeModel_, path, &reason))
-    {
-        dialogService_.Error("Snapshot save failed", reason.c_str());
-        SetStatusText("Snapshot save failed: " + reason);
-        return;
-    }
-    SetStatusText("Saved demo tree snapshot.");
+    treePresenter_->SaveSnapshot(path);
 }
 
 void wxSDKEditorFrame::OnTreeEndLabelEdit(wxTreeEvent& event)
@@ -390,20 +257,16 @@ void wxSDKEditorFrame::OnTreeEndLabelEdit(wxTreeEvent& event)
     }
 
     std::string reason;
-    const std::string previousLabel = node->Label();
-    if (!treeModel_.RenameNode(*node, event.GetLabel().ToStdString(), &reason))
+    if (!treePresenter_->RenameNode(*node, event.GetLabel().ToStdString(), &reason))
     {
         event.Veto();
-        SetStatusText("Rename rejected: " + reason);
         CallAfter([this, reason]() {
             dialogService_.Warning("Rename rejected", reason.c_str());
-            UpdateSelectionProperties();
+            treePresenter_->RefreshSelection();
         });
         return;
     }
 
-    SetStatusText("Renamed '" + previousLabel + "' to '" + node->Label() + "'.");
-    UpdateSelectionProperties();
     event.Skip();
 }
 
@@ -419,6 +282,6 @@ void wxSDKEditorFrame::OnTreeKeyDown(wxKeyEvent& event)
 
 void wxSDKEditorFrame::OnTreeSelectionChanged(wxTreeEvent& event)
 {
-    UpdateSelectionProperties();
+    treePresenter_->RefreshSelection();
     event.Skip();
 }

@@ -21,6 +21,7 @@ endif()
 set(XR_WX_SDK_EDITOR_SOURCES
   src/App.cpp
   ${XR_WX_SDK_EDITOR_MODEL_SOURCES}
+  src/editor_app/EditorTreePresenter.cpp
   src/MainFrame.cpp
   src/wxDialogService.cpp
   src/wxEditorTree.cpp
@@ -31,6 +32,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   include/editor_ui/IDialogService.h
   include/editor_ui/IEditorTree.h
   include/editor_ui/IPropertyPanel.h
+  include/editor_app/EditorTreePresenter.h
   ${XR_WX_SDK_EDITOR_MODEL_HEADERS}
   src/MainFrame.h
   src/wxDialogService.h

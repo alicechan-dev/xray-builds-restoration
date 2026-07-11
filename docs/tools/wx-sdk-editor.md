@@ -49,6 +49,18 @@ The first shell contains only infrastructure:
 * a right property-panel placeholder that follows tree selection;
 * a bottom read-only output pane.
 
+`EditorTreePresenter` is the GUI-facing coordination seam between
+`EditorTreeModel`, `IEditorTree`, `IPropertyPanel`, and `IDialogService`. It owns
+the model, rebuilds the disposable tree view, refreshes selection properties,
+and coordinates create, delete, rename, snapshot, and path-list operations.
+Status and output updates are supplied as callbacks, so the presenter includes
+no wxWidgets headers.
+
+`MainFrame` remains responsible for wx layout, menus and event binding, file
+dialogs and path-list file reading, plus translation of wx tree events into
+presenter calls. Rename rejection remains deferred through the frame so the wx
+label-edit event can be vetoed before its dialog is shown.
+
 It does not load levels, assets, forms, or runtime data. `EditorTreeModel`
 owns the demo Objects, Lights, Sounds, Sectors / Portals, and Spawn Elements
 hierarchy. Selecting an entry shows its model label, category, path, and a
@@ -132,6 +144,10 @@ initial selection. The frame traverses `EditorTreeModel`, populates
 `IEditorTree`, and lets `wxEditorTree` translate that into `wxTreeCtrl` items.
 The model remains independent of wxWidgets and owns every node referenced by
 the view.
+
+The presenter now performs that model-to-adapter projection instead of
+`MainFrame`. This keeps widget construction and event objects at the wx edge
+while model mutation and view synchronization share one explicit seam.
 
 The first model seam provides owned children, non-owning parent links, stable
 node addresses, labels, categories, paths, lookup, and rename validation.

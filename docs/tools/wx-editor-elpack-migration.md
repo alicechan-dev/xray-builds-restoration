@@ -116,6 +116,13 @@ implicit groups and atomic validation, without compiling or calling
 path-rule extraction a small test surface; it is not a historical SDK importer
 and does not read levels or game data.
 
+`EditorTreePresenter` now coordinates this model with `IEditorTree`,
+`IPropertyPanel`, and `IDialogService`. This removes hierarchy traversal and
+mutation policy from `MainFrame` without importing historical `TElTree` or
+`xrEProps` code. The separation gives future `ItemListHelper`/`FolderLib`
+behavior one model-centered integration point while preserving wx as a view
+adapter only.
+
 `FolderLib` is the second seam, after the model exists. Its pure path and
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx
