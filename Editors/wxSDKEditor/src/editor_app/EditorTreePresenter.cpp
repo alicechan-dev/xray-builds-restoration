@@ -1,6 +1,7 @@
 #include "editor_app/EditorTreePresenter.h"
 
 #include "editor_model/EditorTreePathListImport.h"
+#include "editor_model/EditorPropertySet.h"
 #include "editor_model/EditorTreeQuery.h"
 #include "editor_model/EditorTreeSnapshot.h"
 #include "editor_ui/IDialogService.h"
@@ -15,6 +16,10 @@ EditorTreePresenter::EditorTreePresenter(IEditorTree& tree,
     tree_(tree), properties_(properties), dialogs_(dialogs),
     status_(std::move(status)), output_(std::move(output))
 {
+    properties_.SetApplyHandler(
+        [this](const std::string& key, const std::string& value) {
+            return ApplySelectedProperty(key, value);
+        });
 }
 
 void EditorTreePresenter::InitializeDemo()
@@ -70,13 +75,7 @@ void EditorTreePresenter::RefreshSelection()
         return;
     }
 
-    const std::string text = "Selected: " + node->Label() +
-        "\nKind: " + std::string(ToString(node->Kind())) +
-        "\nType: " + node->Category() +
-        "\nPath: " + node->Path() +
-        "\nProperties: placeholder only"
-        "\n\nNo real SDK data is loaded.";
-    properties_.ShowPlaceholder(text.c_str());
+    properties_.ShowProperties(BuildEditorNodePropertySet(*node));
 }
 
 void EditorTreePresenter::SetStatus(const std::string& message) const
@@ -185,6 +184,35 @@ bool EditorTreePresenter::MoveSelectedTo(const std::string& newParentPath)
     if (output_)
         output_("Moved '" + label + "' to '" + newParent->Path() + "'.");
     SetStatus("Moved '" + label + "' to '" + newParent->Path() + "'.");
+    return true;
+}
+
+bool EditorTreePresenter::ApplySelectedProperty(
+    const std::string& key, std::string value)
+{
+    EditorTreeNode* selected = SelectedNode();
+    if (!selected)
+    {
+        dialogs_.Warning("Property edit rejected", "No tree node is selected.");
+        SetStatus("Property edit rejected: no tree node is selected.");
+        return false;
+    }
+
+    const EditorPropertyApplyResult result =
+        ApplyEditorNodeProperty(model_, *selected, key, std::move(value));
+    if (!result.success)
+    {
+        dialogs_.Warning("Property edit rejected", result.reason.c_str());
+        SetStatus("Property edit rejected: " + result.reason);
+        RefreshSelection();
+        return false;
+    }
+
+    if (result.requiresTreeRebuild)
+        Rebuild(selected);
+    else if (result.requiresPropertyRefresh)
+        RefreshSelection();
+    SetStatus("Updated property '" + key + "'.");
     return true;
 }
 

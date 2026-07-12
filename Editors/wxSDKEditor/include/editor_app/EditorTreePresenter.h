@@ -31,6 +31,7 @@ public:
     void DeleteSelected();
     std::vector<std::string> GetMoveDestinations() const;
     bool MoveSelectedTo(const std::string& newParentPath);
+    bool ApplySelectedProperty(const std::string& key, std::string value);
     bool RenameNode(EditorTreeNode& node, std::string newName,
         std::string* reason = nullptr);
     bool LoadSnapshot(const std::filesystem::path& path);

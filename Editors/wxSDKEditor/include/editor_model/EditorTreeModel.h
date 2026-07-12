@@ -54,6 +54,7 @@ public:
         EditorTreeNode& parent, const std::string& baseName);
     bool RenameNode(EditorTreeNode& node, std::string newName,
         std::string* reason = nullptr);
+    void SetNodeCategory(EditorTreeNode& node, std::string category);
     bool CanDeleteNode(const EditorTreeNode& node,
         std::string* reason = nullptr) const;
     bool DeleteNode(EditorTreeNode& node, std::string* reason = nullptr);

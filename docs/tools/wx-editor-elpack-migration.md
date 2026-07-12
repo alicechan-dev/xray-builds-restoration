@@ -176,6 +176,10 @@ menu/choice-dialog prototype. See [wx Editor Tree Move](wx-editor-move.md).
 
 ## Explicit Non-Goals
 
+The first property seam maps only audited value descriptors and apply
+validation. It excludes ElPack rows/editors, drawing, chooser forms, callbacks,
+and object bindings. See [wx Editor Properties](wx-editor-properties.md).
+
 This map does not add ElPack headers, package libraries, VCL shims, real level
 loading, or old editor calls. It does not alter the preserved Borland sources.
 The model-driven demo tree in `wxSDKEditor` remains placeholder-only.

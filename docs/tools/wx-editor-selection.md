@@ -62,3 +62,7 @@ They require no wxWidgets package.
 
 This is a model migration seam, not a port of ElPack selection state or real SDK
 data loading.
+
+Selection drives the editable [wx Editor Properties](wx-editor-properties.md)
+set. Clearing selection clears the property panel; property edits never store
+node pointers in the selection model.

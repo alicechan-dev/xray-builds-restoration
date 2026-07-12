@@ -204,6 +204,14 @@ small choice-dialog prototype rather than drag/drop. Headless tests remain
 independent of wxWidgets, and old `xrEProps`/LevelEditor sources remain
 untouched. See [wx Editor Tree Move](wx-editor-move.md).
 
+The experiment also has its first editable property seam. A wx-free tagged
+property set exposes node label/category for editing and kind/generated path as
+read-only. Label apply reuses model rename validation; category remains a
+development display field. The concrete panel uses basic wx controls rather
+than another property-grid dependency, while fake-panel tests remain wx-free.
+No historical `xrEProps` source or real SDK object binding is involved. See
+[wx Editor Properties](wx-editor-properties.md).
+
 Explicitly prohibited for the SDK GUI branch:
 
 * fake `ElTree.hpp` or placeholder ElPack tree widgets;
@@ -230,5 +238,6 @@ Explicitly prohibited for the SDK GUI branch:
 * [Experimental wxWidgets SDK Editor](wx-sdk-editor.md)
 * [wx Editor ElPack Migration Map](wx-editor-elpack-migration.md)
 * [wx Editor Tree Move](wx-editor-move.md)
+* [wx Editor Properties](wx-editor-properties.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)

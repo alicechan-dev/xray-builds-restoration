@@ -61,3 +61,7 @@ coordination. Tests-only mode does not discover, include, or link wxWidgets.
 
 Old `xrEProps` and LevelEditor sources remain untouched. This is a migration
 seam, not a `FolderLib` port, and it loads no real levels or SDK assets.
+
+Moved-node label/category editing now uses the separate wx-free
+[property seam](wx-editor-properties.md); move ownership rules remain
+independent of property presentation.

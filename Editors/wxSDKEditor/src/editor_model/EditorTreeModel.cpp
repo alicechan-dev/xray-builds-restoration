@@ -168,6 +168,12 @@ bool EditorTreeModel::CanDeleteNode(
     return true;
 }
 
+void EditorTreeModel::SetNodeCategory(
+    EditorTreeNode& node, std::string category)
+{
+    node.category_ = std::move(category);
+}
+
 bool EditorTreeModel::DeleteNode(EditorTreeNode& node, std::string* reason)
 {
     if (!CanDeleteNode(node, reason))

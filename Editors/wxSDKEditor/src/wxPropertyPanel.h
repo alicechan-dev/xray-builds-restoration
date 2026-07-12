@@ -6,6 +6,8 @@
 #include <wx/panel.h>
 
 class wxStaticText;
+class wxTextCtrl;
+class wxCommandEvent;
 
 class wxPropertyPanel final : public wxPanel, public IPropertyPanel
 {
@@ -14,9 +16,18 @@ public:
 
     void Clear() override;
     void ShowPlaceholder(const char* text) override;
+    void ShowProperties(const EditorPropertySet& properties) override;
+    void SetApplyHandler(ApplyHandler handler) override;
 
 private:
+    void OnApply(wxCommandEvent& event);
+
     wxStaticText* placeholder_ = nullptr;
+    wxTextCtrl* label_ = nullptr;
+    wxTextCtrl* category_ = nullptr;
+    wxTextCtrl* kind_ = nullptr;
+    wxTextCtrl* path_ = nullptr;
+    ApplyHandler applyHandler_;
 };
 
 #endif

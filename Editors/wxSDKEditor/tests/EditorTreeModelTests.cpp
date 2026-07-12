@@ -1,4 +1,5 @@
 #include "editor_model/EditorTreeModel.h"
+#include "editor_model/EditorPropertySet.h"
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorSelectionModel.h"
 #include "editor_model/EditorTreePathListImport.h"
@@ -55,6 +56,14 @@ int main()
     Check(model.Root()->Kind() == EditorItemKind::Root,
         "demo root kind");
 
+    Check(ToString(EditorPropertyType::String) == "string" &&
+        ToString(EditorPropertyType::Integer) == "integer" &&
+        ToString(EditorPropertyType::Float) == "float" &&
+        ToString(EditorPropertyType::Boolean) == "boolean" &&
+        ToString(EditorPropertyType::Choice) == "choice" &&
+        ToString(EditorPropertyType::ReadOnlyText) == "read-only text",
+        "property type names");
+
     EditorTreeNode* objects = model.FindByPath("Scene (demo data)/Objects");
     Check(objects != nullptr, "objects group exists");
     Check(objects && objects->Kind() == EditorItemKind::Folder,
@@ -108,6 +117,57 @@ int main()
         Check(model.DeleteNode(parent, &reason), "child subtree deletion accepted");
         Check(model.FindByPath(descendantPath) == nullptr,
             "deleted descendant removed from lookup");
+    }
+
+    EditorTreeModel propertyModel = EditorTreeModel::CreateDemoScene();
+    EditorTreeNode* propertyActor =
+        propertyModel.FindByPath("Scene (demo data)/Objects/actor");
+    EditorTreeNode* propertyObjects =
+        propertyModel.FindByPath("Scene (demo data)/Objects");
+    Check(propertyActor && propertyObjects, "property test fixtures exist");
+    if (propertyActor && propertyObjects)
+    {
+        EditorTreeNode& propertyChild = propertyModel.AddChild(
+            *propertyActor, "child", "demo scene object", EditorItemKind::Object);
+        EditorPropertySet propertySet = BuildEditorNodePropertySet(*propertyActor);
+        Check(propertySet.Properties().size() == 4 &&
+            propertySet.Find("LABEL") && propertySet.Find("category") &&
+            propertySet.Find("kind") && propertySet.Find("path"),
+            "node property set contains stable keys");
+        Check(!propertySet.Find("label")->readOnly &&
+            !propertySet.Find("category")->readOnly &&
+            propertySet.Find("kind")->readOnly &&
+            propertySet.Find("path")->readOnly,
+            "node property editability");
+
+        EditorPropertyApplyResult apply = ApplyEditorNodeProperty(
+            propertyModel, *propertyActor, "label", "stalker");
+        Check(apply.success && apply.requiresTreeRebuild &&
+            apply.requiresPropertyRefresh,
+            "label property apply result flags");
+        Check(propertyActor->Path() == "Scene (demo data)/Objects/stalker" &&
+            propertyChild.Path() == "Scene (demo data)/Objects/stalker/child",
+            "label property refreshes node and descendant paths");
+        const std::string acceptedPath = propertyActor->Path();
+        apply = ApplyEditorNodeProperty(propertyModel, *propertyActor, "label", "");
+        Check(!apply.success && propertyActor->Path() == acceptedPath,
+            "empty label property rejected without mutation");
+        apply = ApplyEditorNodeProperty(
+            propertyModel, *propertyActor, "label", "PHYSIC_OBJECT");
+        Check(!apply.success && propertyActor->Label() == "stalker",
+            "case-insensitive duplicate label property rejected");
+        apply = ApplyEditorNodeProperty(
+            propertyModel, *propertyActor, "category", "custom display");
+        Check(apply.success && !apply.requiresTreeRebuild &&
+            apply.requiresPropertyRefresh &&
+            propertyActor->Category() == "custom display",
+            "category property applies without tree rebuild");
+        apply = ApplyEditorNodeProperty(propertyModel, *propertyActor, "kind", "folder");
+        Check(!apply.success && propertyActor->Kind() == EditorItemKind::Object,
+            "read-only kind property rejected");
+        apply = ApplyEditorNodeProperty(propertyModel, *propertyActor, "path", "other");
+        Check(!apply.success && propertyActor->Path() == acceptedPath,
+            "read-only path property rejected");
     }
 
     std::string reason;

@@ -74,3 +74,6 @@ Hierarchy containment now uses the same audited distinction: `Root` and
 `Folder` may accept moved children, while `Object` and `Unknown` may not. The
 policy is documented in [wx Editor Tree Move](wx-editor-move.md) and does not
 invent child semantics for unknown historical caller types.
+
+Kind is exposed as a read-only [node property](wx-editor-properties.md). This
+prevents the prototype property editor from inventing type-conversion rules.

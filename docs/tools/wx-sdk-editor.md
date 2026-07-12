@@ -288,3 +288,9 @@ no-result behavior.
 Selection checks cover select/deselect/toggle, duplicate prevention, model-order
 paths, labels, raw prefix and kind filters, clearing, stale pruning, replacement
 resolution, presenter single-selection synchronization, reporting, and clear.
+
+The property placeholder is now a small editable prototype. Selection supplies
+a wx-free `EditorPropertySet`; label and category use text fields, while kind
+and generated path are read-only. Apply routes through the presenter and node
+property adapter. Rename validation remains in `EditorTreeModel`, and category
+remains development-only. See [wx Editor Properties](wx-editor-properties.md).

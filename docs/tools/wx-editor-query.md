@@ -65,3 +65,6 @@ Move destination discovery reuses an empty read-only query to traverse nodes,
 then asks `EditorTreeModel::CanMoveNode` to admit only valid Root/Folder
 destinations. Query itself remains unaware of mutation rules. See
 [wx Editor Tree Move](wx-editor-move.md).
+
+Selecting a query result also rebuilds the wx-free
+[node property set](wx-editor-properties.md); query itself remains read-only.

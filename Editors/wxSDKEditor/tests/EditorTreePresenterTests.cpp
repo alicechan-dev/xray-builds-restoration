@@ -1,4 +1,5 @@
 #include "editor_app/EditorTreePresenter.h"
+#include "editor_model/EditorPropertySet.h"
 #include "editor_ui/IDialogService.h"
 #include "editor_ui/IEditorTree.h"
 #include "editor_ui/IPropertyPanel.h"
@@ -132,9 +133,33 @@ public:
     {
         text = value ? value : "";
     }
+    void ShowProperties(const EditorPropertySet& properties) override
+    {
+        ++showCount;
+        lastProperties = properties;
+        const auto value = [&properties](const char* key) {
+            const EditorProperty* property = properties.Find(key);
+            return property ? property->value : std::string();
+        };
+        text = "Selected: " + value("label") +
+            "\nKind: " + value("kind") +
+            "\nType: " + value("category") +
+            "\nPath: " + value("path");
+    }
+    void SetApplyHandler(ApplyHandler handler) override
+    {
+        applyHandler = std::move(handler);
+    }
+    bool Apply(const std::string& key, const std::string& value)
+    {
+        return applyHandler && applyHandler(key, value);
+    }
 
     std::string text;
     int clearCount = 0;
+    int showCount = 0;
+    EditorPropertySet lastProperties;
+    ApplyHandler applyHandler;
 };
 
 class FakeDialogService final : public IDialogService
@@ -206,6 +231,9 @@ int RunEditorTreePresenterTests()
     check(tree.GetSelectedLabel() == "Scene (demo data)", "initial root selected");
     check(ContainsText(properties.text, "Path: Scene (demo data)"),
         "initial selection refreshes properties");
+    check(properties.lastProperties.Find("label") &&
+        properties.lastProperties.Find("path")->readOnly,
+        "selection exposes editable property set");
     check(presenter.GetMoveDestinations().empty(),
         "root has no valid move destinations");
     const int clearsBeforeRootMove = tree.clearCount;
@@ -265,9 +293,35 @@ int RunEditorTreePresenterTests()
     check(presenter.MoveSelectedTo("Scene (demo data)/Objects"),
         "presenter can move object back to original folder");
 
+    const int clearsBeforePropertyRename = tree.clearCount;
+    check(properties.Apply("label", "property_actor"),
+        "presenter accepts property label edit");
+    check(tree.clearCount == clearsBeforePropertyRename + 1 &&
+        tree.GetSelectedLabel() == "property_actor",
+        "property label edit rebuilds tree and preserves selection");
+    check(ContainsText(properties.text,
+        "Path: Scene (demo data)/Objects/property_actor") &&
+        ContainsText(status, "Updated property 'label'"),
+        "property label edit refreshes path and status");
+    const int clearsBeforeFailedProperty = tree.clearCount;
+    check(!properties.Apply("label", ""),
+        "presenter rejects empty property label");
+    check(tree.clearCount == clearsBeforeFailedProperty &&
+        tree.GetSelectedLabel() == "property_actor" &&
+        ContainsText(dialogs.lastWarning, "Name cannot be empty"),
+        "failed property edit preserves tree and reports reason");
+    check(!properties.Apply("label", "PHYSIC_OBJECT"),
+        "presenter rejects duplicate property label");
+    check(properties.Apply("category", "edited category"),
+        "presenter accepts category property edit");
+    check(ContainsText(properties.text, "Type: edited category"),
+        "category property edit refreshes panel");
+    check(!properties.Apply("path", "forbidden"),
+        "presenter rejects read-only property edit");
+
     output.clear();
     presenter.ReportSelection();
-    check(ContainsText(output, "Scene (demo data)/Objects/actor"),
+    check(ContainsText(output, "Scene (demo data)/Objects/property_actor"),
         "selected path report uses model path");
     check(ContainsText(status, "1 model item"),
         "selected path report includes count");

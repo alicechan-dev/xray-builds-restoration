@@ -481,6 +481,14 @@ Historical drag images, mouse callbacks, widget selection/expansion, popup
 menus, and FolderLib's merge behavior are not ported. Tests-only mode remains
 wxWidgets-free. See [wx Editor Tree Move](wx-editor-move.md).
 
+The next completed neutral slice is an editable node property model. It maps
+only audited string/integer/float/boolean/choice/read-only type categories and
+currently binds label/category plus read-only kind/path. Presenter apply uses
+existing rename rules and a basic wx form; ElPack editors, chooser dialogs,
+drawing, callbacks, reflection, and real SDK binding remain excluded. Snapshot
+format is unchanged because category was already persisted. See
+[wx Editor Properties](wx-editor-properties.md).
+
 ## Related Documents
 
 * [Tools and SDK Status](status.md)
@@ -500,6 +508,7 @@ wxWidgets-free. See [wx Editor Tree Move](wx-editor-move.md).
 * [FreeImage Dependency](freeimage-dependency.md)
 * [Gauss CMake Shell](gauss-cmake.md)
 * [wx Editor Tree Move](wx-editor-move.md)
+* [wx Editor Properties](wx-editor-properties.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)
