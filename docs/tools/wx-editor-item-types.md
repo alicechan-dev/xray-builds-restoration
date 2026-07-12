@@ -61,3 +61,7 @@ Further mapping requires a consumer-by-consumer audit of the opaque historical
 `ListItem::type` integer. It must not be converted into a broad enum merely
 because individual editors reused that field for local edit modes. Real SDK
 metadata loading remains future work, and the Borland/VCL path stays separate.
+
+`EditorItemKind` can now be used as an optional read-only filter through
+[wx Editor Tree Query](wx-editor-query.md). Filtering does not add historical
+caller-mode meanings or mutate model nodes.

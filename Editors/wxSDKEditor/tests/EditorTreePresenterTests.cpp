@@ -206,6 +206,22 @@ int RunEditorTreePresenterTests()
     check(ContainsText(properties.text, "Path: Scene (demo data)"),
         "initial selection refreshes properties");
 
+    check(presenter.FindFirst("ACT") == 1,
+        "search finds case-insensitive label substring");
+    check(tree.GetSelectedLabel() == "actor", "search selects first result");
+    check(ContainsText(properties.text, "Path: Scene (demo data)/Objects/actor"),
+        "search refreshes selected properties");
+    check(ContainsText(status, "Found 1 matching item"),
+        "search reports match count");
+    const std::string propertiesBeforeNoMatch = properties.text;
+    check(presenter.FindFirst("does-not-exist") == 0,
+        "search reports no results");
+    check(tree.GetSelectedLabel() == "actor" &&
+        properties.text == propertiesBeforeNoMatch,
+        "no-result search preserves selection and properties");
+    check(ContainsText(status, "No matching tree items"),
+        "no-result search reports non-fatal status");
+
     check(tree.SelectByLabel("Objects"), "objects group selectable");
     presenter.RefreshSelection();
     check(ContainsText(properties.text, "Type: demo group"),

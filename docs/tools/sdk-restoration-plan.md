@@ -210,6 +210,16 @@ wx-free `EditorItemKind` with `Unknown`, structural `Root`, `Folder`, and
 callbacks, pointers, icon/color fields, sorting, drawing, and form behavior are
 intentionally unmapped. See [wx Editor Item Types](wx-editor-item-types.md).
 
+The next neutral seam is `EditorTreeQuery`. Historical audit found exact key
+and direct-child comparisons, component-wise path traversal, folder/object
+restrictions, selected-key prefix checks, and folder-first widget sorting. The
+wx-free query API maps only read-only model traversal: default case-insensitive
+label substring, optional path/case/exact controls, optional item-kind filter,
+and stable pre-order results. The wx prototype selects the first result and
+updates properties/status without filtering the tree. UI sorting, selection
+callbacks, drawing, and drag/drop remain excluded. See [wx Editor Tree
+Query](wx-editor-query.md).
+
 `BUILD_XR_WX_SDK_EDITOR_MODEL_TESTS` adds the headless
 `wxSDKEditorModelTests` executable. It compiles only the independent model and
 snapshot/import sources plus the wx-free presenter, requires no wxWidgets

@@ -15,6 +15,7 @@
 #include <wx/splitter.h>
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
+#include <wx/textdlg.h>
 #include <wx/treectrl.h>
 
 namespace
@@ -27,7 +28,8 @@ enum
     IdDeleteSelected,
     IdSaveSnapshot,
     IdLoadSnapshot,
-    IdImportPathList
+    IdImportPathList,
+    IdFindItem
 };
 
 const char* SnapshotWildcard =
@@ -89,6 +91,7 @@ void wxSDKEditorFrame::CreateMenus()
     toolsMenu->Append(IdAddDemoObject, "Add Demo &Object");
     toolsMenu->Append(IdAddDemoGroup, "Add Demo &Group");
     toolsMenu->Append(IdDeleteSelected, "&Delete Selected");
+    toolsMenu->Append(IdFindItem, "&Find Item...");
     toolsMenu->AppendSeparator();
     toolsMenu->Append(IdAdapterStatus, "&Adapter Status");
     toolsMenu->AppendSeparator();
@@ -109,6 +112,7 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveSnapshot, this, IdSaveSnapshot);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnLoadSnapshot, this, IdLoadSnapshot);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnImportPathList, this, IdImportPathList);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnFindItem, this, IdFindItem);
 }
 
 void wxSDKEditorFrame::CreateWorkspace()
@@ -226,6 +230,14 @@ void wxSDKEditorFrame::OnImportPathList(wxCommandEvent&)
     const std::string text{
         std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
     treePresenter_->ImportPathList(text, dialog.GetPath().ToStdString());
+}
+
+void wxSDKEditorFrame::OnFindItem(wxCommandEvent&)
+{
+    wxTextEntryDialog dialog(this, "Search node labels", "Find Item");
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+    treePresenter_->FindFirst(dialog.GetValue().ToStdString());
 }
 
 void wxSDKEditorFrame::OnSaveSnapshot(wxCommandEvent&)

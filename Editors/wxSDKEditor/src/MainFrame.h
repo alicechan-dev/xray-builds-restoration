@@ -29,6 +29,7 @@ private:
     void OnAdapterStatus(wxCommandEvent& event);
     void OnDeleteSelected(wxCommandEvent& event);
     void OnImportPathList(wxCommandEvent& event);
+    void OnFindItem(wxCommandEvent& event);
     void OnLoadSnapshot(wxCommandEvent& event);
     void OnSaveSnapshot(wxCommandEvent& event);
     void OnTreeEndLabelEdit(wxTreeEvent& event);

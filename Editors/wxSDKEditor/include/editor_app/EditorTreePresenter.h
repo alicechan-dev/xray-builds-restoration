@@ -3,6 +3,7 @@
 
 #include "editor_model/EditorTreeModel.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -31,6 +32,7 @@ public:
     bool LoadSnapshot(const std::filesystem::path& path);
     bool SaveSnapshot(const std::filesystem::path& path);
     bool ImportPathList(std::string_view text, const std::string& sourceName);
+    std::size_t FindFirst(std::string text);
 
 private:
     EditorTreeNode* SelectedNode() const;

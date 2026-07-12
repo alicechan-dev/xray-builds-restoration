@@ -1,6 +1,7 @@
 #include "editor_model/EditorTreeModel.h"
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorTreePathListImport.h"
+#include "editor_model/EditorTreeQuery.h"
 #include "editor_model/EditorTreeSnapshot.h"
 
 #include <iostream>
@@ -202,6 +203,61 @@ int main()
     Check(customImported.FindByPath("Custom/Items/value")->Kind() ==
         EditorItemKind::Unknown,
         "custom category falls back to unknown kind");
+
+    EditorTreeModel queryModel = EditorTreeModel::CreateDemoScene();
+    queryModel.AddChild(*queryModel.Root(), "custom", "custom category");
+    EditorTreeQueryOptions query;
+    query.text = "ACT";
+    EditorTreeQueryResult queryResults = QueryEditorTree(queryModel, query);
+    Check(queryResults.size() == 1 && queryResults.front()->Label() == "actor",
+        "default query is case-insensitive label substring");
+
+    query.exactMatch = true;
+    query.text = "ACT";
+    Check(QueryEditorTree(queryModel, query).empty(),
+        "exact query compares the complete label");
+    query.text = "actor";
+    Check(QueryEditorTree(queryModel, query).size() == 1,
+        "exact label query succeeds");
+
+    query.matchLabel = false;
+    query.matchPath = true;
+    query.exactMatch = false;
+    query.text = "objects/actor";
+    Check(QueryEditorTree(queryModel, query).size() == 1,
+        "query can match model-generated path");
+    query.caseSensitive = true;
+    query.text = "Objects/Actor";
+    Check(QueryEditorTree(queryModel, query).empty(),
+        "case-sensitive query preserves case");
+
+    query = {};
+    query.kind = EditorItemKind::Folder;
+    queryResults = QueryEditorTree(queryModel, query);
+    Check(queryResults.size() == 5 && queryResults.front()->Label() == "Objects",
+        "empty folder query returns folders in traversal order");
+    query.kind = EditorItemKind::Object;
+    Check(QueryEditorTree(queryModel, query).size() == 6,
+        "object kind filter");
+    query.kind = EditorItemKind::Root;
+    Check(QueryEditorTree(queryModel, query).size() == 1,
+        "root kind filter");
+    query.kind = EditorItemKind::Unknown;
+    queryResults = QueryEditorTree(queryModel, query);
+    Check(queryResults.size() == 1 && queryResults.front()->Label() == "custom",
+        "unknown kind filter");
+
+    query = {};
+    queryResults = QueryEditorTree(queryModel, query);
+    Check(queryResults.size() == 13 &&
+        queryResults[0]->Label() == "Scene (demo data)" &&
+        queryResults[1]->Label() == "Objects" &&
+        queryResults[2]->Label() == "actor",
+        "empty query returns all nodes in stable pre-order");
+    query.text = "does-not-exist";
+    Check(QueryEditorTree(queryModel, query).empty(), "query no-result behavior");
+    Check(queryModel.FindByPath("Scene (demo data)/Objects/actor") != nullptr,
+        "query does not mutate model");
 
     std::string importedSnapshot;
     EditorTreeModel importedRoundTrip;

@@ -137,6 +137,14 @@ whose meaning belongs to each caller. The neutral model therefore adds only
 icons, colors, object pointers, and caller-specific edit modes remain unmapped.
 See [wx Editor Item Types](wx-editor-item-types.md).
 
+The first search audit found exact vector-key lookup, exact direct-child lookup,
+component-wise path navigation, folder/object restrictions, a selected-key
+prefix check, and folder-first ElPack sorting. `EditorTreeQuery` extracts only a
+read-only traversal/query seam; widget sorting, selection callbacks, expansion,
+and drawing remain outside it. Its default case-insensitive substring search is
+a documented neutral convenience rather than a historical compatibility claim.
+See [wx Editor Tree Query](wx-editor-query.md).
+
 This marks the wx model/presenter foundation checkpoint. Future work can map
 `ItemListTypes` concepts onto neutral categories or add a read-only metadata
 adapter, but should not modify `xrEProps` merely to feed the prototype. A small

@@ -1,6 +1,7 @@
 #include "editor_app/EditorTreePresenter.h"
 
 #include "editor_model/EditorTreePathListImport.h"
+#include "editor_model/EditorTreeQuery.h"
 #include "editor_model/EditorTreeSnapshot.h"
 #include "editor_ui/IDialogService.h"
 #include "editor_ui/IEditorTree.h"
@@ -192,4 +193,23 @@ bool EditorTreePresenter::ImportPathList(
         output_("Imported development path list: " + sourceName);
     SetStatus("Imported development path list.");
     return true;
+}
+
+std::size_t EditorTreePresenter::FindFirst(std::string text)
+{
+    EditorTreeQueryOptions options;
+    options.text = std::move(text);
+    const EditorTreeQueryResult matches = QueryEditorTree(model_, options);
+    if (matches.empty())
+    {
+        SetStatus("No matching tree items found.");
+        return 0;
+    }
+
+    tree_.SelectByUserData(
+        reinterpret_cast<IEditorTree::UserData>(matches.front()));
+    RefreshSelection();
+    SetStatus("Found " + std::to_string(matches.size()) +
+        " matching item(s); selected '" + matches.front()->Label() + "'.");
+    return matches.size();
 }

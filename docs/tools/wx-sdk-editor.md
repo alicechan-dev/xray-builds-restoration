@@ -103,6 +103,14 @@ Selected. Creation uses model-generated case-insensitive unique sibling names
 owned node storage. After either operation, the wx tree is rebuilt entirely
 from `EditorTreeModel` and selects the new node or surviving parent.
 
+**Tools → Find Item...** is a minimal query prototype. MainFrame collects text,
+the presenter invokes the wx-free `EditorTreeQuery`, and the first
+case-insensitive label-substring match is selected without filtering or
+rebuilding the tree. Properties refresh from the matched model node and status
+reports the result count; no match leaves selection unchanged. Path, exact,
+case-sensitive, and kind-filter options exist at model level but are not yet a
+large UI. See [wx Editor Tree Query](wx-editor-query.md).
+
 The File menu provides Save Demo Snapshot and Load Demo Snapshot. These
 commands use a dependency-free, development-only `.wx_tree_snapshot` format;
 they do not read or write X-Ray level data. Loading parses into a temporary
@@ -255,3 +263,9 @@ loading remains future work.
 Item-kind checks cover conversion/parsing, group/leaf classification, demo
 assignments, v2 snapshot round trips, v1 compatibility, known path-list
 category mapping, custom-category fallback, and presenter property text.
+
+Query checks cover default case-insensitive label substrings, exact labels,
+model paths, case-sensitive comparison, all four kind filters, empty and
+no-result behavior, stable pre-order, and model immutability. Presenter checks
+cover first-result selection, property refresh, match-count status, and safe
+no-result behavior.
