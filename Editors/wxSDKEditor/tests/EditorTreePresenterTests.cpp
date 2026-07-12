@@ -1,0 +1,279 @@
+#include "editor_app/EditorTreePresenter.h"
+#include "editor_ui/IDialogService.h"
+#include "editor_ui/IEditorTree.h"
+#include "editor_ui/IPropertyPanel.h"
+
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <vector>
+
+namespace
+{
+class FakeEditorTree final : public IEditorTree
+{
+public:
+    struct Item
+    {
+        ItemHandle handle = InvalidItem;
+        ItemHandle parent = InvalidItem;
+        std::string label;
+        UserData userData = 0;
+    };
+
+    void Clear() override
+    {
+        ++clearCount;
+        items.clear();
+        selected = InvalidItem;
+    }
+
+    ItemHandle AddRoot(const char* label) override
+    {
+        return AddItem(InvalidItem, label);
+    }
+
+    ItemHandle AddChild(ItemHandle parent, const char* label) override
+    {
+        return AddItem(parent, label);
+    }
+
+    std::string GetSelectedLabel() const override
+    {
+        const Item* item = Find(selected);
+        return item ? item->label : std::string();
+    }
+
+    void SetItemUserData(ItemHandle handle, UserData userData) override
+    {
+        if (Item* item = Find(handle))
+            item->userData = userData;
+    }
+
+    UserData GetSelectedUserData() const override
+    {
+        const Item* item = Find(selected);
+        return item ? item->userData : 0;
+    }
+
+    void ExpandAllItems() override { ++expandCount; }
+    void SelectFirst() override
+    {
+        selected = items.empty() ? InvalidItem : items.front().handle;
+    }
+    void BeginEditSelectedLabel() override {}
+    void SelectByUserData(UserData userData) override
+    {
+        const auto found = std::find_if(items.begin(), items.end(),
+            [userData](const Item& item) { return item.userData == userData; });
+        selected = found == items.end() ? InvalidItem : found->handle;
+    }
+
+    bool SelectByLabel(const std::string& label)
+    {
+        const auto found = std::find_if(items.begin(), items.end(),
+            [&label](const Item& item) { return item.label == label; });
+        selected = found == items.end() ? InvalidItem : found->handle;
+        return found != items.end();
+    }
+
+    bool Contains(const std::string& label) const
+    {
+        return std::any_of(items.begin(), items.end(),
+            [&label](const Item& item) { return item.label == label; });
+    }
+
+    std::size_t Count(const std::string& label) const
+    {
+        return static_cast<std::size_t>(std::count_if(items.begin(), items.end(),
+            [&label](const Item& item) { return item.label == label; }));
+    }
+
+    std::vector<Item> items;
+    int clearCount = 0;
+    int expandCount = 0;
+
+private:
+    ItemHandle AddItem(ItemHandle parent, const char* label)
+    {
+        const ItemHandle handle = nextHandle++;
+        items.push_back({handle, parent, label, 0});
+        return handle;
+    }
+
+    Item* Find(ItemHandle handle)
+    {
+        const auto found = std::find_if(items.begin(), items.end(),
+            [handle](const Item& item) { return item.handle == handle; });
+        return found == items.end() ? nullptr : &*found;
+    }
+
+    const Item* Find(ItemHandle handle) const
+    {
+        const auto found = std::find_if(items.begin(), items.end(),
+            [handle](const Item& item) { return item.handle == handle; });
+        return found == items.end() ? nullptr : &*found;
+    }
+
+    ItemHandle nextHandle = 1;
+    ItemHandle selected = InvalidItem;
+};
+
+class FakePropertyPanel final : public IPropertyPanel
+{
+public:
+    void Clear() override
+    {
+        ++clearCount;
+        text.clear();
+    }
+    void ShowPlaceholder(const char* value) override
+    {
+        text = value ? value : "";
+    }
+
+    std::string text;
+    int clearCount = 0;
+};
+
+class FakeDialogService final : public IDialogService
+{
+public:
+    void Info(const char* title, const char* message) override
+    {
+        lastInfo = Join(title, message);
+    }
+    void Warning(const char* title, const char* message) override
+    {
+        lastWarning = Join(title, message);
+    }
+    void Error(const char* title, const char* message) override
+    {
+        lastError = Join(title, message);
+    }
+    bool Confirm(const char* title, const char* message) override
+    {
+        ++confirmCount;
+        lastConfirm = Join(title, message);
+        return confirmResult;
+    }
+
+    bool confirmResult = true;
+    int confirmCount = 0;
+    std::string lastInfo;
+    std::string lastWarning;
+    std::string lastError;
+    std::string lastConfirm;
+
+private:
+    static std::string Join(const char* title, const char* message)
+    {
+        return std::string(title ? title : "") + ": " +
+            (message ? message : "");
+    }
+};
+
+bool ContainsText(const std::string& text, const std::string& value)
+{
+    return text.find(value) != std::string::npos;
+}
+}
+
+int RunEditorTreePresenterTests()
+{
+    int failures = 0;
+    const auto check = [&failures](bool condition, const char* message) {
+        if (condition)
+            return;
+        ++failures;
+        std::cerr << "FAIL: presenter " << message << '\n';
+    };
+
+    FakeEditorTree tree;
+    FakePropertyPanel properties;
+    FakeDialogService dialogs;
+    std::string status;
+    std::string output;
+    EditorTreePresenter presenter(tree, properties, dialogs,
+        [&status](const std::string& message) { status = message; },
+        [&output](const std::string& message) { output = message; });
+
+    presenter.InitializeDemo();
+    check(tree.Contains("Scene (demo data)"), "initial demo root populated");
+    check(tree.Contains("actor"), "initial demo descendants populated");
+    check(tree.expandCount == 1, "initial tree expanded");
+    check(tree.GetSelectedLabel() == "Scene (demo data)", "initial root selected");
+    check(ContainsText(properties.text, "Path: Scene (demo data)"),
+        "initial selection refreshes properties");
+
+    check(tree.SelectByLabel("Objects"), "objects group selectable");
+    presenter.RefreshSelection();
+    check(ContainsText(properties.text, "Type: demo group"),
+        "selection category shown in properties");
+
+    presenter.AddDemoNode("new_object", "demo scene object");
+    check(tree.GetSelectedLabel() == "new_object", "added object selected");
+    check(ContainsText(properties.text, "Path: Scene (demo data)/Objects/new_object"),
+        "added object properties refreshed");
+    check(ContainsText(status, "Added 'new_object'"), "add object status reported");
+    check(tree.SelectByLabel("Objects"), "objects group reselectable");
+    presenter.AddDemoNode("new_object", "demo scene object");
+    check(tree.GetSelectedLabel() == "new_object_1", "unique object name generated");
+
+    check(tree.SelectByLabel("Objects"), "objects group selected for group add");
+    presenter.AddDemoNode("new_group", "demo group");
+    check(tree.GetSelectedLabel() == "new_group", "added group selected");
+    check(ContainsText(properties.text, "Type: demo group"),
+        "added group properties refreshed");
+
+    check(tree.SelectByLabel("new_object"), "first new object selectable");
+    auto* renamed = reinterpret_cast<EditorTreeNode*>(tree.GetSelectedUserData());
+    std::string reason;
+    check(renamed && presenter.RenameNode(*renamed, "renamed_object", &reason),
+        "unique rename accepted");
+    check(ContainsText(properties.text, "renamed_object"),
+        "accepted rename refreshes properties");
+    check(!presenter.RenameNode(*renamed, "new_object_1", &reason),
+        "duplicate sibling rename rejected");
+    check(ContainsText(status, "Rename rejected"), "rename rejection status reported");
+    check(!presenter.RenameNode(*renamed, "", &reason), "empty rename rejected");
+
+    check(tree.SelectByLabel("physic_object"), "delete candidate selectable");
+    dialogs.confirmResult = false;
+    presenter.DeleteSelected();
+    check(dialogs.confirmCount == 1, "delete requests confirmation");
+    check(tree.Contains("physic_object"), "cancelled delete preserves node");
+    dialogs.confirmResult = true;
+    presenter.DeleteSelected();
+    check(dialogs.confirmCount == 2, "confirmed delete requests confirmation");
+    check(!tree.Contains("physic_object"), "confirmed delete removes node");
+    check(tree.GetSelectedLabel() == "Objects", "delete selects surviving parent");
+
+    tree.SelectFirst();
+    const int confirmationsBeforeRootDelete = dialogs.confirmCount;
+    presenter.DeleteSelected();
+    check(dialogs.confirmCount == confirmationsBeforeRootDelete,
+        "root delete rejected before confirmation");
+    check(ContainsText(dialogs.lastWarning, "root node cannot be deleted"),
+        "root delete warning reported");
+
+    check(presenter.ImportPathList(
+        "/Imported/Objects/item | imported object\n", "memory.wx_tree_paths"),
+        "valid path list imported");
+    check(tree.Contains("Imported") && tree.Contains("item"),
+        "successful import rebuilds tree");
+    check(tree.GetSelectedLabel() == "Imported", "successful import selects root");
+    check(ContainsText(output, "memory.wx_tree_paths"), "import output reported");
+
+    const int clearsBeforeFailedImport = tree.clearCount;
+    check(!presenter.ImportPathList("relative/path\n", "bad.wx_tree_paths"),
+        "invalid path list rejected");
+    check(tree.clearCount == clearsBeforeFailedImport,
+        "failed import does not rebuild tree");
+    check(tree.Contains("Imported") && tree.Contains("item"),
+        "failed import preserves existing model view");
+    check(ContainsText(dialogs.lastError, "path must begin with"),
+        "failed import reports reason through dialogs");
+
+    return failures;
+}

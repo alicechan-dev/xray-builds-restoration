@@ -26,6 +26,8 @@ bool RejectsSnapshot(EditorTreeModel& model, const std::string& snapshot)
 const char* Header = "# wxSDKEditor tree snapshot v1\n";
 }
 
+int RunEditorTreePresenterTests();
+
 int main()
 {
     EditorTreeModel model = EditorTreeModel::CreateDemoScene();
@@ -153,12 +155,14 @@ int main()
         "/Scene//actor\n", &reason),
         "empty path component rejected");
 
+    failures += RunEditorTreePresenterTests();
+
     if (failures)
     {
         std::cerr << failures << " editor model test(s) failed.\n";
         return 1;
     }
 
-    std::cout << "PASS: wxSDKEditor model and snapshot tests\n";
+    std::cout << "PASS: wxSDKEditor model, snapshot, and presenter tests\n";
     return 0;
 }

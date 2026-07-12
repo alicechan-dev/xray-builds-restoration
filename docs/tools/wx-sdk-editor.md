@@ -33,8 +33,9 @@ cmake --build build-wx-model-tests-check --config Release \
 ./build-wx-model-tests-check/bin/wxSDKEditorModelTests.exe
 ```
 
-`wxSDKEditorModelTests` compiles only `EditorTreeModel`, the path-list importer,
-and `EditorTreeSnapshot`; it does not discover, include, or link wxWidgets. Both
+`wxSDKEditorModelTests` compiles `EditorTreeModel`, the path-list importer,
+`EditorTreeSnapshot`, and the wx-free `EditorTreePresenter`; it does not
+discover, include, or link wxWidgets. Both
 wx options default to OFF, so normal configuration remains unchanged.
 
 ## Current Shell
@@ -213,3 +214,12 @@ round trip. Snapshot checks cover in-memory round trips, escaped
 fields, malformed headers and records, invalid depth, empty labels, duplicate
 siblings, path mismatch, and atomic preservation after failed loads. Tests use
 no real assets, runtime data, or generated snapshot files.
+
+Presenter checks use deterministic test-only `FakeEditorTree`,
+`FakePropertyPanel`, and `FakeDialogService` implementations. They cover demo
+projection and selection properties, unique create behavior, accepted and
+rejected rename, delete confirmation and cancellation, root-delete rejection,
+successful path-list replacement, and preservation of the old model after a
+failed import. These tests launch no wxWidgets code and add no production test
+hooks. The preserved `xrEProps` code remains untouched, and real SDK data
+loading remains future work.

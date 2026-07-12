@@ -123,6 +123,13 @@ mutation policy from `MainFrame` without importing historical `TElTree` or
 behavior one model-centered integration point while preserving wx as a view
 adapter only.
 
+That coordination seam is covered headlessly with fake tree, property-panel,
+and dialog adapters. Tests exercise model/view/property/dialog coordination,
+including delete confirmation and cancellation, root rejection, rebuild and
+selection behavior, and atomic failed path-list import. This makes future
+`ItemListHelper`/`FolderLib` behavior testable without wxWidgets and before any
+ElPack-dependent implementation or preserved `xrEProps` source is touched.
+
 `FolderLib` is the second seam, after the model exists. Its pure path and
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx
