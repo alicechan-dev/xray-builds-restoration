@@ -227,6 +227,17 @@ int RunEditorTreePresenterTests()
 
     presenter.InitializeDemo();
     check(!document.IsModified(), "initial document state is clean");
+    check(presenter.SelectLogicalPath("Scene (demo data)/Objects/actor") &&
+        tree.GetSelectedLabel() == "actor" &&
+        ContainsText(properties.text, "Objects/actor") &&
+        !document.IsModified() && !presenter.CanUndo(),
+        "preview path selection updates tree and properties without mutation");
+    check(!presenter.SelectLogicalPath("") &&
+        tree.GetSelectedUserData() == 0 && properties.text.empty() &&
+        !document.IsModified() && !presenter.CanUndo(),
+        "empty preview click clears selection without history or dirtiness");
+    tree.SelectFirst();
+    presenter.RefreshSelection();
     check(tree.Contains("Scene (demo data)"), "initial demo root populated");
     check(tree.Contains("actor"), "initial demo descendants populated");
     check(tree.expandCount == 1, "initial tree expanded");

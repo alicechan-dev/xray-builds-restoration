@@ -218,3 +218,6 @@ No historical renderer or editor viewport code is compiled or called. See
 The synthetic preview adapter consumes only the neutral tree model and logical
 selection paths. It does not port historical viewport widgets, object classes,
 or rendering behavior. See [wxSDKEditor Preview Scene](wx-editor-preview-scene.md).
+
+Picking likewise uses neutral logical paths and screen-space preview shapes; it
+does not emulate ElPack widget hit testing or historical scene ray casting.

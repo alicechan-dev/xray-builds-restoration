@@ -350,3 +350,8 @@ surface paints them over the existing grid. Labels can be toggled and Frame
 Selected centers the placeholder camera. Preview data is derived only and does
 not alter snapshots or document dirtiness. See [wxSDKEditor Preview
 Scene](wx-editor-preview-scene.md).
+
+The synthetic surface now supports wx-free click picking with shared projection
+rules. Hits select the corresponding tree path and refresh properties/highlight;
+empty space clears selection. Reverse draw order resolves overlaps. See
+[wxSDKEditor Preview Picking](wx-editor-picking.md).

@@ -281,3 +281,8 @@ placeholder positions, and synchronizes selection by logical path. A wx-free
 draw list feeds the wx painter; labels and frame-selected are available without
 changing snapshots or linking renderer targets. See [wxSDKEditor Preview
 Scene](wx-editor-preview-scene.md).
+
+Synthetic preview picking now shares renderer projection and selects current
+tree paths through the presenter. Box/circle/tolerant-marker hits use reverse
+draw order; empty space clears selection without dirtiness/history changes.
+Headless tests remain wx-free. See [wxSDKEditor Preview Picking](wx-editor-picking.md).

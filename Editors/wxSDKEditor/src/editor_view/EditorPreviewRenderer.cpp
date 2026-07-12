@@ -26,22 +26,22 @@ void EditorPreviewRenderer::Resize(int width, int height)
 void EditorPreviewRenderer::Render(const EditorViewportState& state)
 {
     drawList_.Clear();
+    pickShapes_.clear();
     if (!scene_ || width_ <= 0 || height_ <= 0)
         return;
 
-    constexpr float scale = 40.0f;
+    projection_ = MakeEditorPreviewProjectionContext(state, width_, height_);
+    pickShapes_ = BuildEditorPreviewPickShapes(*scene_, projection_);
     for (const EditorPreviewObject& object : scene_->GetObjects())
     {
         if (!object.visible)
             continue;
-        const float x = static_cast<float>(width_) * 0.5f +
-            (object.x - state.camera.x) * scale;
-        const float y = static_cast<float>(height_) * 0.5f +
-            (object.z - state.camera.z) * scale;
-        if (x < -40.0f || y < -40.0f ||
-            x > static_cast<float>(width_ + 40) ||
-            y > static_cast<float>(height_ + 40))
+        const EditorPreviewProjectedPoint point =
+            ProjectEditorPreviewObject(object, projection_);
+        if (!point.visible)
             continue;
+        const float x = point.x;
+        const float y = point.y;
 
         const EditorViewportStyle style = StyleFor(object.kind);
         if (object.kind == EditorPreviewKind::Box)
@@ -67,4 +67,9 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
                 EditorViewportStyle::Label, x + 18.0f, y - 8.0f,
                 0.0f, 0.0f, 0.0f, object.label});
     }
+}
+
+EditorPreviewPickResult EditorPreviewRenderer::Pick(float x, float y) const
+{
+    return PickEditorPreview(pickShapes_, x, y);
 }

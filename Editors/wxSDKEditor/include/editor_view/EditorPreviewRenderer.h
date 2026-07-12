@@ -3,6 +3,7 @@
 
 #include "editor_view/EditorViewportDrawList.h"
 #include "editor_view/IEditorViewportRenderer.h"
+#include "editor_view/EditorPreviewPicking.h"
 
 class EditorPreviewScene;
 
@@ -13,6 +14,7 @@ public:
     void SetLabelsVisible(bool visible) { labelsVisible_ = visible; }
     bool LabelsVisible() const { return labelsVisible_; }
     const EditorViewportDrawList& DrawList() const { return drawList_; }
+    EditorPreviewPickResult Pick(float x, float y) const;
 
     void Resize(int width, int height) override;
     void Render(const EditorViewportState& state) override;
@@ -23,6 +25,8 @@ private:
     bool labelsVisible_ = true;
     int width_ = 0;
     int height_ = 0;
+    EditorPreviewProjectionContext projection_;
+    std::vector<EditorPreviewPickShape> pickShapes_;
 };
 
 #endif

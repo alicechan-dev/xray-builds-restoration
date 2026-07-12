@@ -110,6 +110,29 @@ void EditorTreePresenter::RefreshPreview() const
     previewChanged_(model_, paths.empty() ? std::string() : paths.front());
 }
 
+bool EditorTreePresenter::SelectLogicalPath(const std::string& logicalPath)
+{
+    if (logicalPath.empty())
+    {
+        ClearSelection();
+        SetStatus("No preview object under cursor.");
+        return false;
+    }
+    EditorTreeNode* node = model_.FindByPath(logicalPath);
+    if (!node)
+    {
+        ClearSelection();
+        SetStatus("Preview selection path is no longer available.");
+        return false;
+    }
+    tree_.SelectByUserData(reinterpret_cast<IEditorTree::UserData>(node));
+    RefreshSelection();
+    SetStatus("Selected preview object: " + logicalPath);
+    if (output_)
+        output_("Selected preview object: " + logicalPath);
+    return true;
+}
+
 void EditorTreePresenter::SetStatus(const std::string& message) const
 {
     if (status_)
@@ -463,6 +486,7 @@ void EditorTreePresenter::ClearSelection()
     tree_.ClearSelection();
     selection_.Clear();
     properties_.Clear();
+    RefreshPreview();
     SetStatus("Selection cleared.");
 }
 

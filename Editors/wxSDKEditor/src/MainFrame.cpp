@@ -202,6 +202,9 @@ void wxSDKEditorFrame::CreateWorkspace()
     treePanel->SetSizer(treeSizer);
 
     viewport_ = new wxEditorViewport(this);
+    viewport_->SetSelectionHandler([this](const std::string& logicalPath) {
+        treePresenter_->SelectLogicalPath(logicalPath);
+    });
     propertyPanel_ = new wxPropertyPanel(this);
     propertyPanel_->ShowPlaceholder("Properties placeholder");
 

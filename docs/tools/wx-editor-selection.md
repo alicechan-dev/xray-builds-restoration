@@ -66,3 +66,8 @@ data loading.
 Selection drives the editable [wx Editor Properties](wx-editor-properties.md)
 set. Clearing selection clears the property panel; property edits never store
 node pointers in the selection model.
+
+Synthetic viewport clicks now feed canonical paths into the presenter. Hits
+select/reveal the matching tree item and refresh properties; empty space clears
+selection. These operations neither dirty the document nor create commands.
+See [wxSDKEditor Preview Picking](wx-editor-picking.md).

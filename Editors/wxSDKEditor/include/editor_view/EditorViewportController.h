@@ -3,6 +3,9 @@
 
 #include "editor_view/EditorViewportState.h"
 
+#include <functional>
+#include <string>
+#include <utility>
 class IEditorViewportRenderer;
 
 enum class EditorViewportMouseButton
@@ -41,6 +44,9 @@ public:
     void ToggleGrid();
     void ResetCamera();
     void FrameCameraOn(float x, float y, float z);
+    void SetPickHandler(std::function<std::string(int, int)> handler)
+    { pickHandler_ = std::move(handler); }
+    std::string OnPrimaryClick(int x, int y) const;
 
     const EditorViewportState& State() const { return state_; }
 
@@ -57,6 +63,7 @@ private:
     bool up_ = false;
     bool down_ = false;
     bool haveMousePosition_ = false;
+    std::function<std::string(int, int)> pickHandler_;
 };
 
 #endif

@@ -1,5 +1,6 @@
 #include "editor_model/EditorTreeModel.h"
 #include "editor_view/EditorPreviewRenderer.h"
+#include "editor_view/EditorPreviewPicking.h"
 #include "editor_view/EditorPreviewScene.h"
 #include "editor_view/EditorTreePreviewAdapter.h"
 #include "editor_view/EditorViewportState.h"
@@ -119,5 +120,66 @@ int RunEditorPreviewSceneTests()
     renderer.Render(viewport);
     check(renderer.DrawList().Primitives().empty(),
         "zero viewport dimensions are safe");
+
+    const EditorPreviewProjectionContext context =
+        MakeEditorPreviewProjectionContext(viewport, 640, 480);
+    const EditorPreviewProjectedPoint projected =
+        ProjectEditorPreviewObject(*adapted.FindByLogicalPath(light.Path()), context);
+    const EditorPreviewObject* projectedLight =
+        adapted.FindByLogicalPath(light.Path());
+    check(projected.visible &&
+        projected.x == 320.0f + projectedLight->x * 40.0f &&
+        projected.y == 240.0f + (projectedLight->z + 5.0f) * 40.0f,
+        "world-to-screen projection is deterministic");
+    EditorViewportState movedCamera = viewport;
+    movedCamera.camera.x = 1.0f;
+    const EditorPreviewProjectedPoint cameraProjected =
+        ProjectEditorPreviewObject(*adapted.FindByLogicalPath(light.Path()),
+            MakeEditorPreviewProjectionContext(movedCamera, 800, 480));
+    check(cameraProjected.x != projected.x,
+        "resize and camera offset affect projection");
+    check(!ProjectEditorPreviewObject(*adapted.FindByLogicalPath(light.Path()),
+        MakeEditorPreviewProjectionContext(viewport, 0, 0)).visible,
+        "zero-size projection is safe");
+
+    std::vector<EditorPreviewPickShape> shapes =
+        BuildEditorPreviewPickShapes(adapted, context);
+    EditorPreviewPickResult pick = PickEditorPreview(shapes,
+        projected.x, projected.y);
+    check(pick.hit && pick.logicalPath == light.Path() &&
+        pick.kind == EditorPreviewKind::Light,
+        "light-circle hit returns logical identity");
+    check(!PickEditorPreview(shapes, 5.0f, 5.0f).hit,
+        "empty-space miss is safe");
+    EditorPreviewPickShape markerShape;
+    markerShape.logicalPath = "marker";
+    markerShape.kind = EditorPreviewKind::Marker;
+    markerShape.centerX = 100.0f;
+    markerShape.centerY = 100.0f;
+    markerShape.halfWidth = markerShape.halfHeight = 2.0f;
+    check(PickEditorPreview({markerShape}, 105.0f, 100.0f).hit,
+        "marker pick tolerance is applied");
+    EditorPreviewPickShape boxShape = markerShape;
+    boxShape.logicalPath = "box";
+    boxShape.kind = EditorPreviewKind::Box;
+    boxShape.halfWidth = 14.0f;
+    boxShape.halfHeight = 10.0f;
+    check(PickEditorPreview({boxShape}, 113.0f, 109.0f).hit &&
+        !PickEditorPreview({boxShape}, 115.0f, 100.0f).hit,
+        "box rectangle hit and miss use exact bounds");
+    EditorPreviewPickShape spawnShape = markerShape;
+    spawnShape.logicalPath = "spawn";
+    spawnShape.kind = EditorPreviewKind::Spawn;
+    check(PickEditorPreview({spawnShape}, 103.0f, 103.0f).logicalPath == "spawn",
+        "spawn marker uses tolerant rectangle picking");
+    EditorPreviewPickShape first = markerShape;
+    first.logicalPath = "first";
+    EditorPreviewPickShape last = markerShape;
+    last.logicalPath = "last";
+    check(PickEditorPreview({first, last}, 100.0f, 100.0f).logicalPath == "last",
+        "overlap resolves to last drawn object");
+    markerShape.selectable = false;
+    check(!PickEditorPreview({markerShape}, 100.0f, 100.0f).hit,
+        "non-selectable shape is ignored");
     return failures;
 }

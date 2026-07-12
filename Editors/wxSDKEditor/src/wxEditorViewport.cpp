@@ -37,6 +37,10 @@ wxEditorViewport::wxEditorViewport(wxWindow* parent) :
     controller_(&renderer_), timer_(this)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
+    controller_.SetPickHandler([this](int x, int y) {
+        return renderer_.Pick(static_cast<float>(x), static_cast<float>(y))
+            .logicalPath;
+    });
     Bind(wxEVT_PAINT, &wxEditorViewport::OnPaint, this);
     Bind(wxEVT_SIZE, &wxEditorViewport::OnSize, this);
     Bind(wxEVT_SET_FOCUS, &wxEditorViewport::OnFocus, this);
@@ -84,6 +88,7 @@ void wxEditorViewport::RebuildPreview(
 {
     previewScene_ = BuildEditorPreviewScene(model, selectedPath);
     renderer_.SetScene(&previewScene_);
+    controller_.Render();
     Refresh(false);
 }
 
@@ -222,6 +227,8 @@ void wxEditorViewport::OnMouseButton(wxMouseEvent& event)
     SetFocus();
     const bool pressed = event.ButtonDown();
     controller_.OnMouseButton(MapButton(event.GetButton()), pressed);
+    if (pressed && event.GetButton() == wxMOUSE_BTN_LEFT && selectionHandler_)
+        selectionHandler_(controller_.OnPrimaryClick(event.GetX(), event.GetY()));
     if (pressed && !HasCapture())
         CaptureMouse();
     else if (!event.LeftIsDown() && !event.RightIsDown() &&

@@ -6,6 +6,8 @@
 #include "editor_view/EditorPreviewScene.h"
 
 #include <memory>
+#include <functional>
+#include <string>
 #include <wx/panel.h>
 #include <wx/timer.h>
 
@@ -25,6 +27,8 @@ public:
     void TogglePreviewLabels();
     bool ArePreviewLabelsVisible() const;
     bool FrameSelected();
+    void SetSelectionHandler(std::function<void(const std::string&)> handler)
+    { selectionHandler_ = std::move(handler); }
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -43,6 +47,7 @@ private:
     EditorPreviewRenderer renderer_;
     EditorViewportController controller_;
     wxTimer timer_;
+    std::function<void(const std::string&)> selectionHandler_;
 };
 
 #endif

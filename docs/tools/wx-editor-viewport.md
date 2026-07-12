@@ -49,3 +49,7 @@ The first concrete consumer is now the wx-free `EditorPreviewRenderer`. It
 converts a derived synthetic preview scene into semantic screen-space draw-list
 primitives; `wxEditorViewport` alone maps those primitives to wx colors. See
 [wxSDKEditor Preview Scene](wx-editor-preview-scene.md).
+
+Left-button presses now use shared wx-free projection/pick shapes to select a
+preview path. Right-button camera rotation remains separate. See [wxSDKEditor
+Preview Picking](wx-editor-picking.md).

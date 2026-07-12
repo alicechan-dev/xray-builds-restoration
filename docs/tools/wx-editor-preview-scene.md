@@ -51,3 +51,7 @@ wxWidgets-free.
 Future work may implement another `IEditorViewportRenderer` adapter, but real
 assets, picking, gizmos, DirectX/OpenGL/Vulkan, LevelEditor, `xrEProps`, and
 runtime renderer targets remain explicitly outside this pass.
+
+The same projection now produces wx-free pick shapes. Left-click selection uses
+canonical paths and reverse draw order, while empty space clears selection. See
+[wxSDKEditor Preview Picking](wx-editor-picking.md).

@@ -121,6 +121,14 @@ void EditorViewportController::FrameCameraOn(float x, float, float z)
     state_.camera.z = z;
 }
 
+std::string EditorViewportController::OnPrimaryClick(int x, int y) const
+{
+    if (!pickHandler_ || state_.width <= 0 || state_.height <= 0 ||
+        state_.rightButton)
+        return {};
+    return pickHandler_(x, y);
+}
+
 void EditorViewportController::SetKey(EditorViewportKey key, bool pressed)
 {
     switch (key)

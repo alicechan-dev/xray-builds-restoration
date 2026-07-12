@@ -114,5 +114,19 @@ int RunEditorViewportControllerTests()
     check(renderer.renderCount == 1 &&
         renderer.lastFrame == controller.State().frameCount,
         "render boundary receives current state");
+    controller.SetPickHandler([](int x, int y) {
+        return x == 25 && y == 30 ? std::string("Root/object") : std::string();
+    });
+    controller.OnResize(640, 480);
+    check(controller.OnPrimaryClick(25, 30) == "Root/object" &&
+        controller.OnPrimaryClick(1, 1).empty(),
+        "primary click reports hit and empty result");
+    controller.OnMouseButton(EditorViewportMouseButton::Right, true);
+    check(controller.OnPrimaryClick(25, 30).empty(),
+        "right-button camera state suppresses picking");
+    controller.OnMouseButton(EditorViewportMouseButton::Right, false);
+    controller.OnResize(0, 0);
+    check(controller.OnPrimaryClick(25, 30).empty(),
+        "invalid dimensions suppress picking");
     return failures;
 }

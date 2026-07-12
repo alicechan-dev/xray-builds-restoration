@@ -563,3 +563,11 @@ concrete wx painter. Selection highlighting, label toggling, and placeholder
 frame-selected behavior validate synchronization without changing snapshots or
 linking historical renderer targets. See [wxSDKEditor Preview
 Scene](wx-editor-preview-scene.md).
+
+## wxSDKEditor Preview Picking Checkpoint
+
+Shared wx-free projection now generates both preview drawing and deterministic
+pick shapes. Left clicks resolve the last-drawn hit to a canonical model path,
+then reuse presenter tree/property selection; empty space clears selection.
+This adds no document mutation, command, ray casting, depth, or renderer SDK
+dependency. See [wxSDKEditor Preview Picking](wx-editor-picking.md).

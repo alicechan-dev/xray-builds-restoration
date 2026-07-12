@@ -45,6 +45,7 @@ public:
     void ClearSelection();
     void ReportSelection();
     void RefreshPreview() const;
+    bool SelectLogicalPath(const std::string& logicalPath);
     bool Undo();
     bool Redo();
     bool CanUndo() const { return history_.CanUndo(); }

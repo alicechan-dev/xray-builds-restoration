@@ -52,3 +52,6 @@ Viewport Host](wx-editor-viewport.md).
 Preview objects and their synthetic positions are derived from the current
 tree and selection. They are not document state, never mark the document dirty,
 and do not change snapshot v2. See [wxSDKEditor Preview Scene](wx-editor-preview-scene.md).
+
+Preview picking changes only logical selection. Hits and empty-space clears do
+not affect the saved snapshot baseline or command history.
