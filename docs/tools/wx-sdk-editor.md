@@ -321,3 +321,13 @@ Only the opt-in GUI target adds the wxWidgets `aui` component. Tests-only mode
 still returns before wxWidgets discovery and remains wx-free. This modern shell
 layout is not a port of VCL form persistence. See [wxSDKEditor Dockable
 Layout](wx-editor-layout.md).
+
+## Development Document
+
+`MainFrame` now owns one wx-free `EditorDocument`; the presenter references its
+model, selection, and command history. File actions provide New/Open/Save/Save
+As for `.wx_tree_snapshot`, three-way Save/Discard/Cancel prompting protects
+New/Open/Import/close, and the title shows filename plus a dirty marker. The
+save point is an exact serialized-model baseline, so undo back to the saved
+state becomes clean. Import creates a modified untitled document. See
+[wxSDKEditor Document Layer](wx-editor-document.md).

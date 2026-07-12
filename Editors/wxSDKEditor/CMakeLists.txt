@@ -1,5 +1,6 @@
 set(XR_WX_SDK_EDITOR_MODEL_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorCommandHistory.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorDocument.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorModelCommand.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorProperty.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorPropertySet.cpp"
@@ -13,6 +14,7 @@ set(XR_WX_SDK_EDITOR_MODEL_SOURCES
 
 set(XR_WX_SDK_EDITOR_MODEL_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorCommandHistory.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorDocument.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorModelCommand.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/IEditorCommand.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorProperty.h"

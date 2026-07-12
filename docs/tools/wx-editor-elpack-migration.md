@@ -205,3 +205,8 @@ persistence: scene tree, properties, and output can dock independently, while
 the viewport remains a non-functional center placeholder. The AUI perspective
 is user UI configuration only. Historical `xrEProps` and LevelEditor layout
 code remains untouched. See [wxSDKEditor Dockable Layout](wx-editor-layout.md).
+
+The document layer is likewise a neutral ownership boundary, not a port of VCL
+document/form behavior. It coordinates only the development snapshot, neutral
+model services, path, and dirty state. Real historical document formats remain
+unmapped. See [wxSDKEditor Document Layer](wx-editor-document.md).

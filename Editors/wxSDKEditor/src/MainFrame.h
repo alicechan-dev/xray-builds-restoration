@@ -2,6 +2,7 @@
 #define XR_WX_SDK_EDITOR_MAIN_FRAME_H
 
 #include "wxDialogService.h"
+#include "editor_app/EditorDocument.h"
 
 #include <memory>
 #include <string>
@@ -14,6 +15,7 @@ class wxKeyEvent;
 class wxPropertyPanel;
 class wxTextCtrl;
 class wxTreeEvent;
+class wxCloseEvent;
 
 class wxSDKEditorFrame final : public wxFrame
 {
@@ -24,12 +26,21 @@ public:
 private:
     void CreateMenus();
     void CreateWorkspace();
+    bool ConfirmSaveChanges();
+    bool SaveDocument();
+    bool SaveDocumentAs();
+    void UpdateDocumentTitle();
     void RestoreLayout();
     void SaveLayout();
     void ResetLayout();
     void TogglePane(const char* paneName);
     void UpdatePaneMenu(wxUpdateUIEvent& event, const char* paneName);
     void OnExit(wxCommandEvent& event);
+    void OnClose(wxCloseEvent& event);
+    void OnNewDocument(wxCommandEvent& event);
+    void OnOpenDocument(wxCommandEvent& event);
+    void OnSaveDocument(wxCommandEvent& event);
+    void OnSaveDocumentAs(wxCommandEvent& event);
     void OnUndo(wxCommandEvent& event);
     void OnRedo(wxCommandEvent& event);
     void OnUpdateUndo(wxUpdateUIEvent& event);
@@ -51,8 +62,6 @@ private:
     void OnFindItem(wxCommandEvent& event);
     void OnClearSelection(wxCommandEvent& event);
     void OnShowSelection(wxCommandEvent& event);
-    void OnLoadSnapshot(wxCommandEvent& event);
-    void OnSaveSnapshot(wxCommandEvent& event);
     void OnTreeEndLabelEdit(wxTreeEvent& event);
     void OnTreeKeyDown(wxKeyEvent& event);
     void OnTreeSelectionChanged(wxTreeEvent& event);
@@ -62,6 +71,7 @@ private:
     wxTextCtrl* output_ = nullptr;
     wxAuiManager auiManager_;
     wxString defaultPerspective_;
+    EditorDocument document_;
     wxDialogService dialogService_;
     std::unique_ptr<EditorTreePresenter> treePresenter_;
 };

@@ -31,6 +31,7 @@ const char* Header = "# wxSDKEditor tree snapshot v1\n";
 }
 
 int RunEditorTreePresenterTests();
+int RunEditorDocumentTests();
 
 int main()
 {
@@ -472,6 +473,7 @@ int main()
         "empty path component rejected");
 
     failures += RunEditorTreePresenterTests();
+    failures += RunEditorDocumentTests();
 
     if (failures)
     {
@@ -479,6 +481,6 @@ int main()
         return 1;
     }
 
-    std::cout << "PASS: wxSDKEditor model, snapshot, and presenter tests\n";
+    std::cout << "PASS: wxSDKEditor model, document, snapshot, and presenter tests\n";
     return 0;
 }

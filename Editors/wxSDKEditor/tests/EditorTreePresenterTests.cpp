@@ -220,11 +220,13 @@ int RunEditorTreePresenterTests()
     FakeDialogService dialogs;
     std::string status;
     std::string output;
-    EditorTreePresenter presenter(tree, properties, dialogs,
+    EditorDocument document;
+    EditorTreePresenter presenter(document, tree, properties, dialogs,
         [&status](const std::string& message) { status = message; },
         [&output](const std::string& message) { output += message + "\n"; });
 
     presenter.InitializeDemo();
+    check(!document.IsModified(), "initial document state is clean");
     check(tree.Contains("Scene (demo data)"), "initial demo root populated");
     check(tree.Contains("actor"), "initial demo descendants populated");
     check(tree.expandCount == 1, "initial tree expanded");
@@ -271,6 +273,7 @@ int RunEditorTreePresenterTests()
     const int clearsBeforeMove = tree.clearCount;
     check(presenter.MoveSelectedTo("Scene (demo data)/Lights"),
         "presenter moves selected object");
+    check(document.IsModified(), "presenter mutation marks document dirty");
     check(tree.clearCount == clearsBeforeMove + 1,
         "successful move rebuilds tree");
     check(tree.GetSelectedLabel() == "actor",
@@ -281,11 +284,13 @@ int RunEditorTreePresenterTests()
     check(ContainsText(status, "Moved 'actor'") &&
         ContainsText(output, "Moved 'actor'"),
         "successful move reports status and output");
-    check(presenter.CanUndo() && presenter.Undo(), "move can be undone");
+    check(presenter.CanUndo() && presenter.Undo() && !document.IsModified(),
+        "move can be undone to clean document baseline");
     check(ContainsText(properties.text, "Objects/actor") &&
         tree.GetSelectedLabel() == "actor",
         "move undo restores hierarchy and logical selection");
-    check(presenter.CanRedo() && presenter.Redo(), "move can be redone");
+    check(presenter.CanRedo() && presenter.Redo() && document.IsModified(),
+        "move can be redone to dirty document state");
     check(ContainsText(properties.text, "Lights/actor"),
         "move redo restores destination and selection");
     const int clearsBeforeRejectedMove = tree.clearCount;
@@ -427,6 +432,8 @@ int RunEditorTreePresenterTests()
     check(tree.Contains("Imported") && tree.Contains("item"),
         "successful import rebuilds tree");
     check(tree.GetSelectedLabel() == "Imported", "successful import selects root");
+    check(document.IsModified() && !document.HasFilePath(),
+        "presenter import creates modified untitled document");
     check(!presenter.CanUndo() && !presenter.CanRedo(),
         "successful import clears command history");
     check(ContainsText(output, "memory.wx_tree_paths"), "import output reported");

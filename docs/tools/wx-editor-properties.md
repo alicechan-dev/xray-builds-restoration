@@ -59,3 +59,7 @@ The concrete property panel is now hosted in the right wxAUI pane and can be
 docked, floated, hidden, and restored without changing `IPropertyPanel` or the
 presenter. Pane state is UI configuration only; property values remain model
 state. See [wxSDKEditor Dockable Layout](wx-editor-layout.md).
+
+Successful label/category applies now change the owning `EditorDocument` model
+and therefore its exact snapshot-based dirty state. Rejected or read-only
+applies leave the saved-state comparison unchanged.

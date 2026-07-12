@@ -1,9 +1,7 @@
 #ifndef XR_WX_SDK_EDITOR_EDITOR_TREE_PRESENTER_H
 #define XR_WX_SDK_EDITOR_EDITOR_TREE_PRESENTER_H
 
-#include "editor_model/EditorTreeModel.h"
-#include "editor_model/EditorSelectionModel.h"
-#include "editor_app/EditorCommandHistory.h"
+#include "editor_app/EditorDocument.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -22,11 +20,13 @@ class EditorTreePresenter
 public:
     using MessageCallback = std::function<void(const std::string&)>;
 
-    EditorTreePresenter(IEditorTree& tree, IPropertyPanel& properties,
+    EditorTreePresenter(EditorDocument& document, IEditorTree& tree,
+        IPropertyPanel& properties,
         IDialogService& dialogs, MessageCallback status,
-        MessageCallback output);
+        MessageCallback output, MessageCallback documentChanged = {});
 
     void InitializeDemo();
+    void NewDocument();
     void RefreshSelection();
     void AddDemoNode(const char* baseName, const char* category);
     void DeleteSelected();
@@ -53,15 +53,18 @@ private:
     void PopulateNode(const EditorTreeNode& node,
         std::uintptr_t parentItem);
     void SetStatus(const std::string& message) const;
+    void NotifyDocumentChanged() const;
 
     IEditorTree& tree_;
     IPropertyPanel& properties_;
     IDialogService& dialogs_;
     MessageCallback status_;
     MessageCallback output_;
-    EditorTreeModel model_;
-    EditorSelectionModel selection_;
-    EditorCommandHistory history_;
+    MessageCallback documentChanged_;
+    EditorDocument& document_;
+    EditorTreeModel& model_;
+    EditorSelectionModel& selection_;
+    EditorCommandHistory& history_;
 };
 
 #endif

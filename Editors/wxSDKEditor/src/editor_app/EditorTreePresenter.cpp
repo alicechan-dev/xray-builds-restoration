@@ -12,11 +12,15 @@
 #include <utility>
 #include <memory>
 
-EditorTreePresenter::EditorTreePresenter(IEditorTree& tree,
-    IPropertyPanel& properties, IDialogService& dialogs,
-    MessageCallback status, MessageCallback output) :
+EditorTreePresenter::EditorTreePresenter(EditorDocument& document,
+    IEditorTree& tree, IPropertyPanel& properties, IDialogService& dialogs,
+    MessageCallback status, MessageCallback output,
+    MessageCallback documentChanged) :
     tree_(tree), properties_(properties), dialogs_(dialogs),
-    status_(std::move(status)), output_(std::move(output))
+    status_(std::move(status)), output_(std::move(output)),
+    documentChanged_(std::move(documentChanged)), document_(document),
+    model_(document.Model()), selection_(document.Selection()),
+    history_(document.History())
 {
     properties_.SetApplyHandler(
         [this](const std::string& key, const std::string& value) {
@@ -26,9 +30,16 @@ EditorTreePresenter::EditorTreePresenter(IEditorTree& tree,
 
 void EditorTreePresenter::InitializeDemo()
 {
-    model_ = EditorTreeModel::CreateDemoScene();
-    history_.Clear();
     Rebuild(nullptr, true);
+    NotifyDocumentChanged();
+}
+
+void EditorTreePresenter::NewDocument()
+{
+    document_.NewDocument();
+    Rebuild(nullptr, true);
+    SetStatus("Created a new development document.");
+    NotifyDocumentChanged();
 }
 
 EditorTreeNode* EditorTreePresenter::SelectedNode() const
@@ -94,6 +105,12 @@ void EditorTreePresenter::SetStatus(const std::string& message) const
         status_(message);
 }
 
+void EditorTreePresenter::NotifyDocumentChanged() const
+{
+    if (documentChanged_)
+        documentChanged_(document_.GetDisplayName());
+}
+
 void EditorTreePresenter::AddDemoNode(const char* baseName, const char* category)
 {
     EditorTreeNode* parent = SelectedNode();
@@ -129,6 +146,7 @@ void EditorTreePresenter::AddDemoNode(const char* baseName, const char* category
     }
     RebuildByPath(history_.GetSelectionPath());
     SetStatus("Added '" + tree_.GetSelectedLabel() + "'.");
+    NotifyDocumentChanged();
 }
 
 void EditorTreePresenter::DeleteSelected()
@@ -179,6 +197,7 @@ void EditorTreePresenter::DeleteSelected()
 
     RebuildByPath(history_.GetSelectionPath(), true);
     SetStatus("Deleted '" + label + "'.");
+    NotifyDocumentChanged();
 }
 
 std::vector<std::string> EditorTreePresenter::GetMoveDestinations() const
@@ -248,6 +267,7 @@ bool EditorTreePresenter::MoveSelectedTo(const std::string& newParentPath)
     if (output_)
         output_("Moved '" + label + "' to '" + newParentPath + "'.");
     SetStatus("Moved '" + label + "' to '" + newParentPath + "'.");
+    NotifyDocumentChanged();
     return true;
 }
 
@@ -293,6 +313,7 @@ bool EditorTreePresenter::ApplySelectedProperty(
     }
     RebuildByPath(history_.GetSelectionPath());
     SetStatus("Updated property '" + key + "'.");
+    NotifyDocumentChanged();
     return true;
 }
 
@@ -324,24 +345,23 @@ bool EditorTreePresenter::RenameNode(
 
     RefreshSelection();
     SetStatus("Renamed '" + previousLabel + "' to '" + node.Label() + "'.");
+    NotifyDocumentChanged();
     return true;
 }
 
 bool EditorTreePresenter::LoadSnapshot(const std::filesystem::path& path)
 {
-    EditorTreeModel loaded;
     std::string reason;
-    if (!LoadEditorTreeSnapshot(loaded, path, &reason))
+    if (!document_.LoadFromSnapshot(path, &reason))
     {
         dialogs_.Error("Snapshot load failed", reason.c_str());
         SetStatus("Snapshot load failed: " + reason);
         return false;
     }
 
-    model_ = std::move(loaded);
-    history_.Clear();
     Rebuild(nullptr, true);
     SetStatus("Loaded demo tree snapshot.");
+    NotifyDocumentChanged();
     return true;
 }
 
@@ -356,6 +376,7 @@ bool EditorTreePresenter::Undo()
     }
     RebuildByPath(history_.GetSelectionPath(), true);
     SetStatus("Undid '" + name + "'.");
+    NotifyDocumentChanged();
     return true;
 }
 
@@ -370,19 +391,21 @@ bool EditorTreePresenter::Redo()
     }
     RebuildByPath(history_.GetSelectionPath(), true);
     SetStatus("Redid '" + name + "'.");
+    NotifyDocumentChanged();
     return true;
 }
 
 bool EditorTreePresenter::SaveSnapshot(const std::filesystem::path& path)
 {
     std::string reason;
-    if (!SaveEditorTreeSnapshot(model_, path, &reason))
+    if (!document_.SaveAs(path, &reason))
     {
         dialogs_.Error("Snapshot save failed", reason.c_str());
         SetStatus("Snapshot save failed: " + reason);
         return false;
     }
     SetStatus("Saved demo tree snapshot.");
+    NotifyDocumentChanged();
     return true;
 }
 
@@ -390,18 +413,18 @@ bool EditorTreePresenter::ImportPathList(
     std::string_view text, const std::string& sourceName)
 {
     std::string reason;
-    if (!ImportEditorTreePathList(model_, text, &reason))
+    if (!document_.ImportPathList(text, &reason))
     {
         dialogs_.Error("Path-list import failed", reason.c_str());
         SetStatus("Path-list import failed: " + reason);
         return false;
     }
 
-    history_.Clear();
     Rebuild(nullptr, true);
     if (output_)
         output_("Imported development path list: " + sourceName);
     SetStatus("Imported development path list.");
+    NotifyDocumentChanged();
     return true;
 }
 

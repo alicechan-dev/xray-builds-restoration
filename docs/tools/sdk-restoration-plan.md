@@ -524,6 +524,7 @@ format is unchanged because category was already persisted. See
 * [Modding Overview](../modding/overview.md)
 * [Assets Policy](../modding/assets-policy.md)
 * [wxSDKEditor Dockable Layout](wx-editor-layout.md)
+* [wxSDKEditor Document Layer](wx-editor-document.md)
 
 ## wxSDKEditor Dockable Layout Checkpoint
 
@@ -533,3 +534,13 @@ viewport placeholder; View actions toggle/reset them, and wxConfig persists a
 defensively restored perspective outside the repository. This UI-only step
 does not alter presenter/model ownership, does not enter headless builds, and
 does not port VCL form persistence.
+
+## wxSDKEditor Document Checkpoint
+
+One frame-owned, wx-free `EditorDocument` now coordinates the neutral model,
+selection, command history, development snapshot path, and exact serialized
+save baseline. The frame translates New/Open/Save/Save As and
+Save/Discard/Cancel prompts, while imports establish a modified untitled
+document. Undo/redo dirtiness follows exact saved content, and tests remain
+independent of wxWidgets. This is not a real SDK document format. See
+[wxSDKEditor Document Layer](wx-editor-document.md).

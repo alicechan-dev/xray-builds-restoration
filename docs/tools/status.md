@@ -229,6 +229,13 @@ Only the opt-in GUI target adds the wxWidgets `aui` component; headless tests
 remain wx-free. This is not VCL form persistence. See [wxSDKEditor Dockable
 Layout](wx-editor-layout.md).
 
+The wx experiment now has a single wx-free `EditorDocument` owning model,
+selection, command history, development snapshot path, and exact saved-state
+baseline. New/Open/Save/Save As and protected close/import flows are wired in
+the frame; the title reflects filename and dirtiness. Imports become modified
+untitled documents. Headless document and presenter tests remain independent
+of wxWidgets. See [wxSDKEditor Document Layer](wx-editor-document.md).
+
 Explicitly prohibited for the SDK GUI branch:
 
 * fake `ElTree.hpp` or placeholder ElPack tree widgets;
@@ -259,3 +266,4 @@ Explicitly prohibited for the SDK GUI branch:
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)
 * [wxSDKEditor Dockable Layout](wx-editor-layout.md)
+* [wxSDKEditor Document Layer](wx-editor-document.md)

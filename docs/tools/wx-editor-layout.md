@@ -38,3 +38,7 @@ option returns before wx discovery and remains wxWidgets-free. This is a modern
 shell layout, not a port or emulation of VCL form persistence, ElPack, or old
 LevelEditor docking behavior. Preserved `xrEProps` and LevelEditor sources are
 untouched.
+
+The frame also owns the single `EditorDocument`, but AUI perspective state is
+kept separate from document state. Moving or hiding panes never marks the
+document modified. See [wxSDKEditor Document Layer](wx-editor-document.md).

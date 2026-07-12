@@ -13,6 +13,7 @@
 #include <wx/config.h>
 #include <wx/filedlg.h>
 #include <wx/menu.h>
+#include <wx/msgdlg.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
@@ -29,8 +30,6 @@ enum
     IdAddDemoGroup,
     IdDeleteSelected,
     IdMoveSelected,
-    IdSaveSnapshot,
-    IdLoadSnapshot,
     IdImportPathList,
     IdFindItem,
     IdClearSelection,
@@ -86,8 +85,11 @@ void wxSDKEditorFrame::CreateMenus()
     auto* menuBar = new wxMenuBar();
 
     auto* fileMenu = new wxMenu();
-    fileMenu->Append(IdSaveSnapshot, "&Save Demo Snapshot...");
-    fileMenu->Append(IdLoadSnapshot, "&Load Demo Snapshot...");
+    fileMenu->Append(wxID_NEW, "&New\tCtrl+N");
+    fileMenu->Append(wxID_OPEN, "&Open Snapshot...\tCtrl+O");
+    fileMenu->Append(wxID_SAVE, "&Save\tCtrl+S");
+    fileMenu->Append(wxID_SAVEAS, "Save &As...\tCtrl+Shift+S");
+    fileMenu->AppendSeparator();
     fileMenu->Append(IdImportPathList, "&Import Demo Path List...");
     fileMenu->AppendSeparator();
     fileMenu->Append(wxID_EXIT, "E&xit\tAlt-X");
@@ -126,6 +128,11 @@ void wxSDKEditorFrame::CreateMenus()
 
     SetMenuBar(menuBar);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnExit, this, wxID_EXIT);
+    Bind(wxEVT_CLOSE_WINDOW, &wxSDKEditorFrame::OnClose, this);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnNewDocument, this, wxID_NEW);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnOpenDocument, this, wxID_OPEN);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveDocument, this, wxID_SAVE);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveDocumentAs, this, wxID_SAVEAS);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnUndo, this, wxID_UNDO);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnRedo, this, wxID_REDO);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateUndo, this, wxID_UNDO);
@@ -150,8 +157,6 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnDeleteSelected, this, IdDeleteSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnMoveSelected, this, IdMoveSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAdapterStatus, this, IdAdapterStatus);
-    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveSnapshot, this, IdSaveSnapshot);
-    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnLoadSnapshot, this, IdLoadSnapshot);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnImportPathList, this, IdImportPathList);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnFindItem, this, IdFindItem);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnShowSelection, this, IdShowSelection);
@@ -204,11 +209,11 @@ void wxSDKEditorFrame::CreateWorkspace()
     RestoreLayout();
 
     treePresenter_ = std::make_unique<EditorTreePresenter>(
-        *editorTree_, *propertyPanel_, dialogService_,
+        document_, *editorTree_, *propertyPanel_, dialogService_,
         [this](const std::string& message) { SetStatusText(message); },
         [this](const std::string& message) {
             output_->AppendText("\n" + wxString::FromUTF8(message) + "\n");
-        });
+        }, [this](const std::string&) { UpdateDocumentTitle(); });
     treePresenter_->InitializeDemo();
 }
 
@@ -273,7 +278,89 @@ void wxSDKEditorFrame::UpdatePaneMenu(
 
 void wxSDKEditorFrame::OnExit(wxCommandEvent&)
 {
-    Close(true);
+    Close(false);
+}
+
+void wxSDKEditorFrame::OnClose(wxCloseEvent& event)
+{
+    if (ConfirmSaveChanges())
+        event.Skip();
+    else
+        event.Veto();
+}
+
+void wxSDKEditorFrame::OnNewDocument(wxCommandEvent&)
+{
+    if (!ConfirmSaveChanges())
+        return;
+    treePresenter_->NewDocument();
+}
+
+void wxSDKEditorFrame::OnOpenDocument(wxCommandEvent&)
+{
+    if (!ConfirmSaveChanges())
+        return;
+
+    wxFileDialog dialog(this, "Open development tree snapshot", wxEmptyString,
+        wxEmptyString, SnapshotWildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+    treePresenter_->LoadSnapshot(
+        std::filesystem::path(dialog.GetPath().ToStdWstring()));
+}
+
+void wxSDKEditorFrame::OnSaveDocument(wxCommandEvent&)
+{
+    SaveDocument();
+}
+
+void wxSDKEditorFrame::OnSaveDocumentAs(wxCommandEvent&)
+{
+    SaveDocumentAs();
+}
+
+bool wxSDKEditorFrame::ConfirmSaveChanges()
+{
+    if (!document_.IsModified())
+        return true;
+
+    wxMessageDialog dialog(this,
+        "Save changes to '" + document_.GetDisplayName() + "'?",
+        "Unsaved development document",
+        wxYES_NO | wxCANCEL | wxYES_DEFAULT | wxICON_WARNING);
+    const int result = dialog.ShowModal();
+    if (result == wxID_CANCEL)
+        return false;
+    if (result == wxID_NO)
+        return true;
+    return result == wxID_YES && SaveDocument();
+}
+
+bool wxSDKEditorFrame::SaveDocument()
+{
+    if (!document_.HasFilePath())
+        return SaveDocumentAs();
+    return treePresenter_->SaveSnapshot(document_.GetFilePath());
+}
+
+bool wxSDKEditorFrame::SaveDocumentAs()
+{
+    wxFileDialog dialog(this, "Save development tree snapshot", wxEmptyString,
+        document_.GetDisplayName() == "Untitled"
+            ? "untitled.wx_tree_snapshot" : document_.GetDisplayName(),
+        SnapshotWildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    if (dialog.ShowModal() != wxID_OK)
+        return false;
+    return treePresenter_->SaveSnapshot(
+        std::filesystem::path(dialog.GetPath().ToStdWstring()));
+}
+
+void wxSDKEditorFrame::UpdateDocumentTitle()
+{
+    std::string title = "wxSDKEditor - " + document_.GetDisplayName();
+    if (document_.IsModified())
+        title += " *";
+    SetTitle(wxString::FromUTF8(title));
 }
 
 void wxSDKEditorFrame::OnUndo(wxCommandEvent&)
@@ -384,19 +471,10 @@ void wxSDKEditorFrame::OnMoveSelected(wxCommandEvent&)
         destinations[static_cast<std::size_t>(dialog.GetSelection())]);
 }
 
-void wxSDKEditorFrame::OnLoadSnapshot(wxCommandEvent&)
-{
-    wxFileDialog dialog(this, "Load demo tree snapshot", wxEmptyString,
-        wxEmptyString, SnapshotWildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
-    if (dialog.ShowModal() != wxID_OK)
-        return;
-
-    const std::filesystem::path path(dialog.GetPath().ToStdWstring());
-    treePresenter_->LoadSnapshot(path);
-}
-
 void wxSDKEditorFrame::OnImportPathList(wxCommandEvent&)
 {
+    if (!ConfirmSaveChanges())
+        return;
     wxFileDialog dialog(this, "Import demo path list", wxEmptyString,
         wxEmptyString, PathListWildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (dialog.ShowModal() != wxID_OK)
@@ -432,18 +510,6 @@ void wxSDKEditorFrame::OnClearSelection(wxCommandEvent&)
 void wxSDKEditorFrame::OnShowSelection(wxCommandEvent&)
 {
     treePresenter_->ReportSelection();
-}
-
-void wxSDKEditorFrame::OnSaveSnapshot(wxCommandEvent&)
-{
-    wxFileDialog dialog(this, "Save demo tree snapshot", wxEmptyString,
-        "demo.wx_tree_snapshot", SnapshotWildcard,
-        wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
-    if (dialog.ShowModal() != wxID_OK)
-        return;
-
-    const std::filesystem::path path(dialog.GetPath().ToStdWstring());
-    treePresenter_->SaveSnapshot(path);
 }
 
 void wxSDKEditorFrame::OnTreeEndLabelEdit(wxTreeEvent& event)

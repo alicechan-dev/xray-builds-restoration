@@ -29,3 +29,8 @@ transactions remain future work.
 Docking does not participate in command history. Pane positions and visibility
 are user-interface state persisted separately through wxConfig; model commands
 remain wx-free. See [wxSDKEditor Dockable Layout](wx-editor-layout.md).
+
+`EditorDocument` now defines the save point by retaining the exact serialized
+model baseline. Command history itself remains concerned only with execution,
+undo, redo, and selection restoration; document dirtiness becomes clean when
+undo returns to that baseline. See [wxSDKEditor Document Layer](wx-editor-document.md).
