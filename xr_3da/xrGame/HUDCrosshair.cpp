@@ -120,7 +120,7 @@ void CHUDCrosshair::OnRender ()
 	dwCount 				= u32(pv-pv_start);
 	RCache.Vertex.Unlock	(dwCount,hGeomLine->vb_stride);
 
-	//RCache.set_Shader		(hShader);
+	RCache.set_Shader		(hShader);
 	RCache.set_Geometry		(hGeomLine);
 	RCache.Render	   		(D3DPT_LINELIST,dwOffset,dwCount/2);
 
