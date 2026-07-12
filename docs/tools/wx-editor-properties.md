@@ -54,3 +54,8 @@ coordination. Tests-only mode does not discover or link wxWidgets.
 Category was already part of snapshot v2, so persistence is unchanged. No
 demo-only fields were added. Old `xrEProps` and LevelEditor remain untouched;
 real SDK object properties and assets remain future work.
+
+The concrete property panel is now hosted in the right wxAUI pane and can be
+docked, floated, hidden, and restored without changing `IPropertyPanel` or the
+presenter. Pane state is UI configuration only; property values remain model
+state. See [wxSDKEditor Dockable Layout](wx-editor-layout.md).

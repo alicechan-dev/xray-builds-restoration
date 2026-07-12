@@ -523,3 +523,13 @@ format is unchanged because category was already persisted. See
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)
 * [Assets Policy](../modding/assets-policy.md)
+* [wxSDKEditor Dockable Layout](wx-editor-layout.md)
+
+## wxSDKEditor Dockable Layout Checkpoint
+
+The shell now has a modern docking boundary using the built-in wxWidgets AUI
+component. Named scene, properties, and output panes surround a fixed center
+viewport placeholder; View actions toggle/reset them, and wxConfig persists a
+defensively restored perspective outside the repository. This UI-only step
+does not alter presenter/model ownership, does not enter headless builds, and
+does not port VCL form persistence.

@@ -10,11 +10,11 @@
 #include <iterator>
 #include <vector>
 #include <wx/choicdlg.h>
+#include <wx/config.h>
 #include <wx/filedlg.h>
 #include <wx/menu.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
-#include <wx/splitter.h>
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include <wx/textdlg.h>
@@ -34,8 +34,18 @@ enum
     IdImportPathList,
     IdFindItem,
     IdClearSelection,
-    IdShowSelection
+    IdShowSelection,
+    IdViewSceneTree,
+    IdViewProperties,
+    IdViewOutput,
+    IdResetLayout
 };
+
+const char* SceneTreePane = "scene_tree";
+const char* PropertiesPane = "properties";
+const char* OutputPane = "output";
+const char* ViewportPane = "viewport";
+const char* PerspectiveKey = "/layout/aui_perspective";
 
 const char* SnapshotWildcard =
     "wxSDKEditor snapshots (*.wx_tree_snapshot)|*.wx_tree_snapshot|All files (*.*)|*.*";
@@ -89,7 +99,11 @@ void wxSDKEditorFrame::CreateMenus()
     menuBar->Append(editMenu, "&Edit");
 
     auto* viewMenu = new wxMenu();
-    viewMenu->Append(wxID_ANY, "Reset layout")->Enable(false);
+    viewMenu->AppendCheckItem(IdViewSceneTree, "Scene &Tree");
+    viewMenu->AppendCheckItem(IdViewProperties, "&Properties");
+    viewMenu->AppendCheckItem(IdViewOutput, "&Output");
+    viewMenu->AppendSeparator();
+    viewMenu->Append(IdResetLayout, "&Reset Layout");
     menuBar->Append(viewMenu, "&View");
 
     auto* toolsMenu = new wxMenu();
@@ -116,6 +130,20 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnRedo, this, wxID_REDO);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateUndo, this, wxID_UNDO);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateRedo, this, wxID_REDO);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleSceneTree,
+        this, IdViewSceneTree);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleProperties,
+        this, IdViewProperties);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleOutput,
+        this, IdViewOutput);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnResetLayout,
+        this, IdResetLayout);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateSceneTree,
+        this, IdViewSceneTree);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateProperties,
+        this, IdViewProperties);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateOutput,
+        this, IdViewOutput);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoObject, this, IdAddDemoObject);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoGroup, this, IdAddDemoGroup);
@@ -132,14 +160,9 @@ void wxSDKEditorFrame::CreateMenus()
 
 void wxSDKEditorFrame::CreateWorkspace()
 {
-    auto* outerSplitter = new wxSplitterWindow(this, wxID_ANY,
-        wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3D);
-    auto* workspaceSplitter = new wxSplitterWindow(outerSplitter, wxID_ANY,
-        wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3D);
-    auto* contentSplitter = new wxSplitterWindow(workspaceSplitter, wxID_ANY,
-        wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3D);
+    auiManager_.SetManagedWindow(this);
 
-    auto* treePanel = new wxPanel(workspaceSplitter);
+    auto* treePanel = new wxPanel(this);
     auto* treeSizer = new wxBoxSizer(wxVERTICAL);
     treeSizer->Add(new wxStaticText(treePanel, wxID_ANY, "Scene / Objects"),
         0, wxALL, 8);
@@ -153,21 +176,32 @@ void wxSDKEditorFrame::CreateWorkspace()
     treeSizer->Add(editorTree_, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
     treePanel->SetSizer(treeSizer);
 
-    wxPanel* viewportPanel = CreateViewportPanel(contentSplitter);
-    propertyPanel_ = new wxPropertyPanel(contentSplitter);
+    wxPanel* viewportPanel = CreateViewportPanel(this);
+    propertyPanel_ = new wxPropertyPanel(this);
     propertyPanel_->ShowPlaceholder("Properties placeholder");
 
-    contentSplitter->SetMinimumPaneSize(180);
-    contentSplitter->SplitVertically(viewportPanel, propertyPanel_, 700);
-    workspaceSplitter->SetMinimumPaneSize(180);
-    workspaceSplitter->SplitVertically(treePanel, contentSplitter, 250);
-
-    output_ = new wxTextCtrl(outerSplitter, wxID_ANY,
+    output_ = new wxTextCtrl(this, wxID_ANY,
         "wxSDKEditor experimental shell ready.", wxDefaultPosition,
         wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
-    outerSplitter->SetMinimumPaneSize(100);
-    outerSplitter->SetSashGravity(1.0);
-    outerSplitter->SplitHorizontally(workspaceSplitter, output_, 680);
+
+    auiManager_.AddPane(treePanel, wxAuiPaneInfo().Name(SceneTreePane)
+        .Caption("Scene / Objects").Left().Layer(1).Position(0)
+        .BestSize(260, 600).MinSize(180, 180).CloseButton(true)
+        .MaximizeButton(true).Resizable(true));
+    auiManager_.AddPane(propertyPanel_, wxAuiPaneInfo().Name(PropertiesPane)
+        .Caption("Properties").Right().Layer(1).Position(0)
+        .BestSize(320, 600).MinSize(220, 180).CloseButton(true)
+        .MaximizeButton(true).Resizable(true));
+    auiManager_.AddPane(output_, wxAuiPaneInfo().Name(OutputPane)
+        .Caption("Output").Bottom().Layer(1).Position(0)
+        .BestSize(-1, 170).MinSize(240, 100).CloseButton(true)
+        .MaximizeButton(true).Resizable(true));
+    auiManager_.AddPane(viewportPanel, wxAuiPaneInfo().Name(ViewportPane)
+        .Caption("Viewport").CenterPane().PaneBorder(false)
+        .CloseButton(false).Floatable(false).Dockable(false));
+    auiManager_.Update();
+    defaultPerspective_ = auiManager_.SavePerspective();
+    RestoreLayout();
 
     treePresenter_ = std::make_unique<EditorTreePresenter>(
         *editorTree_, *propertyPanel_, dialogService_,
@@ -178,7 +212,64 @@ void wxSDKEditorFrame::CreateWorkspace()
     treePresenter_->InitializeDemo();
 }
 
-wxSDKEditorFrame::~wxSDKEditorFrame() = default;
+wxSDKEditorFrame::~wxSDKEditorFrame()
+{
+    SaveLayout();
+    if (editorTree_)
+    {
+        editorTree_->Unbind(wxEVT_KEY_DOWN,
+            &wxSDKEditorFrame::OnTreeKeyDown, this);
+        editorTree_->Unbind(wxEVT_TREE_END_LABEL_EDIT,
+            &wxSDKEditorFrame::OnTreeEndLabelEdit, this);
+        editorTree_->Unbind(wxEVT_TREE_SEL_CHANGED,
+            &wxSDKEditorFrame::OnTreeSelectionChanged, this);
+    }
+    treePresenter_.reset();
+    auiManager_.UnInit();
+}
+
+void wxSDKEditorFrame::RestoreLayout()
+{
+    wxConfig config("wxSDKEditor");
+    wxString perspective;
+    if (!config.Read(PerspectiveKey, &perspective) || perspective.empty())
+        return;
+
+    if (!auiManager_.LoadPerspective(perspective, true))
+        auiManager_.LoadPerspective(defaultPerspective_, true);
+    auiManager_.Update();
+}
+
+void wxSDKEditorFrame::SaveLayout()
+{
+    wxConfig config("wxSDKEditor");
+    config.Write(PerspectiveKey, auiManager_.SavePerspective());
+    config.Flush();
+}
+
+void wxSDKEditorFrame::ResetLayout()
+{
+    auiManager_.LoadPerspective(defaultPerspective_, true);
+    auiManager_.Update();
+    SaveLayout();
+    SetStatusText("Editor layout reset.");
+}
+
+void wxSDKEditorFrame::TogglePane(const char* paneName)
+{
+    wxAuiPaneInfo& pane = auiManager_.GetPane(paneName);
+    if (!pane.IsOk())
+        return;
+    pane.Show(!pane.IsShown());
+    auiManager_.Update();
+}
+
+void wxSDKEditorFrame::UpdatePaneMenu(
+    wxUpdateUIEvent& event, const char* paneName)
+{
+    const wxAuiPaneInfo& pane = auiManager_.GetPane(paneName);
+    event.Check(pane.IsOk() && pane.IsShown());
+}
 
 void wxSDKEditorFrame::OnExit(wxCommandEvent&)
 {
@@ -203,6 +294,41 @@ void wxSDKEditorFrame::OnUpdateUndo(wxUpdateUIEvent& event)
 void wxSDKEditorFrame::OnUpdateRedo(wxUpdateUIEvent& event)
 {
     event.Enable(treePresenter_ && treePresenter_->CanRedo());
+}
+
+void wxSDKEditorFrame::OnToggleSceneTree(wxCommandEvent&)
+{
+    TogglePane(SceneTreePane);
+}
+
+void wxSDKEditorFrame::OnToggleProperties(wxCommandEvent&)
+{
+    TogglePane(PropertiesPane);
+}
+
+void wxSDKEditorFrame::OnToggleOutput(wxCommandEvent&)
+{
+    TogglePane(OutputPane);
+}
+
+void wxSDKEditorFrame::OnResetLayout(wxCommandEvent&)
+{
+    ResetLayout();
+}
+
+void wxSDKEditorFrame::OnUpdateSceneTree(wxUpdateUIEvent& event)
+{
+    UpdatePaneMenu(event, SceneTreePane);
+}
+
+void wxSDKEditorFrame::OnUpdateProperties(wxUpdateUIEvent& event)
+{
+    UpdatePaneMenu(event, PropertiesPane);
+}
+
+void wxSDKEditorFrame::OnUpdateOutput(wxUpdateUIEvent& event)
+{
+    UpdatePaneMenu(event, OutputPane);
 }
 
 void wxSDKEditorFrame::OnAbout(wxCommandEvent&)

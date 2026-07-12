@@ -308,3 +308,16 @@ a wx-free `EditorPropertySet`; label and category use text fields, while kind
 and generated path are read-only. Apply routes through the presenter and node
 property adapter. Rename validation remains in `EditorTreeModel`, and category
 remains development-only. See [wx Editor Properties](wx-editor-properties.md).
+
+## Dockable Shell Layout
+
+The shell layout now uses `wxAuiManager` instead of nested splitters. Scene,
+properties, and output are named dockable panes around a non-dockable center
+viewport placeholder. The View menu toggles panes and restores the default
+layout. AUI perspective state is saved through `wxConfig` in the user profile,
+restored defensively at startup, and never written into the repository.
+
+Only the opt-in GUI target adds the wxWidgets `aui` component. Tests-only mode
+still returns before wxWidgets discovery and remains wx-free. This modern shell
+layout is not a port of VCL form persistence. See [wxSDKEditor Dockable
+Layout](wx-editor-layout.md).

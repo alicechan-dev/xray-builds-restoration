@@ -66,12 +66,12 @@ endif()
 
 # vcpkg provides wxWidgets config packages on current installations. Fall back
 # to CMake's standard module for system/package layouts that expose wx-config.
-find_package(wxWidgets CONFIG QUIET)
-if(wxWidgets_FOUND AND TARGET wx::core AND TARGET wx::base)
-  set(XR_WX_SDK_EDITOR_LIBRARIES wx::core wx::base)
+find_package(wxWidgets CONFIG QUIET COMPONENTS core base aui)
+if(wxWidgets_FOUND AND TARGET wx::core AND TARGET wx::base AND TARGET wx::aui)
+  set(XR_WX_SDK_EDITOR_LIBRARIES wx::core wx::base wx::aui)
   set(XR_WX_SDK_EDITOR_DISCOVERY "CONFIG package")
 else()
-  find_package(wxWidgets MODULE QUIET COMPONENTS core base)
+  find_package(wxWidgets MODULE QUIET COMPONENTS core base aui)
   if(wxWidgets_FOUND)
     include("${wxWidgets_USE_FILE}")
     set(XR_WX_SDK_EDITOR_LIBRARIES ${wxWidgets_LIBRARIES})

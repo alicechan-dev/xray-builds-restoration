@@ -25,3 +25,7 @@ model. Tests-only configuration does not discover, include, or link wxWidgets.
 The preserved `xrEProps` and LevelEditor sources remain untouched. Real SDK
 data loading, on-disk command journals, command merging, and asset-aware
 transactions remain future work.
+
+Docking does not participate in command history. Pane positions and visibility
+are user-interface state persisted separately through wxConfig; model commands
+remain wx-free. See [wxSDKEditor Dockable Layout](wx-editor-layout.md).

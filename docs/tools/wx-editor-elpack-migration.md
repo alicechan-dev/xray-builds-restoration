@@ -196,3 +196,12 @@ This command seam does not port `ItemListHelper`, `FolderLib`, or historical
 ElPack command behavior. Preserved `xrEProps` remains untouched; real SDK data
 loading and asset-aware transactions remain future work. See [wx Editor Command
 History](wx-editor-command-history.md).
+
+## Modern Layout Boundary
+
+The wx shell now hosts its adapter views in built-in wxAUI panes. This improves
+the experimental shell without mapping ElPack widget state or VCL form
+persistence: scene tree, properties, and output can dock independently, while
+the viewport remains a non-functional center placeholder. The AUI perspective
+is user UI configuration only. Historical `xrEProps` and LevelEditor layout
+code remains untouched. See [wxSDKEditor Dockable Layout](wx-editor-layout.md).

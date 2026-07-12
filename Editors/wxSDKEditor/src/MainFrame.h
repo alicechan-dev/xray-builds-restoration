@@ -4,6 +4,8 @@
 #include "wxDialogService.h"
 
 #include <memory>
+#include <string>
+#include <wx/aui/aui.h>
 #include <wx/frame.h>
 
 class EditorTreePresenter;
@@ -22,11 +24,23 @@ public:
 private:
     void CreateMenus();
     void CreateWorkspace();
+    void RestoreLayout();
+    void SaveLayout();
+    void ResetLayout();
+    void TogglePane(const char* paneName);
+    void UpdatePaneMenu(wxUpdateUIEvent& event, const char* paneName);
     void OnExit(wxCommandEvent& event);
     void OnUndo(wxCommandEvent& event);
     void OnRedo(wxCommandEvent& event);
     void OnUpdateUndo(wxUpdateUIEvent& event);
     void OnUpdateRedo(wxUpdateUIEvent& event);
+    void OnToggleSceneTree(wxCommandEvent& event);
+    void OnToggleProperties(wxCommandEvent& event);
+    void OnToggleOutput(wxCommandEvent& event);
+    void OnResetLayout(wxCommandEvent& event);
+    void OnUpdateSceneTree(wxUpdateUIEvent& event);
+    void OnUpdateProperties(wxUpdateUIEvent& event);
+    void OnUpdateOutput(wxUpdateUIEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnAddDemoGroup(wxCommandEvent& event);
     void OnAddDemoObject(wxCommandEvent& event);
@@ -46,6 +60,8 @@ private:
     wxEditorTree* editorTree_ = nullptr;
     wxPropertyPanel* propertyPanel_ = nullptr;
     wxTextCtrl* output_ = nullptr;
+    wxAuiManager auiManager_;
+    wxString defaultPerspective_;
     wxDialogService dialogService_;
     std::unique_ptr<EditorTreePresenter> treePresenter_;
 };

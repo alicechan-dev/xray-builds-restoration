@@ -221,6 +221,14 @@ linking wxWidgets. The wx shell exposes `Ctrl+Z` and `Ctrl+Y`; old `xrEProps`
 and real SDK data remain untouched. See [wx Editor Command
 History](wx-editor-command-history.md).
 
+The wx shell layout is now managed by built-in `wxAuiManager`: scene tree,
+properties, and output are closable dockable panes around an always-present
+center viewport placeholder. View-menu checks follow pane visibility, reset
+restores defaults, and wxConfig stores the perspective outside the repository.
+Only the opt-in GUI target adds the wxWidgets `aui` component; headless tests
+remain wx-free. This is not VCL form persistence. See [wxSDKEditor Dockable
+Layout](wx-editor-layout.md).
+
 Explicitly prohibited for the SDK GUI branch:
 
 * fake `ElTree.hpp` or placeholder ElPack tree widgets;
@@ -250,3 +258,4 @@ Explicitly prohibited for the SDK GUI branch:
 * [wx Editor Properties](wx-editor-properties.md)
 * [Archive Formats](../formats/archives.md)
 * [Modding Overview](../modding/overview.md)
+* [wxSDKEditor Dockable Layout](wx-editor-layout.md)
