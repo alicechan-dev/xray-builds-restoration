@@ -267,3 +267,10 @@ Explicitly prohibited for the SDK GUI branch:
 * [Modding Overview](../modding/overview.md)
 * [wxSDKEditor Dockable Layout](wx-editor-layout.md)
 * [wxSDKEditor Document Layer](wx-editor-document.md)
+* [wxSDKEditor Viewport Host](wx-editor-viewport.md)
+
+The wx experiment now has a dedicated center viewport host. A wx-free
+state/controller covers dimensions, input, placeholder camera, grid, and
+renderer invocation; the concrete wx control paints a buffered diagnostic grid
+through a null-renderer fallback. No runtime renderer target or real level data
+is linked. Headless viewport tests remain wxWidgets-free.

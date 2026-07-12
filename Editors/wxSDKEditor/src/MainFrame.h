@@ -11,6 +11,7 @@
 
 class EditorTreePresenter;
 class wxEditorTree;
+class wxEditorViewport;
 class wxKeyEvent;
 class wxPropertyPanel;
 class wxTextCtrl;
@@ -52,6 +53,10 @@ private:
     void OnUpdateSceneTree(wxUpdateUIEvent& event);
     void OnUpdateProperties(wxUpdateUIEvent& event);
     void OnUpdateOutput(wxUpdateUIEvent& event);
+    void OnToggleViewportGrid(wxCommandEvent& event);
+    void OnResetViewportCamera(wxCommandEvent& event);
+    void OnFocusViewport(wxCommandEvent& event);
+    void OnUpdateViewportGrid(wxUpdateUIEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnAddDemoGroup(wxCommandEvent& event);
     void OnAddDemoObject(wxCommandEvent& event);
@@ -69,6 +74,7 @@ private:
     wxEditorTree* editorTree_ = nullptr;
     wxPropertyPanel* propertyPanel_ = nullptr;
     wxTextCtrl* output_ = nullptr;
+    wxEditorViewport* viewport_ = nullptr;
     wxAuiManager auiManager_;
     wxString defaultPerspective_;
     EditorDocument document_;

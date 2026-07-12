@@ -210,3 +210,7 @@ The document layer is likewise a neutral ownership boundary, not a port of VCL
 document/form behavior. It coordinates only the development snapshot, neutral
 model services, path, and dirty state. Real historical document formats remain
 unmapped. See [wxSDKEditor Document Layer](wx-editor-document.md).
+
+The viewport host is another modern boundary, not an ElPack or VCL mapping.
+No historical renderer or editor viewport code is compiled or called. See
+[wxSDKEditor Viewport Host](wx-editor-viewport.md).

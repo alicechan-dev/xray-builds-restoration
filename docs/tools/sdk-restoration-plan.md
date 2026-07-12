@@ -544,3 +544,12 @@ Save/Discard/Cancel prompts, while imports establish a modified untitled
 document. Undo/redo dirtiness follows exact saved content, and tests remain
 independent of wxWidgets. This is not a real SDK document format. See
 [wxSDKEditor Document Layer](wx-editor-document.md).
+
+## wxSDKEditor Viewport Host Checkpoint
+
+The fixed center placeholder is replaced by a dedicated wx viewport surface.
+Its state/controller and renderer contract are wx-free; the concrete control
+paints only a diagnostic grid/overlay and translates placeholder camera input.
+`NullEditorViewportRenderer` establishes an injection point without linking
+DirectX, OpenGL, X-Ray renderers, levels, or assets. See [wxSDKEditor Viewport
+Host](wx-editor-viewport.md).

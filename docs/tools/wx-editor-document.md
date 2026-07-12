@@ -44,3 +44,7 @@ Tests-only configuration remains wxWidgets-free.
 Real SDK documents, MDI, recent files, autosave, asset serialization, and level
 loading remain future work. Preserved `xrEProps` and LevelEditor sources are
 untouched.
+
+Viewport focus, camera placeholders, frame ticks, and grid visibility are UI
+state and never modify `EditorDocument` or its dirty baseline. See [wxSDKEditor
+Viewport Host](wx-editor-viewport.md).

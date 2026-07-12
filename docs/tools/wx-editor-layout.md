@@ -42,3 +42,7 @@ untouched.
 The frame also owns the single `EditorDocument`, but AUI perspective state is
 kept separate from document state. Moving or hiding panes never marks the
 document modified. See [wxSDKEditor Document Layer](wx-editor-document.md).
+
+The AUI center pane now owns `wxEditorViewport` rather than a static label. It
+remains non-closable and non-dockable; reset layout always restores it. See
+[wxSDKEditor Viewport Host](wx-editor-viewport.md).

@@ -10,6 +10,8 @@ set(XR_WX_SDK_EDITOR_MODEL_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreePathListImport.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeQuery.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeSnapshot.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_view/EditorViewportController.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_view/EditorViewportState.cpp"
 )
 
 set(XR_WX_SDK_EDITOR_MODEL_HEADERS
@@ -25,6 +27,9 @@ set(XR_WX_SDK_EDITOR_MODEL_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreePathListImport.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreeQuery.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreeSnapshot.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/EditorViewportController.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/EditorViewportState.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/IEditorViewportRenderer.h"
 )
 
 if(BUILD_XR_WX_SDK_EDITOR_MODEL_TESTS)
@@ -42,6 +47,7 @@ set(XR_WX_SDK_EDITOR_SOURCES
   src/MainFrame.cpp
   src/wxDialogService.cpp
   src/wxEditorTree.cpp
+  src/wxEditorViewport.cpp
   src/wxPropertyPanel.cpp
 )
 
@@ -54,6 +60,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   src/MainFrame.h
   src/wxDialogService.h
   src/wxEditorTree.h
+  src/wxEditorViewport.h
   src/wxPropertyPanel.h
 )
 

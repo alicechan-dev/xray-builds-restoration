@@ -331,3 +331,12 @@ New/Open/Import/close, and the title shows filename plus a dirty marker. The
 save point is an exact serialized-model baseline, so undo back to the saved
 state becomes clean. Import creates a modified untitled document. See
 [wxSDKEditor Document Layer](wx-editor-document.md).
+
+## Viewport Host
+
+The center pane now contains `wxEditorViewport`: a buffered dark grid and
+diagnostic overlay backed by a wx-free state/controller and a no-op renderer
+interface. Right drag, wheel, focused WASD/QE, grid toggle, camera reset, and
+focus commands validate future input flow only. No graphics device, level,
+asset, picking, or historical renderer is connected. See [wxSDKEditor Viewport
+Host](wx-editor-viewport.md).

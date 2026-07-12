@@ -3,6 +3,7 @@
 #include "editor_app/EditorTreePresenter.h"
 #include "editor_model/EditorTreeSnapshot.h"
 #include "wxEditorTree.h"
+#include "wxEditorViewport.h"
 #include "wxPropertyPanel.h"
 
 #include <filesystem>
@@ -37,7 +38,10 @@ enum
     IdViewSceneTree,
     IdViewProperties,
     IdViewOutput,
-    IdResetLayout
+    IdResetLayout,
+    IdToggleViewportGrid,
+    IdResetViewportCamera,
+    IdFocusViewport
 };
 
 const char* SceneTreePane = "scene_tree";
@@ -51,17 +55,6 @@ const char* SnapshotWildcard =
 const char* PathListWildcard =
     "wxSDKEditor path lists (*.wx_tree_paths)|*.wx_tree_paths|Text files (*.txt)|*.txt|All files (*.*)|*.*";
 
-wxPanel* CreateViewportPanel(wxWindow* parent)
-{
-    auto* panel = new wxPanel(parent);
-    auto* sizer = new wxBoxSizer(wxVERTICAL);
-    sizer->AddStretchSpacer();
-    sizer->Add(new wxStaticText(panel, wxID_ANY, "Viewport placeholder"),
-        0, wxALIGN_CENTER_HORIZONTAL);
-    sizer->AddStretchSpacer();
-    panel->SetSizer(sizer);
-    return panel;
-}
 }
 
 wxSDKEditorFrame::wxSDKEditorFrame() :
@@ -106,6 +99,10 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendCheckItem(IdViewOutput, "&Output");
     viewMenu->AppendSeparator();
     viewMenu->Append(IdResetLayout, "&Reset Layout");
+    viewMenu->AppendSeparator();
+    viewMenu->AppendCheckItem(IdToggleViewportGrid, "Viewport &Grid");
+    viewMenu->Append(IdResetViewportCamera, "Reset Viewport &Camera");
+    viewMenu->Append(IdFocusViewport, "&Focus Viewport");
     menuBar->Append(viewMenu, "&View");
 
     auto* toolsMenu = new wxMenu();
@@ -151,6 +148,14 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdViewProperties);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateOutput,
         this, IdViewOutput);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleViewportGrid,
+        this, IdToggleViewportGrid);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnResetViewportCamera,
+        this, IdResetViewportCamera);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnFocusViewport,
+        this, IdFocusViewport);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateViewportGrid,
+        this, IdToggleViewportGrid);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoObject, this, IdAddDemoObject);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoGroup, this, IdAddDemoGroup);
@@ -181,7 +186,7 @@ void wxSDKEditorFrame::CreateWorkspace()
     treeSizer->Add(editorTree_, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
     treePanel->SetSizer(treeSizer);
 
-    wxPanel* viewportPanel = CreateViewportPanel(this);
+    viewport_ = new wxEditorViewport(this);
     propertyPanel_ = new wxPropertyPanel(this);
     propertyPanel_->ShowPlaceholder("Properties placeholder");
 
@@ -201,7 +206,7 @@ void wxSDKEditorFrame::CreateWorkspace()
         .Caption("Output").Bottom().Layer(1).Position(0)
         .BestSize(-1, 170).MinSize(240, 100).CloseButton(true)
         .MaximizeButton(true).Resizable(true));
-    auiManager_.AddPane(viewportPanel, wxAuiPaneInfo().Name(ViewportPane)
+    auiManager_.AddPane(viewport_, wxAuiPaneInfo().Name(ViewportPane)
         .Caption("Viewport").CenterPane().PaneBorder(false)
         .CloseButton(false).Floatable(false).Dockable(false));
     auiManager_.Update();
@@ -416,6 +421,27 @@ void wxSDKEditorFrame::OnUpdateProperties(wxUpdateUIEvent& event)
 void wxSDKEditorFrame::OnUpdateOutput(wxUpdateUIEvent& event)
 {
     UpdatePaneMenu(event, OutputPane);
+}
+
+void wxSDKEditorFrame::OnToggleViewportGrid(wxCommandEvent&)
+{
+    viewport_->ToggleGrid();
+}
+
+void wxSDKEditorFrame::OnResetViewportCamera(wxCommandEvent&)
+{
+    viewport_->ResetCamera();
+    SetStatusText("Placeholder viewport camera reset.");
+}
+
+void wxSDKEditorFrame::OnFocusViewport(wxCommandEvent&)
+{
+    viewport_->FocusViewport();
+}
+
+void wxSDKEditorFrame::OnUpdateViewportGrid(wxUpdateUIEvent& event)
+{
+    event.Check(viewport_ && viewport_->IsGridVisible());
 }
 
 void wxSDKEditorFrame::OnAbout(wxCommandEvent&)
