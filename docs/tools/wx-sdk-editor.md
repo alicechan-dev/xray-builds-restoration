@@ -38,6 +38,26 @@ cmake --build build-wx-model-tests-check --config Release \
 discover, include, or link wxWidgets. Both
 wx options default to OFF, so normal configuration remains unchanged.
 
+## Foundation Checkpoint
+
+The opt-in wxSDKEditor foundation is established, but remains an experimental
+parallel path rather than a replacement for the historical Borland SDK. Its
+current prototype behaviors are model-backed create, rename, delete, snapshot
+save/load, and logical path-list import. No preserved `xrEProps` or
+`LevelEditor` source is compiled, called, or modified.
+
+Responsibilities are intentionally separated:
+
+* `MainFrame` owns wx layout, menus, file dialogs, and wx event translation;
+* `EditorTreePresenter` coordinates model, tree view, property panel, dialogs,
+  snapshot/import handoff, and status/output callbacks;
+* `EditorTreeModel` owns nodes and supplies paths plus create, rename, unique
+  name, and delete rules;
+* snapshot and path-list code implement development-only formats, not SDK
+  assets, levels, or game data;
+* `wxSDKEditorModelTests` verifies model, persistence, import, and presenter
+  coordination headlessly without discovering, including, or linking wxWidgets.
+
 ## Current Shell
 
 The first shell contains only infrastructure:
@@ -141,7 +161,7 @@ understood and covered by small tests.
 
 `IEditorTree` is the first active adapter boundary. It currently owns only
 opaque item handles, hierarchy insertion, selected item data, expansion, and
-initial selection. The frame traverses `EditorTreeModel`, populates
+initial selection. The presenter traverses `EditorTreeModel`, populates
 `IEditorTree`, and lets `wxEditorTree` translate that into `wxTreeCtrl` items.
 The model remains independent of wxWidgets and owns every node referenced by
 the view.
@@ -175,10 +195,11 @@ model/rename logic as the first extraction candidate and keeps the much larger
 
 The next safe sequence is:
 
-1. keep the current model and path-list contracts small and tested;
-2. map `ItemListHelper` and `FolderLib` path rules precisely against them;
-3. add model commands only for behavior proven by that audit;
-4. connect old SDK/editor logic only after those commands are tested.
+1. optionally add an intentionally documented sample under `docs/examples`;
+2. map `ItemListTypes` concepts to model categories without modifying
+   `xrEProps`;
+3. later add a read-only adapter for independently extracted metadata;
+4. keep the historical Borland/VCL restoration path separate.
 
 Development is isolated on `experiment/sdk-wx-editor-ui`. If the experiment
 is accepted, it can be squash-merged so the restoration branch receives one

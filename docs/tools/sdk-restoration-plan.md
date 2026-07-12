@@ -218,6 +218,17 @@ including delete confirmation and cancellation, root rejection, and
 preservation of the existing model after failed path-list import. Real SDK data
 loading remains deferred.
 
+This establishes the experimental wxSDKEditor foundation checkpoint. Both wx
+options remain OFF by default; normal configuration has no wxWidgets
+requirement, while tests-only configuration does not discover, include, or link
+wxWidgets. The prototype does not replace the historical Borland editor and
+does not compile, call, or modify `xrEProps` or LevelEditor code.
+
+Reasonable next wx-path tasks are limited to an intentionally documented sample
+path list, mapping `ItemListTypes` concepts to neutral model categories without
+source changes, or a later read-only adapter for independently extracted
+metadata. The real Borland/VCL restoration path remains separate.
+
 ## Recommended First Practical Target
 
 After the current inventory, the safest next target is still the archive/tooling path:

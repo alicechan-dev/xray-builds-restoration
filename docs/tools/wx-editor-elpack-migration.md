@@ -130,6 +130,12 @@ selection behavior, and atomic failed path-list import. This makes future
 `ItemListHelper`/`FolderLib` behavior testable without wxWidgets and before any
 ElPack-dependent implementation or preserved `xrEProps` source is touched.
 
+This marks the wx model/presenter foundation checkpoint. Future work can map
+`ItemListTypes` concepts onto neutral categories or add a read-only metadata
+adapter, but should not modify `xrEProps` merely to feed the prototype. A small
+path-list example belongs under documentation only if it is deliberately added
+and explained. The historical Borland/VCL and real ElPack path remains separate.
+
 `FolderLib` is the second seam, after the model exists. Its pure path and
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx
