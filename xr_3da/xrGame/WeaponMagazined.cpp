@@ -770,7 +770,7 @@ void CWeaponMagazined::InitAddons()
 			m_fScopeZoomFactor = pSettings->r_float	(*m_sScopeName, "scope_zoom_factor");
 			if(m_UIScope.GetShader())
 				m_UIScope.GetShader().destroy();	
-			m_UIScope.Init(*scope_tex_name, "hud\\default", 0, 0, alNone);
+			m_UIScope.Init(*scope_tex_name, "hud\\default", 0, 0, alCenter);
 		}
 		else if(m_eScopeStatus == ALife::eAddonPermanent)
 		{
@@ -780,7 +780,7 @@ void CWeaponMagazined::InitAddons()
 
 			if(m_UIScope.GetShader())
 				m_UIScope.GetShader().destroy();	
-			m_UIScope.Init(*scope_tex_name, "hud\\default", 0, 0, alNone);
+			m_UIScope.Init(*scope_tex_name, "hud\\default", 0, 0, alCenter);
 		}
 	}
 	else
