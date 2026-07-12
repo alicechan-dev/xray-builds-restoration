@@ -61,6 +61,7 @@ public:
     {
         selected = items.empty() ? InvalidItem : items.front().handle;
     }
+    void ClearSelection() override { selected = InvalidItem; }
     void BeginEditSelectedLabel() override {}
     void SelectByUserData(UserData userData) override
     {
@@ -196,7 +197,7 @@ int RunEditorTreePresenterTests()
     std::string output;
     EditorTreePresenter presenter(tree, properties, dialogs,
         [&status](const std::string& message) { status = message; },
-        [&output](const std::string& message) { output = message; });
+        [&output](const std::string& message) { output += message + "\n"; });
 
     presenter.InitializeDemo();
     check(tree.Contains("Scene (demo data)"), "initial demo root populated");
@@ -221,6 +222,18 @@ int RunEditorTreePresenterTests()
         "no-result search preserves selection and properties");
     check(ContainsText(status, "No matching tree items"),
         "no-result search reports non-fatal status");
+
+    output.clear();
+    presenter.ReportSelection();
+    check(ContainsText(output, "Scene (demo data)/Objects/actor"),
+        "selected path report uses model path");
+    check(ContainsText(status, "1 model item"),
+        "selected path report includes count");
+    presenter.ClearSelection();
+    check(tree.GetSelectedUserData() == 0, "clear selection clears tree view");
+    check(properties.text.empty(), "clear selection clears properties");
+    check(ContainsText(status, "Selection cleared"),
+        "clear selection reports status");
 
     check(tree.SelectByLabel("Objects"), "objects group selectable");
     presenter.RefreshSelection();

@@ -101,6 +101,11 @@ void wxEditorTree::BeginEditSelectedLabel()
         EditLabel(selected);
 }
 
+void wxEditorTree::ClearSelection()
+{
+    Unselect();
+}
+
 void wxEditorTree::SelectByUserData(UserData userData)
 {
     const auto item = userItems_.find(userData);

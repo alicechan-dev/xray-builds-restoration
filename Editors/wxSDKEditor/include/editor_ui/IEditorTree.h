@@ -21,6 +21,7 @@ public:
     virtual UserData GetSelectedUserData() const = 0;
     virtual void ExpandAllItems() = 0;
     virtual void SelectFirst() = 0;
+    virtual void ClearSelection() = 0;
     virtual void BeginEditSelectedLabel() = 0;
     virtual void SelectByUserData(UserData userData) = 0;
 };

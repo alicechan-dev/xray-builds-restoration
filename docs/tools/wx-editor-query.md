@@ -56,3 +56,7 @@ wxWidgets.
 
 This remains a migration seam, not a port of ItemListHelper or the historical
 GUI, and it does not load SDK assets or game data.
+
+Query is read-only and does not alter [wx Editor Selection](wx-editor-selection.md).
+Presenter search selects its first result through the same single-selection
+model used by direct tree interaction.

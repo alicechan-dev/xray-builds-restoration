@@ -62,6 +62,8 @@ void EditorTreePresenter::Rebuild(EditorTreeNode* selectedNode, bool selectFirst
 void EditorTreePresenter::RefreshSelection()
 {
     const EditorTreeNode* node = SelectedNode();
+    selection_.Clear();
+    selection_.Select(node);
     if (!node)
     {
         properties_.Clear();
@@ -212,4 +214,30 @@ std::size_t EditorTreePresenter::FindFirst(std::string text)
     SetStatus("Found " + std::to_string(matches.size()) +
         " matching item(s); selected '" + matches.front()->Label() + "'.");
     return matches.size();
+}
+
+void EditorTreePresenter::ClearSelection()
+{
+    tree_.ClearSelection();
+    selection_.Clear();
+    properties_.Clear();
+    SetStatus("Selection cleared.");
+}
+
+void EditorTreePresenter::ReportSelection()
+{
+    const std::vector<std::string> paths = selection_.GetSelectedPaths(model_);
+    if (paths.empty())
+    {
+        SetStatus("No model items selected.");
+        return;
+    }
+
+    if (output_)
+    {
+        output_("Selected model path(s):");
+        for (const std::string& path : paths)
+            output_("  " + path);
+    }
+    SetStatus(std::to_string(paths.size()) + " model item(s) selected.");
 }

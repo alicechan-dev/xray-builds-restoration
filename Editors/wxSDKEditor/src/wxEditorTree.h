@@ -20,6 +20,7 @@ public:
     UserData GetSelectedUserData() const override;
     void ExpandAllItems() override;
     void SelectFirst() override;
+    void ClearSelection() override;
     void BeginEditSelectedLabel() override;
     void SelectByUserData(UserData userData) override;
 

@@ -1,5 +1,6 @@
 set(XR_WX_SDK_EDITOR_MODEL_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorItemType.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorSelectionModel.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeModel.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreePathListImport.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeQuery.cpp"
@@ -8,6 +9,7 @@ set(XR_WX_SDK_EDITOR_MODEL_SOURCES
 
 set(XR_WX_SDK_EDITOR_MODEL_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorItemType.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorSelectionModel.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreeModel.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreePathListImport.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_model/EditorTreeQuery.h"

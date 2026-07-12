@@ -29,7 +29,9 @@ enum
     IdSaveSnapshot,
     IdLoadSnapshot,
     IdImportPathList,
-    IdFindItem
+    IdFindItem,
+    IdClearSelection,
+    IdShowSelection
 };
 
 const char* SnapshotWildcard =
@@ -92,6 +94,8 @@ void wxSDKEditorFrame::CreateMenus()
     toolsMenu->Append(IdAddDemoGroup, "Add Demo &Group");
     toolsMenu->Append(IdDeleteSelected, "&Delete Selected");
     toolsMenu->Append(IdFindItem, "&Find Item...");
+    toolsMenu->Append(IdShowSelection, "Show Selected &Path");
+    toolsMenu->Append(IdClearSelection, "&Clear Selection");
     toolsMenu->AppendSeparator();
     toolsMenu->Append(IdAdapterStatus, "&Adapter Status");
     toolsMenu->AppendSeparator();
@@ -113,6 +117,8 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnLoadSnapshot, this, IdLoadSnapshot);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnImportPathList, this, IdImportPathList);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnFindItem, this, IdFindItem);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnShowSelection, this, IdShowSelection);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnClearSelection, this, IdClearSelection);
 }
 
 void wxSDKEditorFrame::CreateWorkspace()
@@ -238,6 +244,16 @@ void wxSDKEditorFrame::OnFindItem(wxCommandEvent&)
     if (dialog.ShowModal() != wxID_OK)
         return;
     treePresenter_->FindFirst(dialog.GetValue().ToStdString());
+}
+
+void wxSDKEditorFrame::OnClearSelection(wxCommandEvent&)
+{
+    treePresenter_->ClearSelection();
+}
+
+void wxSDKEditorFrame::OnShowSelection(wxCommandEvent&)
+{
+    treePresenter_->ReportSelection();
 }
 
 void wxSDKEditorFrame::OnSaveSnapshot(wxCommandEvent&)

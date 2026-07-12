@@ -1,5 +1,6 @@
 #include "editor_model/EditorTreeModel.h"
 #include "editor_model/EditorItemType.h"
+#include "editor_model/EditorSelectionModel.h"
 #include "editor_model/EditorTreePathListImport.h"
 #include "editor_model/EditorTreeQuery.h"
 #include "editor_model/EditorTreeSnapshot.h"
@@ -258,6 +259,60 @@ int main()
     Check(QueryEditorTree(queryModel, query).empty(), "query no-result behavior");
     Check(queryModel.FindByPath("Scene (demo data)/Objects/actor") != nullptr,
         "query does not mutate model");
+
+    EditorSelectionModel selection;
+    EditorTreeNode* selectedActor =
+        queryModel.FindByPath("Scene (demo data)/Objects/actor");
+    EditorTreeNode* selectedLights =
+        queryModel.FindByPath("Scene (demo data)/Lights");
+    EditorTreeNode* selectedSun =
+        queryModel.FindByPath("Scene (demo data)/Lights/sun");
+    selection.Select(nullptr);
+    selection.Select(selectedSun);
+    selection.Select(selectedActor);
+    selection.Select(selectedActor);
+    selection.Select(selectedLights);
+    Check(selection.SelectedCount() == 3,
+        "selection ignores null and duplicate nodes");
+    Check(selection.IsSelected(selectedActor), "selected node lookup");
+    std::vector<std::string> selectedPaths =
+        selection.GetSelectedPaths(queryModel);
+    Check(selectedPaths.size() == 3 &&
+        selectedPaths[0] == "Scene (demo data)/Objects/actor" &&
+        selectedPaths[1] == "Scene (demo data)/Lights" &&
+        selectedPaths[2] == "Scene (demo data)/Lights/sun",
+        "selected paths follow deterministic model traversal order");
+    const std::vector<std::string> selectedLabels =
+        selection.GetSelectedLabels(queryModel);
+    Check(selectedLabels.size() == 3 && selectedLabels[0] == "actor",
+        "selected labels are distinct from full paths");
+    selectedPaths = selection.GetSelectedPaths(
+        queryModel, "Scene (demo data)/Lights");
+    Check(selectedPaths.size() == 2,
+        "selected path prefix filter uses raw path prefix");
+    selectedPaths = selection.GetSelectedPaths(
+        queryModel, {}, EditorItemKind::Folder);
+    Check(selectedPaths.size() == 1 && selectedPaths[0] ==
+        "Scene (demo data)/Lights",
+        "selected kind filter");
+    selection.Toggle(selectedActor);
+    Check(!selection.IsSelected(selectedActor), "toggle deselects selected node");
+    selection.Toggle(selectedActor);
+    selection.Deselect(selectedSun);
+    Check(!selection.IsSelected(selectedSun), "explicit deselect");
+    selection.Select(selectedSun);
+    std::string deleteReason;
+    Check(queryModel.DeleteNode(*selectedSun, &deleteReason),
+        "selection stale-path test deletes node");
+    selection.Prune(queryModel);
+    Check(selection.SelectedCount() == 2,
+        "prune removes stale path after delete");
+    EditorTreeModel replacement = EditorTreeModel::CreateDemoScene();
+    selection.Prune(replacement);
+    Check(selection.SelectedCount() == 2,
+        "path selection resolves across matching model replacement");
+    selection.Clear();
+    Check(selection.SelectedCount() == 0, "selection clear");
 
     std::string importedSnapshot;
     EditorTreeModel importedRoundTrip;

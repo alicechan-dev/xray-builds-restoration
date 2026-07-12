@@ -2,6 +2,7 @@
 #define XR_WX_SDK_EDITOR_EDITOR_TREE_PRESENTER_H
 
 #include "editor_model/EditorTreeModel.h"
+#include "editor_model/EditorSelectionModel.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -33,6 +34,8 @@ public:
     bool SaveSnapshot(const std::filesystem::path& path);
     bool ImportPathList(std::string_view text, const std::string& sourceName);
     std::size_t FindFirst(std::string text);
+    void ClearSelection();
+    void ReportSelection();
 
 private:
     EditorTreeNode* SelectedNode() const;
@@ -47,6 +50,7 @@ private:
     MessageCallback status_;
     MessageCallback output_;
     EditorTreeModel model_;
+    EditorSelectionModel selection_;
 };
 
 #endif
