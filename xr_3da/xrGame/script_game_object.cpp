@@ -36,7 +36,15 @@ class CScriptBinderObject;
 BIND_FUNCTION10	(m_tpGameObject,	CScriptGameObject::Position,			CGameObject,	Position,			Fvector,						Fvector());
 BIND_FUNCTION10	(m_tpGameObject,	CScriptGameObject::Direction,			CGameObject,	Direction,			Fvector,						Fvector());
 BIND_FUNCTION10	(m_tpGameObject,	CScriptGameObject::Mass,		CPhysicsShellHolder,	GetMass,			float,							float(-1));
-BIND_FUNCTION10	(m_tpGameObject,	CScriptGameObject::ID,					CGameObject,	ID,					u32,							u32(-1));
+u32 CScriptGameObject::ID() const
+{
+	if (!m_tpGameObject || std::find(Level().Objects.objects.begin(), Level().Objects.objects.end(), m_tpGameObject) == Level().Objects.objects.end()) {
+		ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CGameObject : cannot access class member ID!");
+		return u32(-1);
+	}
+
+	return m_tpGameObject->ID();
+}
 BIND_FUNCTION10	(m_tpGameObject,	CScriptGameObject::getVisible,			CGameObject,	getVisible,			BOOL,							FALSE);
 BIND_FUNCTION01	(m_tpGameObject,	CScriptGameObject::setVisible,			CGameObject,	setVisible,			BOOL,							BOOL);
 BIND_FUNCTION10	(m_tpGameObject,	CScriptGameObject::getEnabled,			CGameObject,	getEnabled,			BOOL,							FALSE);
