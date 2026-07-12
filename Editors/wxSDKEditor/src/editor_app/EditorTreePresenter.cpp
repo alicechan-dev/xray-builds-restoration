@@ -68,6 +68,7 @@ void EditorTreePresenter::RefreshSelection()
     }
 
     const std::string text = "Selected: " + node->Label() +
+        "\nKind: " + std::string(ToString(node->Kind())) +
         "\nType: " + node->Category() +
         "\nPath: " + node->Path() +
         "\nProperties: placeholder only"

@@ -210,6 +210,8 @@ int RunEditorTreePresenterTests()
     presenter.RefreshSelection();
     check(ContainsText(properties.text, "Type: demo group"),
         "selection category shown in properties");
+    check(ContainsText(properties.text, "Kind: folder"),
+        "selection kind shown in properties");
 
     presenter.AddDemoNode("new_object", "demo scene object");
     check(tree.GetSelectedLabel() == "new_object", "added object selected");

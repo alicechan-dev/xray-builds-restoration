@@ -1,6 +1,8 @@
 #ifndef XR_WX_SDK_EDITOR_EDITOR_TREE_MODEL_H
 #define XR_WX_SDK_EDITOR_EDITOR_TREE_MODEL_H
 
+#include "editor_model/EditorItemType.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -12,6 +14,7 @@ public:
 
     const std::string& Label() const { return label_; }
     const std::string& Category() const { return category_; }
+    EditorItemKind Kind() const { return kind_; }
     const std::string& Path() const { return path_; }
     EditorTreeNode* Parent() { return parent_; }
     const EditorTreeNode* Parent() const { return parent_; }
@@ -20,11 +23,13 @@ public:
 private:
     friend class EditorTreeModel;
 
-    EditorTreeNode(std::string label, std::string category, EditorTreeNode* parent);
+    EditorTreeNode(std::string label, std::string category,
+        EditorItemKind kind, EditorTreeNode* parent);
     void RefreshPath();
 
     std::string label_;
     std::string category_;
+    EditorItemKind kind_ = EditorItemKind::Unknown;
     std::string path_;
     EditorTreeNode* parent_ = nullptr; // Non-owning; the model owns every node.
     Children children_;
@@ -33,9 +38,11 @@ private:
 class EditorTreeModel
 {
 public:
-    EditorTreeNode& CreateRoot(std::string label, std::string category = {});
+    EditorTreeNode& CreateRoot(std::string label, std::string category = {},
+        EditorItemKind kind = EditorItemKind::Root);
     EditorTreeNode& AddChild(EditorTreeNode& parent, std::string label,
-        std::string category = {});
+        std::string category = {},
+        EditorItemKind kind = EditorItemKind::Unknown);
 
     EditorTreeNode* Root() { return root_.get(); }
     const EditorTreeNode* Root() const { return root_.get(); }

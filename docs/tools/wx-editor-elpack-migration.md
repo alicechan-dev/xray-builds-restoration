@@ -130,6 +130,13 @@ selection behavior, and atomic failed path-list import. This makes future
 `ItemListHelper`/`FolderLib` behavior testable without wxWidgets and before any
 ElPack-dependent implementation or preserved `xrEProps` source is touched.
 
+The first type audit is also complete. Historical `EItemType` contributes only
+invalid/folder/object semantics; `ListItem::type` itself is an opaque integer
+whose meaning belongs to each caller. The neutral model therefore adds only
+`Unknown`, structural `Root`, `Folder`, and `Object`. UI flags, callbacks,
+icons, colors, object pointers, and caller-specific edit modes remain unmapped.
+See [wx Editor Item Types](wx-editor-item-types.md).
+
 This marks the wx model/presenter foundation checkpoint. Future work can map
 `ItemListTypes` concepts onto neutral categories or add a read-only metadata
 adapter, but should not modify `xrEProps` merely to feed the prototype. A small

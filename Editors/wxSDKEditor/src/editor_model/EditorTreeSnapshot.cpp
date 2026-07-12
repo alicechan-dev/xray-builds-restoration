@@ -10,7 +10,8 @@
 
 namespace
 {
-constexpr const char* SnapshotHeader = "# wxSDKEditor tree snapshot v1";
+constexpr const char* SnapshotHeaderV1 = "# wxSDKEditor tree snapshot v1";
+constexpr const char* SnapshotHeaderV2 = "# wxSDKEditor tree snapshot v2";
 constexpr std::streamoff MaximumSnapshotSize = 8 * 1024 * 1024;
 
 bool Fail(std::string* reason, const std::string& message)
@@ -42,7 +43,8 @@ void SerializeNode(const EditorTreeNode& node, unsigned int depth,
     std::string& output)
 {
     output += "node depth=" + std::to_string(depth) +
-        " label=\"" + Escape(node.Label()) +
+        " kind=\"" + std::string(ToString(node.Kind())) +
+        "\" label=\"" + Escape(node.Label()) +
         "\" category=\"" + Escape(node.Category()) +
         "\" path=\"" + Escape(node.Path()) + "\"\n";
     for (const auto& child : node.ChildrenView())
@@ -108,11 +110,22 @@ bool ParseQuoted(const std::string& line, std::size_t& position, std::string& va
 }
 
 bool ParseNodeLine(const std::string& line, unsigned int& depth,
-    std::string& label, std::string& category, std::string& path)
+    bool hasKind, EditorItemKind& kind, std::string& label,
+    std::string& category, std::string& path)
 {
     std::size_t position = 0;
-    return Consume(line, position, "node depth=") &&
-        ParseDepth(line, position, depth) &&
+    if (!Consume(line, position, "node depth=") ||
+        !ParseDepth(line, position, depth))
+        return false;
+    if (hasKind)
+    {
+        std::string kindText;
+        if (!Consume(line, position, " kind=") ||
+            !ParseQuoted(line, position, kindText) ||
+            !ParseEditorItemKind(kindText, kind))
+            return false;
+    }
+    return
         Consume(line, position, " label=") &&
         ParseQuoted(line, position, label) &&
         Consume(line, position, " category=") &&
@@ -129,7 +142,7 @@ bool SerializeEditorTreeSnapshot(
     if (!model.Root())
         return Fail(reason, "The tree model has no root node.");
 
-    output = std::string(SnapshotHeader) + "\n";
+    output = std::string(SnapshotHeaderV2) + "\n";
     SerializeNode(*model.Root(), 0, output);
     if (reason)
         reason->clear();
@@ -148,7 +161,8 @@ bool DeserializeEditorTreeSnapshot(
         return Fail(reason, "The snapshot header is missing.");
     if (!line.empty() && line.back() == '\r')
         line.pop_back();
-    if (line != SnapshotHeader)
+    const bool hasKind = line == SnapshotHeaderV2;
+    if (!hasKind && line != SnapshotHeaderV1)
         return Fail(reason, "Unsupported or malformed snapshot header.");
 
     EditorTreeModel parsed;
@@ -166,7 +180,9 @@ bool DeserializeEditorTreeSnapshot(
         std::string label;
         std::string category;
         std::string storedPath;
-        if (!ParseNodeLine(line, depth, label, category, storedPath))
+        EditorItemKind kind = EditorItemKind::Unknown;
+        if (!ParseNodeLine(
+            line, depth, hasKind, kind, label, category, storedPath))
             return Fail(reason, "Malformed node record at line " + std::to_string(lineNumber) + ".");
         if (label.empty())
             return Fail(reason, "Empty node label at line " + std::to_string(lineNumber) + ".");
@@ -176,7 +192,8 @@ bool DeserializeEditorTreeSnapshot(
         {
             if (parsed.Root() || !depthStack.empty())
                 return Fail(reason, "Multiple root nodes are not allowed.");
-            node = &parsed.CreateRoot(label, category);
+            node = &parsed.CreateRoot(label, category,
+                hasKind ? kind : EditorItemKind::Root);
             depthStack.push_back(node);
         }
         else
@@ -187,7 +204,8 @@ bool DeserializeEditorTreeSnapshot(
             EditorTreeNode* parent = depthStack[depth - 1];
             if (parsed.FindChildCaseInsensitive(*parent, label))
                 return Fail(reason, "Duplicate sibling label at line " + std::to_string(lineNumber) + ".");
-            node = &parsed.AddChild(*parent, label, category);
+            node = &parsed.AddChild(*parent, label, category,
+                hasKind ? kind : InferEditorItemKind(category));
             depthStack.push_back(node);
         }
 
@@ -260,7 +278,7 @@ bool RunEditorTreeSnapshotSelfCheck(std::string* failureReason)
         return Fail(failureReason, "Snapshot escaping round trip failed.");
 
     const std::string duplicate =
-        std::string(SnapshotHeader) + "\n"
+        std::string(SnapshotHeaderV1) + "\n"
         "node depth=0 label=\"Root\" category=\"root\" path=\"Root\"\n"
         "node depth=1 label=\"child\" category=\"item\" path=\"Root/child\"\n"
         "node depth=1 label=\"CHILD\" category=\"item\" path=\"Root/CHILD\"\n";

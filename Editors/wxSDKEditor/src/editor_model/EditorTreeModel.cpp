@@ -40,8 +40,10 @@ bool Fail(std::string* reason, const char* message)
 }
 
 EditorTreeNode::EditorTreeNode(
-    std::string label, std::string category, EditorTreeNode* parent) :
-    label_(std::move(label)), category_(std::move(category)), parent_(parent)
+    std::string label, std::string category, EditorItemKind kind,
+    EditorTreeNode* parent) :
+    label_(std::move(label)), category_(std::move(category)), kind_(kind),
+    parent_(parent)
 {
     RefreshPath();
 }
@@ -53,18 +55,24 @@ void EditorTreeNode::RefreshPath()
         child->RefreshPath();
 }
 
-EditorTreeNode& EditorTreeModel::CreateRoot(std::string label, std::string category)
+EditorTreeNode& EditorTreeModel::CreateRoot(
+    std::string label, std::string category, EditorItemKind kind)
 {
     root_ = std::unique_ptr<EditorTreeNode>(
-        new EditorTreeNode(std::move(label), std::move(category), nullptr));
+        new EditorTreeNode(
+            std::move(label), std::move(category), kind, nullptr));
     return *root_;
 }
 
 EditorTreeNode& EditorTreeModel::AddChild(
-    EditorTreeNode& parent, std::string label, std::string category)
+    EditorTreeNode& parent, std::string label, std::string category,
+    EditorItemKind kind)
 {
+    if (kind == EditorItemKind::Unknown)
+        kind = InferEditorItemKind(category);
     parent.children_.push_back(std::unique_ptr<EditorTreeNode>(
-        new EditorTreeNode(std::move(label), std::move(category), &parent)));
+        new EditorTreeNode(
+            std::move(label), std::move(category), kind, &parent)));
     return *parent.children_.back();
 }
 

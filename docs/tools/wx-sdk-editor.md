@@ -84,7 +84,9 @@ label-edit event can be vetoed before its dialog is shown.
 
 It does not load levels, assets, forms, or runtime data. `EditorTreeModel`
 owns the demo Objects, Lights, Sounds, Sectors / Portals, and Spawn Elements
-hierarchy. Selecting an entry shows its model label, category, path, and a
+hierarchy. Each node carries a neutral `EditorItemKind` (`Unknown`, `Root`,
+`Folder`, or `Object`) plus its display category. Selecting an entry shows its
+model label, kind, category, path, and a
 placeholder-only notice in the property panel. No historical editor logic has
 been copied into the shell.
 
@@ -107,18 +109,23 @@ they do not read or write X-Ray level data. Loading parses into a temporary
 model and replaces the current model only after every record validates, then
 rebuilds the wx tree and property selection.
 
-Snapshot v1 begins with:
+Snapshot v2 begins with:
 
 ```text
-# wxSDKEditor tree snapshot v1
+# wxSDKEditor tree snapshot v2
 ```
 
-Each following line stores depth plus quoted label, category, and diagnostic
-path fields. Quotes, backslashes, tabs, and line breaks are escaped. Paths are
+Each following line stores depth plus quoted kind, label, category, and
+diagnostic path fields. Quotes, backslashes, tabs, and line breaks are escaped.
+Paths are
 regenerated from hierarchy during load and compared with the stored diagnostic
 value. The parser rejects malformed records, invalid depth, empty labels,
 case-insensitive duplicate siblings, path mismatches, multiple roots, empty
 trees, and files larger than 8 MiB.
+
+The reader still accepts v1 snapshots. It assigns the structural root kind,
+infers only known development folder/object categories, and leaves custom
+categories as `Unknown`. See [wx Editor Item Types](wx-editor-item-types.md).
 
 The File menu also provides **Import Demo Path List** for dependency-free model
 experiments. Its `.wx_tree_paths` text format accepts one absolute-style logical
@@ -196,8 +203,8 @@ model/rename logic as the first extraction candidate and keeps the much larger
 The next safe sequence is:
 
 1. optionally add an intentionally documented sample under `docs/examples`;
-2. map `ItemListTypes` concepts to model categories without modifying
-   `xrEProps`;
+2. audit individual consumers of the remaining opaque `ListItem::type` integer
+   without modifying `xrEProps`;
 3. later add a read-only adapter for independently extracted metadata;
 4. keep the historical Borland/VCL restoration path separate.
 
@@ -244,3 +251,7 @@ successful path-list replacement, and preservation of the old model after a
 failed import. These tests launch no wxWidgets code and add no production test
 hooks. The preserved `xrEProps` code remains untouched, and real SDK data
 loading remains future work.
+
+Item-kind checks cover conversion/parsing, group/leaf classification, demo
+assignments, v2 snapshot round trips, v1 compatibility, known path-list
+category mapping, custom-category fallback, and presenter property text.

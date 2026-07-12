@@ -108,7 +108,8 @@ bool ImportEditorTreePathList(
         if (!current)
         {
             current = &parsed.CreateRoot(components.front(),
-                components.size() == 1 ? category : ImportedGroupCategory);
+                components.size() == 1 ? category : ImportedGroupCategory,
+                EditorItemKind::Root);
         }
         else if (Lowercase(current->Label()) != Lowercase(components.front()))
         {
@@ -128,7 +129,8 @@ bool ImportEditorTreePathList(
             }
 
             current = &parsed.AddChild(*current, components[index],
-                leaf ? category : ImportedGroupCategory);
+                leaf ? category : ImportedGroupCategory,
+                leaf ? InferEditorItemKind(category) : EditorItemKind::Folder);
         }
 
         ++entryCount;

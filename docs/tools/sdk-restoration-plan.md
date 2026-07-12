@@ -196,11 +196,19 @@ surviving parent. This is only the first small `FolderLib`-like hierarchy
 prototype. Drag/drop, thumbnails, popup menus, VCL forms, and real SDK data
 remain outside the wx path.
 
-The model seam now includes dependency-free `.wx_tree_snapshot` v1
-persistence. Save/load is explicit through File menu dialogs, stores only the
-development hierarchy/labels/categories, and atomically replaces the model
+The model seam now includes dependency-free `.wx_tree_snapshot` v2
+persistence. Save/load is explicit through File menu dialogs, stores the
+development hierarchy, item kinds, labels, and categories, and atomically replaces the model
 after strict validation. It is not a historical SDK format and creates no
-files during startup. Real level and editor-library loading remains deferred.
+files during startup. The reader remains compatible with v1 and conservatively
+infers only known development categories. Real level and editor-library loading
+remains deferred.
+
+The first `ItemListTypes` audit maps historical folder/object structure into a
+wx-free `EditorItemKind` with `Unknown`, structural `Root`, `Folder`, and
+`Object`. The opaque caller-defined `ListItem::type` integer and all UI flags,
+callbacks, pointers, icon/color fields, sorting, drawing, and form behavior are
+intentionally unmapped. See [wx Editor Item Types](wx-editor-item-types.md).
 
 `BUILD_XR_WX_SDK_EDITOR_MODEL_TESTS` adds the headless
 `wxSDKEditorModelTests` executable. It compiles only the independent model and

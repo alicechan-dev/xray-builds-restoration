@@ -1,4 +1,5 @@
 #include "editor_model/EditorTreeModel.h"
+#include "editor_model/EditorItemType.h"
 #include "editor_model/EditorTreePathListImport.h"
 #include "editor_model/EditorTreeSnapshot.h"
 
@@ -30,13 +31,48 @@ int RunEditorTreePresenterTests();
 
 int main()
 {
+    EditorItemKind parsedKind = EditorItemKind::Unknown;
+    Check(ToString(EditorItemKind::Folder) == "folder",
+        "folder kind string conversion");
+    Check(ParseEditorItemKind("OBJECT", parsedKind) &&
+        parsedKind == EditorItemKind::Object,
+        "known item kind parsed case-insensitively");
+    Check(!ParseEditorItemKind("light", parsedKind),
+        "unknown item kind text rejected");
+    Check(IsGroupKind(EditorItemKind::Root) &&
+        IsGroupKind(EditorItemKind::Folder),
+        "root and folder classified as groups");
+    Check(IsLeafKind(EditorItemKind::Object) &&
+        !IsLeafKind(EditorItemKind::Unknown),
+        "object classified as leaf without guessing unknown");
+
     EditorTreeModel model = EditorTreeModel::CreateDemoScene();
     Check(model.Root() != nullptr, "demo root exists");
     Check(model.FindByPath("Scene (demo data)/Objects/actor") != nullptr,
         "known demo path exists");
+    Check(model.Root()->Kind() == EditorItemKind::Root,
+        "demo root kind");
 
     EditorTreeNode* objects = model.FindByPath("Scene (demo data)/Objects");
     Check(objects != nullptr, "objects group exists");
+    Check(objects && objects->Kind() == EditorItemKind::Folder,
+        "demo group kind");
+    EditorTreeNode* demoActor =
+        model.FindByPath("Scene (demo data)/Objects/actor");
+    Check(demoActor && demoActor->Kind() == EditorItemKind::Object,
+        "demo scene object kind");
+    EditorTreeNode* demoLight =
+        model.FindByPath("Scene (demo data)/Lights/sun");
+    Check(demoLight && demoLight->Kind() == EditorItemKind::Object,
+        "demo light remains generic object kind");
+    EditorTreeNode* demoSound =
+        model.FindByPath("Scene (demo data)/Sounds/ambient");
+    Check(demoSound && demoSound->Kind() == EditorItemKind::Object,
+        "demo sound remains generic object kind");
+    EditorTreeNode* demoSpawn =
+        model.FindByPath("Scene (demo data)/Spawn Elements");
+    Check(demoSpawn && demoSpawn->Kind() == EditorItemKind::Folder,
+        "demo spawn collection remains folder kind");
     if (objects)
     {
         const std::string name0 = model.MakeUniqueChildName(*objects, "new_object");
@@ -80,12 +116,17 @@ int main()
     std::string snapshot;
     Check(SerializeEditorTreeSnapshot(model, snapshot, &reason),
         "snapshot serialization succeeds");
+    Check(snapshot.find("# wxSDKEditor tree snapshot v2\n") == 0,
+        "snapshot writer emits v2 header");
 
     EditorTreeModel loaded;
     Check(DeserializeEditorTreeSnapshot(loaded, snapshot, &reason),
         "snapshot deserialization succeeds");
     Check(loaded.FindByPath("Scene (demo data)/Objects/actor") != nullptr,
         "known path survives snapshot round trip");
+    Check(loaded.FindByPath("Scene (demo data)/Objects/actor")->Kind() ==
+        EditorItemKind::Object,
+        "item kind survives v2 snapshot round trip");
     EditorTreeNode* loadedEscaped = loaded.FindByLabel(escaped.Label());
     Check(loadedEscaped != nullptr, "escaped label survives snapshot round trip");
     Check(loadedEscaped && loadedEscaped->Category() == "category\tvalue",
@@ -113,6 +154,22 @@ int main()
         "node depth=0 label=\"Root\" category=\"root\" path=\"Wrong\"\n"),
         "stored path mismatch rejected");
 
+    const std::string legacySnapshot = std::string(Header) +
+        "node depth=0 label=\"Legacy\" category=\"custom root\" path=\"Legacy\"\n"
+        "node depth=1 label=\"Folder\" category=\"demo group\" path=\"Legacy/Folder\"\n"
+        "node depth=2 label=\"Item\" category=\"custom category\" path=\"Legacy/Folder/Item\"\n";
+    EditorTreeModel legacyLoaded;
+    Check(DeserializeEditorTreeSnapshot(legacyLoaded, legacySnapshot, &reason),
+        "v1 snapshot remains readable");
+    Check(legacyLoaded.Root()->Kind() == EditorItemKind::Root,
+        "v1 structural root inferred as root kind");
+    Check(legacyLoaded.FindByPath("Legacy/Folder")->Kind() ==
+        EditorItemKind::Folder,
+        "v1 known group category inferred as folder kind");
+    Check(legacyLoaded.FindByPath("Legacy/Folder/Item")->Kind() ==
+        EditorItemKind::Unknown,
+        "v1 custom category remains unknown kind");
+
     const std::string pathList =
         "# wxSDKEditor path list v1\n"
         "\n"
@@ -127,12 +184,24 @@ int main()
     EditorTreeNode* importedObjects = imported.FindByPath("Scene/Objects");
     Check(importedObjects && importedObjects->Category() == "imported group",
         "implicit group uses imported group category");
+    Check(importedObjects && importedObjects->Kind() == EditorItemKind::Folder,
+        "implicit group maps to folder kind");
     EditorTreeNode* defaultCategory =
         imported.FindByPath("Scene/Objects/level_changer");
     Check(defaultCategory && defaultCategory->Category() == "imported item",
         "missing category uses imported item default");
+    Check(defaultCategory && defaultCategory->Kind() == EditorItemKind::Object,
+        "default imported item maps to object kind");
     Check(imported.FindByPath("Scene/Lights/sun") != nullptr,
         "comments and blank lines are ignored");
+
+    EditorTreeModel customImported;
+    Check(ImportEditorTreePathList(customImported,
+        "/Custom/Items/value | custom category\n", &reason),
+        "custom category import succeeds");
+    Check(customImported.FindByPath("Custom/Items/value")->Kind() ==
+        EditorItemKind::Unknown,
+        "custom category falls back to unknown kind");
 
     std::string importedSnapshot;
     EditorTreeModel importedRoundTrip;
