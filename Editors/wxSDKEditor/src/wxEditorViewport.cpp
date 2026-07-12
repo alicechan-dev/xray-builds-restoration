@@ -1,6 +1,7 @@
 #include "wxEditorViewport.h"
 
 #include "editor_view/IEditorViewportRenderer.h"
+#include "editor_view/EditorTreePreviewAdapter.h"
 
 #include <wx/dcbuffer.h>
 
@@ -33,8 +34,7 @@ EditorViewportMouseButton MapButton(int button)
 wxEditorViewport::wxEditorViewport(wxWindow* parent) :
     wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
         wxWANTS_CHARS | wxBORDER_NONE),
-    renderer_(std::make_unique<NullEditorViewportRenderer>()),
-    controller_(renderer_.get()), timer_(this)
+    controller_(&renderer_), timer_(this)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     Bind(wxEVT_PAINT, &wxEditorViewport::OnPaint, this);
@@ -79,6 +79,36 @@ bool wxEditorViewport::IsGridVisible() const
     return controller_.State().gridVisible;
 }
 
+void wxEditorViewport::RebuildPreview(
+    const EditorTreeModel& model, const std::string& selectedPath)
+{
+    previewScene_ = BuildEditorPreviewScene(model, selectedPath);
+    renderer_.SetScene(&previewScene_);
+    Refresh(false);
+}
+
+void wxEditorViewport::TogglePreviewLabels()
+{
+    renderer_.SetLabelsVisible(!renderer_.LabelsVisible());
+    Refresh(false);
+}
+
+bool wxEditorViewport::ArePreviewLabelsVisible() const
+{
+    return renderer_.LabelsVisible();
+}
+
+bool wxEditorViewport::FrameSelected()
+{
+    const EditorPreviewObject* selected =
+        previewScene_.FindByLogicalPath(previewScene_.SelectedPath());
+    if (!selected)
+        return false;
+    controller_.FrameCameraOn(selected->x, selected->y, selected->z);
+    Refresh(false);
+    return true;
+}
+
 void wxEditorViewport::OnPaint(wxPaintEvent&)
 {
     wxAutoBufferedPaintDC dc(this);
@@ -100,6 +130,46 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
     }
 
     controller_.Render();
+    for (const EditorViewportPrimitive& primitive :
+        renderer_.DrawList().Primitives())
+    {
+        wxColour colour(160, 175, 185);
+        if (primitive.style == EditorViewportStyle::Light)
+            colour = wxColour(245, 210, 90);
+        else if (primitive.style == EditorViewportStyle::Spawn)
+            colour = wxColour(100, 210, 145);
+        else if (primitive.style == EditorViewportStyle::Selected)
+            colour = wxColour(255, 145, 55);
+        else if (primitive.style == EditorViewportStyle::Label)
+            colour = wxColour(215, 220, 225);
+        dc.SetPen(wxPen(colour,
+            primitive.style == EditorViewportStyle::Selected ? 2 : 1));
+        dc.SetBrush(*wxTRANSPARENT_BRUSH);
+        switch (primitive.type)
+        {
+        case EditorViewportPrimitiveType::Line:
+            dc.DrawLine(static_cast<int>(primitive.x1),
+                static_cast<int>(primitive.y1), static_cast<int>(primitive.x2),
+                static_cast<int>(primitive.y2));
+            break;
+        case EditorViewportPrimitiveType::Rectangle:
+            dc.DrawRectangle(static_cast<int>(primitive.x1),
+                static_cast<int>(primitive.y1),
+                static_cast<int>(primitive.x2 - primitive.x1),
+                static_cast<int>(primitive.y2 - primitive.y1));
+            break;
+        case EditorViewportPrimitiveType::Circle:
+            dc.DrawCircle(static_cast<int>(primitive.x1),
+                static_cast<int>(primitive.y1),
+                static_cast<int>(primitive.radius));
+            break;
+        case EditorViewportPrimitiveType::Text:
+            dc.SetTextForeground(colour);
+            dc.DrawText(wxString::FromUTF8(primitive.text),
+                static_cast<int>(primitive.x1), static_cast<int>(primitive.y1));
+            break;
+        }
+    }
     dc.SetTextForeground(wxColour(205, 213, 220));
     dc.DrawText("Renderer is not connected", 12, 12);
     dc.DrawText(wxString::Format("Size: %d x %d", state.width, state.height),

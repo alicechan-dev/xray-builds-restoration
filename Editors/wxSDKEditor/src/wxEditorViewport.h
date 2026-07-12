@@ -2,12 +2,14 @@
 #define XR_WX_SDK_EDITOR_WX_EDITOR_VIEWPORT_H
 
 #include "editor_view/EditorViewportController.h"
+#include "editor_view/EditorPreviewRenderer.h"
+#include "editor_view/EditorPreviewScene.h"
 
 #include <memory>
 #include <wx/panel.h>
 #include <wx/timer.h>
 
-class IEditorViewportRenderer;
+class EditorTreeModel;
 
 class wxEditorViewport final : public wxPanel
 {
@@ -18,6 +20,11 @@ public:
     void ResetCamera();
     void FocusViewport();
     bool IsGridVisible() const;
+    void RebuildPreview(const EditorTreeModel& model,
+        const std::string& selectedPath);
+    void TogglePreviewLabels();
+    bool ArePreviewLabelsVisible() const;
+    bool FrameSelected();
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -32,7 +39,8 @@ private:
     void OnKeyUp(wxKeyEvent& event);
     void OnTimer(wxTimerEvent& event);
 
-    std::unique_ptr<IEditorViewportRenderer> renderer_;
+    EditorPreviewScene previewScene_;
+    EditorPreviewRenderer renderer_;
     EditorViewportController controller_;
     wxTimer timer_;
 };

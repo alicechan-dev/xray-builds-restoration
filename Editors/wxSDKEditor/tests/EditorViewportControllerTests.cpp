@@ -105,6 +105,10 @@ int RunEditorViewportControllerTests()
         Near(controller.State().camera.pitch, 0.0f) &&
         Near(controller.State().camera.movementSpeed, 5.0f),
         "camera reset restores documented defaults");
+    controller.FrameCameraOn(7.0f, 3.0f, 11.0f);
+    check(Near(controller.State().camera.x, 7.0f) &&
+        Near(controller.State().camera.z, 11.0f),
+        "frame-selected seam centers camera on preview position");
 
     controller.Render();
     check(renderer.renderCount == 1 &&

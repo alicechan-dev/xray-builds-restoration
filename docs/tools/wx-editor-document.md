@@ -48,3 +48,7 @@ untouched.
 Viewport focus, camera placeholders, frame ticks, and grid visibility are UI
 state and never modify `EditorDocument` or its dirty baseline. See [wxSDKEditor
 Viewport Host](wx-editor-viewport.md).
+
+Preview objects and their synthetic positions are derived from the current
+tree and selection. They are not document state, never mark the document dirty,
+and do not change snapshot v2. See [wxSDKEditor Preview Scene](wx-editor-preview-scene.md).

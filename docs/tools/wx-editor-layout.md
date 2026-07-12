@@ -46,3 +46,6 @@ document modified. See [wxSDKEditor Document Layer](wx-editor-document.md).
 The AUI center pane now owns `wxEditorViewport` rather than a static label. It
 remains non-closable and non-dockable; reset layout always restores it. See
 [wxSDKEditor Viewport Host](wx-editor-viewport.md).
+
+The center surface now overlays derived preview boxes, markers, lights, labels,
+and selection highlighting while retaining the same fixed AUI pane policy.

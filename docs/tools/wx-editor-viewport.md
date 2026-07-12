@@ -44,3 +44,8 @@ discover or link wxWidgets.
 Future integration should implement `IEditorViewportRenderer` in a separate,
 target-local adapter while preserving the state/controller contract. Old
 `xrEProps`, LevelEditor, and runtime renderer targets remain untouched.
+
+The first concrete consumer is now the wx-free `EditorPreviewRenderer`. It
+converts a derived synthetic preview scene into semantic screen-space draw-list
+primitives; `wxEditorViewport` alone maps those primitives to wx colors. See
+[wxSDKEditor Preview Scene](wx-editor-preview-scene.md).

@@ -214,3 +214,7 @@ unmapped. See [wxSDKEditor Document Layer](wx-editor-document.md).
 The viewport host is another modern boundary, not an ElPack or VCL mapping.
 No historical renderer or editor viewport code is compiled or called. See
 [wxSDKEditor Viewport Host](wx-editor-viewport.md).
+
+The synthetic preview adapter consumes only the neutral tree model and logical
+selection paths. It does not port historical viewport widgets, object classes,
+or rendering behavior. See [wxSDKEditor Preview Scene](wx-editor-preview-scene.md).

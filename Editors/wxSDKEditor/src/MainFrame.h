@@ -57,6 +57,10 @@ private:
     void OnResetViewportCamera(wxCommandEvent& event);
     void OnFocusViewport(wxCommandEvent& event);
     void OnUpdateViewportGrid(wxUpdateUIEvent& event);
+    void OnRebuildPreview(wxCommandEvent& event);
+    void OnTogglePreviewLabels(wxCommandEvent& event);
+    void OnFrameSelected(wxCommandEvent& event);
+    void OnUpdatePreviewLabels(wxUpdateUIEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnAddDemoGroup(wxCommandEvent& event);
     void OnAddDemoObject(wxCommandEvent& event);

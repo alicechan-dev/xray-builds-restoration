@@ -19,11 +19,14 @@ class EditorTreePresenter
 {
 public:
     using MessageCallback = std::function<void(const std::string&)>;
+    using PreviewCallback = std::function<void(
+        const EditorTreeModel&, const std::string&)>;
 
     EditorTreePresenter(EditorDocument& document, IEditorTree& tree,
         IPropertyPanel& properties,
         IDialogService& dialogs, MessageCallback status,
-        MessageCallback output, MessageCallback documentChanged = {});
+        MessageCallback output, MessageCallback documentChanged = {},
+        PreviewCallback previewChanged = {});
 
     void InitializeDemo();
     void NewDocument();
@@ -41,6 +44,7 @@ public:
     std::size_t FindFirst(std::string text);
     void ClearSelection();
     void ReportSelection();
+    void RefreshPreview() const;
     bool Undo();
     bool Redo();
     bool CanUndo() const { return history_.CanUndo(); }
@@ -61,6 +65,7 @@ private:
     MessageCallback status_;
     MessageCallback output_;
     MessageCallback documentChanged_;
+    PreviewCallback previewChanged_;
     EditorDocument& document_;
     EditorTreeModel& model_;
     EditorSelectionModel& selection_;

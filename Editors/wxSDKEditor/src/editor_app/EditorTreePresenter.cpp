@@ -15,10 +15,11 @@
 EditorTreePresenter::EditorTreePresenter(EditorDocument& document,
     IEditorTree& tree, IPropertyPanel& properties, IDialogService& dialogs,
     MessageCallback status, MessageCallback output,
-    MessageCallback documentChanged) :
+    MessageCallback documentChanged, PreviewCallback previewChanged) :
     tree_(tree), properties_(properties), dialogs_(dialogs),
     status_(std::move(status)), output_(std::move(output)),
-    documentChanged_(std::move(documentChanged)), document_(document),
+    documentChanged_(std::move(documentChanged)),
+    previewChanged_(std::move(previewChanged)), document_(document),
     model_(document.Model()), selection_(document.Selection()),
     history_(document.History())
 {
@@ -66,6 +67,7 @@ void EditorTreePresenter::Rebuild(EditorTreeNode* selectedNode, bool selectFirst
     if (!model_.Root())
     {
         properties_.Clear();
+        RefreshPreview();
         return;
     }
 
@@ -90,6 +92,7 @@ void EditorTreePresenter::RefreshSelection()
     const EditorTreeNode* node = SelectedNode();
     selection_.Clear();
     selection_.Select(node);
+    RefreshPreview();
     if (!node)
     {
         properties_.Clear();
@@ -97,6 +100,14 @@ void EditorTreePresenter::RefreshSelection()
     }
 
     properties_.ShowProperties(BuildEditorNodePropertySet(*node));
+}
+
+void EditorTreePresenter::RefreshPreview() const
+{
+    if (!previewChanged_)
+        return;
+    const std::vector<std::string> paths = selection_.GetSelectedPaths(model_);
+    previewChanged_(model_, paths.empty() ? std::string() : paths.front());
 }
 
 void EditorTreePresenter::SetStatus(const std::string& message) const

@@ -553,3 +553,13 @@ paints only a diagnostic grid/overlay and translates placeholder camera input.
 `NullEditorViewportRenderer` establishes an injection point without linking
 DirectX, OpenGL, X-Ray renderers, levels, or assets. See [wxSDKEditor Viewport
 Host](wx-editor-viewport.md).
+
+## wxSDKEditor Synthetic Preview Checkpoint
+
+A disposable `EditorPreviewScene` is now rebuilt from neutral tree paths and
+selection. Stable traversal supplies synthetic grid positions, while a wx-free
+software renderer emits semantic lines, rectangles, circles, and labels for the
+concrete wx painter. Selection highlighting, label toggling, and placeholder
+frame-selected behavior validate synchronization without changing snapshots or
+linking historical renderer targets. See [wxSDKEditor Preview
+Scene](wx-editor-preview-scene.md).

@@ -12,6 +12,10 @@ set(XR_WX_SDK_EDITOR_MODEL_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_model/EditorTreeSnapshot.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_view/EditorViewportController.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_view/EditorViewportState.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_view/EditorPreviewRenderer.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_view/EditorPreviewScene.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_view/EditorTreePreviewAdapter.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_view/EditorViewportDrawList.cpp"
 )
 
 set(XR_WX_SDK_EDITOR_MODEL_HEADERS
@@ -30,6 +34,10 @@ set(XR_WX_SDK_EDITOR_MODEL_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/EditorViewportController.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/EditorViewportState.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/IEditorViewportRenderer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/EditorPreviewRenderer.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/EditorPreviewScene.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/EditorTreePreviewAdapter.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_view/EditorViewportDrawList.h"
 )
 
 if(BUILD_XR_WX_SDK_EDITOR_MODEL_TESTS)

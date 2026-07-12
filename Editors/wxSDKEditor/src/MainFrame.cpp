@@ -41,7 +41,10 @@ enum
     IdResetLayout,
     IdToggleViewportGrid,
     IdResetViewportCamera,
-    IdFocusViewport
+    IdFocusViewport,
+    IdRebuildPreview,
+    IdTogglePreviewLabels,
+    IdFrameSelected
 };
 
 const char* SceneTreePane = "scene_tree";
@@ -103,6 +106,10 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendCheckItem(IdToggleViewportGrid, "Viewport &Grid");
     viewMenu->Append(IdResetViewportCamera, "Reset Viewport &Camera");
     viewMenu->Append(IdFocusViewport, "&Focus Viewport");
+    viewMenu->AppendSeparator();
+    viewMenu->Append(IdRebuildPreview, "&Rebuild Preview Scene");
+    viewMenu->AppendCheckItem(IdTogglePreviewLabels, "Preview &Labels");
+    viewMenu->Append(IdFrameSelected, "Frame &Selected");
     menuBar->Append(viewMenu, "&View");
 
     auto* toolsMenu = new wxMenu();
@@ -156,6 +163,14 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdFocusViewport);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateViewportGrid,
         this, IdToggleViewportGrid);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnRebuildPreview,
+        this, IdRebuildPreview);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnTogglePreviewLabels,
+        this, IdTogglePreviewLabels);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnFrameSelected,
+        this, IdFrameSelected);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdatePreviewLabels,
+        this, IdTogglePreviewLabels);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoObject, this, IdAddDemoObject);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoGroup, this, IdAddDemoGroup);
@@ -218,7 +233,10 @@ void wxSDKEditorFrame::CreateWorkspace()
         [this](const std::string& message) { SetStatusText(message); },
         [this](const std::string& message) {
             output_->AppendText("\n" + wxString::FromUTF8(message) + "\n");
-        }, [this](const std::string&) { UpdateDocumentTitle(); });
+        }, [this](const std::string&) { UpdateDocumentTitle(); },
+        [this](const EditorTreeModel& model, const std::string& selectedPath) {
+            viewport_->RebuildPreview(model, selectedPath);
+        });
     treePresenter_->InitializeDemo();
 }
 
@@ -442,6 +460,30 @@ void wxSDKEditorFrame::OnFocusViewport(wxCommandEvent&)
 void wxSDKEditorFrame::OnUpdateViewportGrid(wxUpdateUIEvent& event)
 {
     event.Check(viewport_ && viewport_->IsGridVisible());
+}
+
+void wxSDKEditorFrame::OnRebuildPreview(wxCommandEvent&)
+{
+    treePresenter_->RefreshPreview();
+    SetStatusText("Preview scene rebuilt from the development model.");
+}
+
+void wxSDKEditorFrame::OnTogglePreviewLabels(wxCommandEvent&)
+{
+    viewport_->TogglePreviewLabels();
+}
+
+void wxSDKEditorFrame::OnFrameSelected(wxCommandEvent&)
+{
+    if (viewport_->FrameSelected())
+        SetStatusText("Placeholder camera framed the selected preview object.");
+    else
+        SetStatusText("Selected tree item has no renderable preview object.");
+}
+
+void wxSDKEditorFrame::OnUpdatePreviewLabels(wxUpdateUIEvent& event)
+{
+    event.Check(viewport_ && viewport_->ArePreviewLabelsVisible());
 }
 
 void wxSDKEditorFrame::OnAbout(wxCommandEvent&)

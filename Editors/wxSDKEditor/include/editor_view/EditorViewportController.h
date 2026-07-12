@@ -40,6 +40,7 @@ public:
     void Render();
     void ToggleGrid();
     void ResetCamera();
+    void FrameCameraOn(float x, float y, float z);
 
     const EditorViewportState& State() const { return state_; }
 

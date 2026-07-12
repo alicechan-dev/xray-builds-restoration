@@ -115,6 +115,12 @@ void EditorViewportController::ResetCamera()
     ClearInput();
 }
 
+void EditorViewportController::FrameCameraOn(float x, float, float z)
+{
+    state_.camera.x = x;
+    state_.camera.z = z;
+}
+
 void EditorViewportController::SetKey(EditorViewportKey key, bool pressed)
 {
     switch (key)

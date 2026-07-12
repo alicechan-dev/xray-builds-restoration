@@ -274,3 +274,10 @@ state/controller covers dimensions, input, placeholder camera, grid, and
 renderer invocation; the concrete wx control paints a buffered diagnostic grid
 through a null-renderer fallback. No runtime renderer target or real level data
 is linked. Headless viewport tests remain wxWidgets-free.
+
+The viewport now also draws a derived synthetic preview scene. A tree adapter
+excludes folders, maps light/spawn/object categories, assigns deterministic
+placeholder positions, and synchronizes selection by logical path. A wx-free
+draw list feeds the wx painter; labels and frame-selected are available without
+changing snapshots or linking renderer targets. See [wxSDKEditor Preview
+Scene](wx-editor-preview-scene.md).
