@@ -251,6 +251,15 @@ requirement, while tests-only configuration does not discover, include, or link
 wxWidgets. The prototype does not replace the historical Borland editor and
 does not compile, call, or modify `xrEProps` or LevelEditor code.
 
+The next completed foundation slice is a bounded command history around the
+neutral model. The presenter routes demo add/delete/move/rename/property
+mutations through in-memory snapshot-backed commands, restores selection by
+logical path, and clears history when a successful load/import establishes a
+new model baseline. Fake UI/service tests exercise undo/redo coordination and
+delete confirmation without wxWidgets; tests-only builds do not discover,
+include, or link it. This does not port historical `xrEProps` commands or load
+real SDK data. See [wx Editor Command History](wx-editor-command-history.md).
+
 Reasonable next wx-path tasks are limited to an intentionally documented sample
 path list, mapping `ItemListTypes` concepts to neutral model categories without
 source changes, or a later read-only adapter for independently extracted

@@ -212,6 +212,15 @@ than another property-grid dependency, while fake-panel tests remain wx-free.
 No historical `xrEProps` source or real SDK object binding is involved. See
 [wx Editor Properties](wx-editor-properties.md).
 
+The experiment now also has bounded, wx-free command history for demo add,
+delete, move, rename, and editable property operations. Undo/redo uses the
+existing in-memory snapshot format and restores selection by logical path.
+Headless fake tree/property/dialog adapters cover coordination, delete
+confirmation, and failed-import model preservation without discovering or
+linking wxWidgets. The wx shell exposes `Ctrl+Z` and `Ctrl+Y`; old `xrEProps`
+and real SDK data remain untouched. See [wx Editor Command
+History](wx-editor-command-history.md).
+
 Explicitly prohibited for the SDK GUI branch:
 
 * fake `ElTree.hpp` or placeholder ElPack tree widgets;

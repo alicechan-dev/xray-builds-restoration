@@ -84,8 +84,8 @@ void wxSDKEditorFrame::CreateMenus()
     menuBar->Append(fileMenu, "&File");
 
     auto* editMenu = new wxMenu();
-    editMenu->Append(wxID_UNDO, "&Undo")->Enable(false);
-    editMenu->Append(wxID_REDO, "&Redo")->Enable(false);
+    editMenu->Append(wxID_UNDO, "&Undo\tCtrl+Z");
+    editMenu->Append(wxID_REDO, "&Redo\tCtrl+Y");
     menuBar->Append(editMenu, "&Edit");
 
     auto* viewMenu = new wxMenu();
@@ -112,6 +112,10 @@ void wxSDKEditorFrame::CreateMenus()
 
     SetMenuBar(menuBar);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnExit, this, wxID_EXIT);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnUndo, this, wxID_UNDO);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnRedo, this, wxID_REDO);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateUndo, this, wxID_UNDO);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateRedo, this, wxID_REDO);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoObject, this, IdAddDemoObject);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoGroup, this, IdAddDemoGroup);
@@ -179,6 +183,26 @@ wxSDKEditorFrame::~wxSDKEditorFrame() = default;
 void wxSDKEditorFrame::OnExit(wxCommandEvent&)
 {
     Close(true);
+}
+
+void wxSDKEditorFrame::OnUndo(wxCommandEvent&)
+{
+    treePresenter_->Undo();
+}
+
+void wxSDKEditorFrame::OnRedo(wxCommandEvent&)
+{
+    treePresenter_->Redo();
+}
+
+void wxSDKEditorFrame::OnUpdateUndo(wxUpdateUIEvent& event)
+{
+    event.Enable(treePresenter_ && treePresenter_->CanUndo());
+}
+
+void wxSDKEditorFrame::OnUpdateRedo(wxUpdateUIEvent& event)
+{
+    event.Enable(treePresenter_ && treePresenter_->CanRedo());
 }
 
 void wxSDKEditorFrame::OnAbout(wxCommandEvent&)

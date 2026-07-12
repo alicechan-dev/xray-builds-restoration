@@ -23,6 +23,10 @@ private:
     void CreateMenus();
     void CreateWorkspace();
     void OnExit(wxCommandEvent& event);
+    void OnUndo(wxCommandEvent& event);
+    void OnRedo(wxCommandEvent& event);
+    void OnUpdateUndo(wxUpdateUIEvent& event);
+    void OnUpdateRedo(wxUpdateUIEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnAddDemoGroup(wxCommandEvent& event);
     void OnAddDemoObject(wxCommandEvent& event);

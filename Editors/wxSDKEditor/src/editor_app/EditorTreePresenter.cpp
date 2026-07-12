@@ -1,4 +1,5 @@
 #include "editor_app/EditorTreePresenter.h"
+#include "editor_app/EditorModelCommand.h"
 
 #include "editor_model/EditorTreePathListImport.h"
 #include "editor_model/EditorPropertySet.h"
@@ -9,6 +10,7 @@
 #include "editor_ui/IPropertyPanel.h"
 
 #include <utility>
+#include <memory>
 
 EditorTreePresenter::EditorTreePresenter(IEditorTree& tree,
     IPropertyPanel& properties, IDialogService& dialogs,
@@ -25,6 +27,7 @@ EditorTreePresenter::EditorTreePresenter(IEditorTree& tree,
 void EditorTreePresenter::InitializeDemo()
 {
     model_ = EditorTreeModel::CreateDemoScene();
+    history_.Clear();
     Rebuild(nullptr, true);
 }
 
@@ -64,6 +67,13 @@ void EditorTreePresenter::Rebuild(EditorTreeNode* selectedNode, bool selectFirst
     RefreshSelection();
 }
 
+void EditorTreePresenter::RebuildByPath(
+    const std::string& selectedPath, bool selectFirst)
+{
+    Rebuild(selectedPath.empty() ? nullptr : model_.FindByPath(selectedPath),
+        selectFirst);
+}
+
 void EditorTreePresenter::RefreshSelection()
 {
     const EditorTreeNode* node = SelectedNode();
@@ -92,10 +102,33 @@ void EditorTreePresenter::AddDemoNode(const char* baseName, const char* category
     if (!parent)
         return;
 
-    const std::string name = model_.MakeUniqueChildName(*parent, baseName);
-    EditorTreeNode& added = model_.AddChild(*parent, name, category);
-    Rebuild(&added);
-    SetStatus("Added '" + added.Label() + "' under '" + parent->Label() + "'.");
+    const std::string parentPath = parent->Path();
+    const std::string base = baseName;
+    const std::string nodeCategory = category;
+    std::string reason;
+    auto command = std::make_unique<EditorModelCommand>(model_, "Add " + base,
+        parentPath, [this, parentPath, base, nodeCategory](
+            std::string* selectionPath, std::string* mutationReason) {
+            EditorTreeNode* currentParent = model_.FindByPath(parentPath);
+            if (!currentParent)
+            {
+                if (mutationReason) *mutationReason = "Parent no longer exists.";
+                return false;
+            }
+            const std::string name =
+                model_.MakeUniqueChildName(*currentParent, base);
+            EditorTreeNode& added =
+                model_.AddChild(*currentParent, name, nodeCategory);
+            *selectionPath = added.Path();
+            return true;
+        });
+    if (!history_.Execute(std::move(command), &reason))
+    {
+        dialogs_.Warning("Add rejected", reason.c_str());
+        return;
+    }
+    RebuildByPath(history_.GetSelectionPath());
+    SetStatus("Added '" + tree_.GetSelectedLabel() + "'.");
 }
 
 void EditorTreePresenter::DeleteSelected()
@@ -120,16 +153,31 @@ void EditorTreePresenter::DeleteSelected()
     if (!dialogs_.Confirm("Delete demo node", prompt.c_str()))
         return;
 
-    EditorTreeNode* parent = selected->Parent();
-    tree_.Clear();
-    if (!model_.DeleteNode(*selected, &reason))
+    const std::string selectedPath = selected->Path();
+    const std::string parentPath = selected->Parent()
+        ? selected->Parent()->Path() : std::string();
+    auto command = std::make_unique<EditorModelCommand>(model_,
+        "Delete " + label, selectedPath,
+        [this, selectedPath, parentPath](
+            std::string* selectionPath, std::string* mutationReason) {
+            EditorTreeNode* current = model_.FindByPath(selectedPath);
+            if (!current)
+            {
+                if (mutationReason) *mutationReason = "Node no longer exists.";
+                return false;
+            }
+            if (!model_.DeleteNode(*current, mutationReason))
+                return false;
+            *selectionPath = parentPath;
+            return true;
+        });
+    if (!history_.Execute(std::move(command), &reason))
     {
-        Rebuild(selected);
         dialogs_.Warning("Delete rejected", reason.c_str());
         return;
     }
 
-    Rebuild(parent ? parent : model_.Root());
+    RebuildByPath(history_.GetSelectionPath(), true);
     SetStatus("Deleted '" + label + "'.");
 }
 
@@ -172,18 +220,34 @@ bool EditorTreePresenter::MoveSelectedTo(const std::string& newParentPath)
     const std::string oldPath = selected->Path();
     const std::string label = selected->Label();
     std::string reason;
-    if (!model_.MoveNode(*selected, *newParent, &reason))
+    auto command = std::make_unique<EditorModelCommand>(model_,
+        "Move " + label, oldPath,
+        [this, oldPath, newParentPath](
+            std::string* selectionPath, std::string* mutationReason) {
+            EditorTreeNode* current = model_.FindByPath(oldPath);
+            EditorTreeNode* destination = model_.FindByPath(newParentPath);
+            if (!current || !destination)
+            {
+                if (mutationReason) *mutationReason =
+                    "Source or destination no longer exists.";
+                return false;
+            }
+            if (!model_.MoveNode(*current, *destination, mutationReason))
+                return false;
+            *selectionPath = current->Path();
+            return true;
+        });
+    if (!history_.Execute(std::move(command), &reason))
     {
         dialogs_.Warning("Move rejected", reason.c_str());
         SetStatus("Move rejected: " + reason);
         return false;
     }
 
-    selection_.RemapPathPrefix(oldPath, selected->Path());
-    Rebuild(selected);
+    RebuildByPath(history_.GetSelectionPath());
     if (output_)
-        output_("Moved '" + label + "' to '" + newParent->Path() + "'.");
-    SetStatus("Moved '" + label + "' to '" + newParent->Path() + "'.");
+        output_("Moved '" + label + "' to '" + newParentPath + "'.");
+    SetStatus("Moved '" + label + "' to '" + newParentPath + "'.");
     return true;
 }
 
@@ -198,20 +262,36 @@ bool EditorTreePresenter::ApplySelectedProperty(
         return false;
     }
 
-    const EditorPropertyApplyResult result =
-        ApplyEditorNodeProperty(model_, *selected, key, std::move(value));
-    if (!result.success)
+    const std::string selectedPath = selected->Path();
+    std::string reason;
+    auto command = std::make_unique<EditorModelCommand>(model_,
+        "Edit " + key, selectedPath,
+        [this, selectedPath, key, value = std::move(value)](
+            std::string* selectionPath, std::string* mutationReason) mutable {
+            EditorTreeNode* current = model_.FindByPath(selectedPath);
+            if (!current)
+            {
+                if (mutationReason) *mutationReason = "Node no longer exists.";
+                return false;
+            }
+            const EditorPropertyApplyResult result =
+                ApplyEditorNodeProperty(model_, *current, key, std::move(value));
+            if (!result.success)
+            {
+                if (mutationReason) *mutationReason = result.reason;
+                return false;
+            }
+            *selectionPath = current->Path();
+            return true;
+        });
+    if (!history_.Execute(std::move(command), &reason))
     {
-        dialogs_.Warning("Property edit rejected", result.reason.c_str());
-        SetStatus("Property edit rejected: " + result.reason);
+        dialogs_.Warning("Property edit rejected", reason.c_str());
+        SetStatus("Property edit rejected: " + reason);
         RefreshSelection();
         return false;
     }
-
-    if (result.requiresTreeRebuild)
-        Rebuild(selected);
-    else if (result.requiresPropertyRefresh)
-        RefreshSelection();
+    RebuildByPath(history_.GetSelectionPath());
     SetStatus("Updated property '" + key + "'.");
     return true;
 }
@@ -220,14 +300,30 @@ bool EditorTreePresenter::RenameNode(
     EditorTreeNode& node, std::string newName, std::string* reason)
 {
     const std::string previousLabel = node.Label();
-    if (!model_.RenameNode(node, std::move(newName), reason))
+    const std::string oldPath = node.Path();
+    auto command = std::make_unique<EditorModelCommand>(model_,
+        "Rename " + previousLabel, oldPath,
+        [this, oldPath, newName = std::move(newName)](
+            std::string* selectionPath, std::string* mutationReason) mutable {
+            EditorTreeNode* current = model_.FindByPath(oldPath);
+            if (!current)
+            {
+                if (mutationReason) *mutationReason = "Node no longer exists.";
+                return false;
+            }
+            if (!model_.RenameNode(*current, std::move(newName), mutationReason))
+                return false;
+            *selectionPath = current->Path();
+            return true;
+        });
+    if (!history_.Execute(std::move(command), reason))
     {
         SetStatus("Rename rejected: " + (reason ? *reason : std::string()));
         return false;
     }
 
-    SetStatus("Renamed '" + previousLabel + "' to '" + node.Label() + "'.");
     RefreshSelection();
+    SetStatus("Renamed '" + previousLabel + "' to '" + node.Label() + "'.");
     return true;
 }
 
@@ -243,8 +339,37 @@ bool EditorTreePresenter::LoadSnapshot(const std::filesystem::path& path)
     }
 
     model_ = std::move(loaded);
+    history_.Clear();
     Rebuild(nullptr, true);
     SetStatus("Loaded demo tree snapshot.");
+    return true;
+}
+
+bool EditorTreePresenter::Undo()
+{
+    const std::string name = history_.GetUndoName();
+    std::string reason;
+    if (!history_.Undo(&reason))
+    {
+        SetStatus(reason);
+        return false;
+    }
+    RebuildByPath(history_.GetSelectionPath(), true);
+    SetStatus("Undid '" + name + "'.");
+    return true;
+}
+
+bool EditorTreePresenter::Redo()
+{
+    const std::string name = history_.GetRedoName();
+    std::string reason;
+    if (!history_.Redo(&reason))
+    {
+        SetStatus(reason);
+        return false;
+    }
+    RebuildByPath(history_.GetSelectionPath(), true);
+    SetStatus("Redid '" + name + "'.");
     return true;
 }
 
@@ -272,6 +397,7 @@ bool EditorTreePresenter::ImportPathList(
         return false;
     }
 
+    history_.Clear();
     Rebuild(nullptr, true);
     if (output_)
         output_("Imported development path list: " + sourceName);

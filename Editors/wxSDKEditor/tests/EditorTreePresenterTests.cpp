@@ -281,6 +281,13 @@ int RunEditorTreePresenterTests()
     check(ContainsText(status, "Moved 'actor'") &&
         ContainsText(output, "Moved 'actor'"),
         "successful move reports status and output");
+    check(presenter.CanUndo() && presenter.Undo(), "move can be undone");
+    check(ContainsText(properties.text, "Objects/actor") &&
+        tree.GetSelectedLabel() == "actor",
+        "move undo restores hierarchy and logical selection");
+    check(presenter.CanRedo() && presenter.Redo(), "move can be redone");
+    check(ContainsText(properties.text, "Lights/actor"),
+        "move redo restores destination and selection");
     const int clearsBeforeRejectedMove = tree.clearCount;
     check(!presenter.MoveSelectedTo("Scene (demo data)/Lights/sun"),
         "presenter rejects object destination");
@@ -316,6 +323,12 @@ int RunEditorTreePresenterTests()
         "presenter accepts category property edit");
     check(ContainsText(properties.text, "Type: edited category"),
         "category property edit refreshes panel");
+    check(presenter.Undo() && ContainsText(properties.text,
+        "Type: demo scene object"),
+        "category edit undo restores property value");
+    check(presenter.Redo() && ContainsText(properties.text,
+        "Type: edited category"),
+        "category edit redo restores property value");
     check(!properties.Apply("path", "forbidden"),
         "presenter rejects read-only property edit");
 
@@ -347,6 +360,13 @@ int RunEditorTreePresenterTests()
     check(ContainsText(properties.text, "Path: Scene (demo data)/Objects/new_object"),
         "added object properties refreshed");
     check(ContainsText(status, "Added 'new_object'"), "add object status reported");
+    check(presenter.Undo() && !tree.Contains("new_object"),
+        "add undo removes node");
+    check(tree.GetSelectedLabel() == "Objects",
+        "add undo restores parent selection");
+    check(presenter.Redo() && tree.Contains("new_object") &&
+        tree.GetSelectedLabel() == "new_object",
+        "add redo restores node and selection");
     check(tree.SelectByLabel("Objects"), "objects group reselectable");
     presenter.AddDemoNode("new_object", "demo scene object");
     check(tree.GetSelectedLabel() == "new_object_1", "unique object name generated");
@@ -364,6 +384,13 @@ int RunEditorTreePresenterTests()
         "unique rename accepted");
     check(ContainsText(properties.text, "renamed_object"),
         "accepted rename refreshes properties");
+    check(presenter.Undo() && tree.Contains("new_object") &&
+        tree.GetSelectedLabel() == "new_object",
+        "rename undo restores old path and selection");
+    check(presenter.Redo() && tree.Contains("renamed_object") &&
+        tree.GetSelectedLabel() == "renamed_object",
+        "rename redo restores new path and selection");
+    renamed = reinterpret_cast<EditorTreeNode*>(tree.GetSelectedUserData());
     check(!presenter.RenameNode(*renamed, "new_object_1", &reason),
         "duplicate sibling rename rejected");
     check(ContainsText(status, "Rename rejected"), "rename rejection status reported");
@@ -379,6 +406,12 @@ int RunEditorTreePresenterTests()
     check(dialogs.confirmCount == 2, "confirmed delete requests confirmation");
     check(!tree.Contains("physic_object"), "confirmed delete removes node");
     check(tree.GetSelectedLabel() == "Objects", "delete selects surviving parent");
+    check(presenter.Undo() && tree.Contains("physic_object") &&
+        tree.GetSelectedLabel() == "physic_object",
+        "delete undo restores subtree and deleted-node selection");
+    check(presenter.Redo() && !tree.Contains("physic_object") &&
+        tree.GetSelectedLabel() == "Objects",
+        "delete redo removes subtree and selects parent");
 
     tree.SelectFirst();
     const int confirmationsBeforeRootDelete = dialogs.confirmCount;
@@ -394,15 +427,22 @@ int RunEditorTreePresenterTests()
     check(tree.Contains("Imported") && tree.Contains("item"),
         "successful import rebuilds tree");
     check(tree.GetSelectedLabel() == "Imported", "successful import selects root");
+    check(!presenter.CanUndo() && !presenter.CanRedo(),
+        "successful import clears command history");
     check(ContainsText(output, "memory.wx_tree_paths"), "import output reported");
+
+    presenter.AddDemoNode("new_group", "demo group");
+    check(presenter.CanUndo() && tree.Contains("new_group"),
+        "post-import mutation establishes new history");
 
     const int clearsBeforeFailedImport = tree.clearCount;
     check(!presenter.ImportPathList("relative/path\n", "bad.wx_tree_paths"),
         "invalid path list rejected");
     check(tree.clearCount == clearsBeforeFailedImport,
         "failed import does not rebuild tree");
-    check(tree.Contains("Imported") && tree.Contains("item"),
-        "failed import preserves existing model view");
+    check(tree.Contains("Imported") && tree.Contains("item") &&
+        tree.Contains("new_group") && presenter.CanUndo(),
+        "failed import preserves existing model view and command history");
     check(ContainsText(dialogs.lastError, "path must begin with"),
         "failed import reports reason through dialogs");
 

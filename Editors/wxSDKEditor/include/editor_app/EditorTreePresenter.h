@@ -3,6 +3,7 @@
 
 #include "editor_model/EditorTreeModel.h"
 #include "editor_model/EditorSelectionModel.h"
+#include "editor_app/EditorCommandHistory.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -40,10 +41,15 @@ public:
     std::size_t FindFirst(std::string text);
     void ClearSelection();
     void ReportSelection();
+    bool Undo();
+    bool Redo();
+    bool CanUndo() const { return history_.CanUndo(); }
+    bool CanRedo() const { return history_.CanRedo(); }
 
 private:
     EditorTreeNode* SelectedNode() const;
     void Rebuild(EditorTreeNode* selectedNode = nullptr, bool selectFirst = false);
+    void RebuildByPath(const std::string& selectedPath, bool selectFirst = false);
     void PopulateNode(const EditorTreeNode& node,
         std::uintptr_t parentItem);
     void SetStatus(const std::string& message) const;
@@ -55,6 +61,7 @@ private:
     MessageCallback output_;
     EditorTreeModel model_;
     EditorSelectionModel selection_;
+    EditorCommandHistory history_;
 };
 
 #endif

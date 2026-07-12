@@ -183,3 +183,16 @@ and object bindings. See [wx Editor Properties](wx-editor-properties.md).
 This map does not add ElPack headers, package libraries, VCL shims, real level
 loading, or old editor calls. It does not alter the preserved Borland sources.
 The model-driven demo tree in `wxSDKEditor` remains placeholder-only.
+
+## Command Coordination Checkpoint
+
+The neutral presenter now routes demo hierarchy and property mutations through
+a bounded, snapshot-backed command history. Headless fake tree, property-panel,
+and dialog adapters verify undo/redo coordination and logical path selection
+restoration without wxWidgets. Delete confirmation is part of this coverage,
+and a failed path-list import leaves both the old model and its history intact.
+
+This command seam does not port `ItemListHelper`, `FolderLib`, or historical
+ElPack command behavior. Preserved `xrEProps` remains untouched; real SDK data
+loading and asset-aware transactions remain future work. See [wx Editor Command
+History](wx-editor-command-history.md).

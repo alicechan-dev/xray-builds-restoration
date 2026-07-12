@@ -275,6 +275,20 @@ failed import. These tests launch no wxWidgets code and add no production test
 hooks. The preserved `xrEProps` code remains untouched, and real SDK data
 loading remains future work.
 
+The presenter also owns the first wx-free command history. Demo add, delete,
+move, rename, and editable property changes use in-memory snapshot-backed
+commands. Undo/redo restores logical selection paths after model replacement,
+and the wx shell exposes `Ctrl+Z`/`Ctrl+Y`. Snapshot load and successful
+path-list import establish new model baselines and clear history. See [wx
+Editor Command History](wx-editor-command-history.md).
+
+Headless coverage exercises command/model/view/property/dialog coordination,
+including delete confirmation, undo/redo selection restoration, and atomic
+failed path-list import. The fake `IEditorTree`, `IPropertyPanel`, and
+`IDialogService` require no wxWidgets; tests-only configuration neither
+discovers nor links it. Old `xrEProps` remains untouched, and real SDK data
+loading remains future work.
+
 Item-kind checks cover conversion/parsing, group/leaf classification, demo
 assignments, v2 snapshot round trips, v1 compatibility, known path-list
 category mapping, custom-category fallback, and presenter property text.
