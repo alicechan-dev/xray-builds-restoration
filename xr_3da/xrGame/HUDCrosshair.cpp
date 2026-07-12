@@ -33,7 +33,7 @@ CHUDCrosshair::~CHUDCrosshair()
 void CHUDCrosshair::OnDeviceCreate()
 {
 	hGeomLine.create			(FVF::F_TL0uv,RCache.Vertex.Buffer(),0);
-	hShader.create				("hud\\cursor","ui\\cursor");
+	hShader.create				("editor\\wire");
 }
 
 void CHUDCrosshair::OnDeviceDestroy()
