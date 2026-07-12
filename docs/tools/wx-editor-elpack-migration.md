@@ -145,6 +145,14 @@ and drawing remain outside it. Its default case-insensitive substring search is
 a documented neutral convenience rather than a historical compatibility claim.
 See [wx Editor Tree Query](wx-editor-query.md).
 
+The selection audit found full paths from `MakeFullName`, backing `ListItem`
+keys, raw prefix checks, and widget-owned ordering/state. Its `bOnlyObject`
+branch tests a non-null payload pointer rather than `TYPE_OBJECT`. The neutral
+`EditorSelectionModel` therefore stores paths, resolves in model order, exposes
+labels and paths separately, and uses optional audited kind filters. ElPack
+multi-select, expansion, callbacks, and form storage remain excluded. See [wx
+Editor Selection Model](wx-editor-selection.md).
+
 This marks the wx model/presenter foundation checkpoint. Future work can map
 `ItemListTypes` concepts onto neutral categories or add a read-only metadata
 adapter, but should not modify `xrEProps` merely to feed the prototype. A small
@@ -155,6 +163,16 @@ and explained. The historical Borland/VCL and real ElPack path remains separate.
 hierarchy operations can migrate incrementally; its drag/drop, popup menu,
 thumbnail drawing, and dialog behavior must be redesigned against explicit wx
 view and service interfaces.
+
+The first hierarchy-move slice is now mapped without compiling `FolderLib`.
+The audit preserves its proven folder/object containment, full-subtree move,
+path-change, root-level drop, current-parent rejection, and cycle-prevention
+semantics. ElPack mouse hit testing, drag state, confirmation, selection,
+expansion, drawing, and callbacks remain excluded. The neutral model uses a
+stricter atomic collision policy: every case-insensitive destination duplicate
+rejects the move instead of merging folders or skipping duplicate objects.
+Selection paths remap after success, and the wx shell exposes only a
+menu/choice-dialog prototype. See [wx Editor Tree Move](wx-editor-move.md).
 
 ## Explicit Non-Goals
 

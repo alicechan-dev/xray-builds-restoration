@@ -103,6 +103,14 @@ Selected. Creation uses model-generated case-insensitive unique sibling names
 owned node storage. After either operation, the wx tree is rebuilt entirely
 from `EditorTreeModel` and selects the new node or surviving parent.
 
+**Tools -> Move Selected To...** is a menu/dialog prototype, not drag/drop. It
+lists only Root/Folder paths accepted by the wx-free model. A successful move
+transfers the owned subtree, refreshes descendant paths, remaps path-based
+selection, rebuilds the view, keeps the moved node selected, and updates the
+property path. Root, self, descendant-cycle, Object destination, current-parent,
+and case-insensitive duplicate moves are rejected without mutation. See
+[wx Editor Tree Move](wx-editor-move.md).
+
 **Tools → Find Item...** is a minimal query prototype. MainFrame collects text,
 the presenter invokes the wx-free `EditorTreeQuery`, and the first
 case-insensitive label-substring match is selected without filtering or
@@ -110,6 +118,13 @@ rebuilding the tree. Properties refresh from the matched model node and status
 reports the result count; no match leaves selection unchanged. Path, exact,
 case-sensitive, and kind-filter options exist at model level but are not yet a
 large UI. See [wx Editor Tree Query](wx-editor-query.md).
+
+The wx tree remains single-selection, but selection identity now also flows
+through the wx-free `EditorSelectionModel` as canonical model paths. **Tools →
+Show Selected Path** reports the current path/count, and **Tools → Clear
+Selection** clears the view, selection model, and properties. Delete selects the
+surviving parent; snapshot/import rebuilds select the new root, so stale pointers
+are never retained. See [wx Editor Selection Model](wx-editor-selection.md).
 
 The File menu provides Save Demo Snapshot and Load Demo Snapshot. These
 commands use a dependency-free, development-only `.wx_tree_snapshot` format;
@@ -269,3 +284,7 @@ model paths, case-sensitive comparison, all four kind filters, empty and
 no-result behavior, stable pre-order, and model immutability. Presenter checks
 cover first-result selection, property refresh, match-count status, and safe
 no-result behavior.
+
+Selection checks cover select/deselect/toggle, duplicate prevention, model-order
+paths, labels, raw prefix and kind filters, clearing, stale pruning, replacement
+resolution, presenter single-selection synchronization, reporting, and clear.

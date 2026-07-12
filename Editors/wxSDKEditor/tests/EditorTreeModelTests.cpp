@@ -260,6 +260,82 @@ int main()
     Check(queryModel.FindByPath("Scene (demo data)/Objects/actor") != nullptr,
         "query does not mutate model");
 
+    EditorTreeModel moveModel;
+    EditorTreeNode& moveRoot = moveModel.CreateRoot(
+        "Root", "test root", EditorItemKind::Root);
+    EditorTreeNode& folderA = moveModel.AddChild(
+        moveRoot, "FolderA", "test folder", EditorItemKind::Folder);
+    EditorTreeNode& folderB = moveModel.AddChild(
+        moveRoot, "FolderB", "test folder", EditorItemKind::Folder);
+    EditorTreeNode& movingObject = moveModel.AddChild(
+        folderA, "actor", "test object", EditorItemKind::Object);
+    EditorTreeNode& nestedFolder = moveModel.AddChild(
+        folderA, "Nested", "test folder", EditorItemKind::Folder);
+    EditorTreeNode& nestedObject = moveModel.AddChild(
+        nestedFolder, "child", "test object", EditorItemKind::Object);
+    EditorTreeNode& duplicate = moveModel.AddChild(
+        folderB, "ACTOR", "test object", EditorItemKind::Object);
+    std::string moveReason;
+    Check(!moveModel.MoveNode(movingObject, folderB, &moveReason),
+        "case-insensitive destination duplicate rejects move");
+    Check(movingObject.Parent() == &folderA &&
+        movingObject.Path() == "Root/FolderA/actor",
+        "failed duplicate move leaves hierarchy unchanged");
+    Check(moveModel.DeleteNode(duplicate, &moveReason),
+        "duplicate fixture removed");
+    EditorTreeNode* movingAddress = &movingObject;
+    Check(moveModel.MoveNode(movingObject, folderB, &moveReason),
+        "object moves between folders");
+    Check(&movingObject == movingAddress && movingObject.Parent() == &folderB,
+        "move preserves node address and updates parent");
+    Check(moveModel.FindByPath("Root/FolderA/actor") == nullptr &&
+        moveModel.FindByPath("Root/FolderB/actor") == &movingObject,
+        "object old path stops resolving and new path resolves");
+    Check(movingObject.Label() == "actor" &&
+        movingObject.Category() == "test object" &&
+        movingObject.Kind() == EditorItemKind::Object,
+        "move preserves node metadata");
+    Check(!moveModel.MoveNode(moveRoot, folderA, &moveReason),
+        "root move rejected");
+    Check(!moveModel.MoveNode(folderA, folderA, &moveReason),
+        "self move rejected");
+    Check(!moveModel.MoveNode(folderA, nestedFolder, &moveReason),
+        "descendant-cycle move rejected");
+    Check(!moveModel.MoveNode(nestedFolder, movingObject, &moveReason),
+        "move into object rejected");
+
+    EditorSelectionModel movedSelection;
+    movedSelection.Select(&folderA);
+    movedSelection.Select(&nestedObject);
+    const std::string oldFolderPath = folderA.Path();
+    Check(moveModel.MoveNode(folderA, folderB, &moveReason),
+        "folder with descendants moves");
+    movedSelection.RemapPathPrefix(oldFolderPath, folderA.Path());
+    Check(folderA.Path() == "Root/FolderB/FolderA" &&
+        nestedObject.Path() == "Root/FolderB/FolderA/Nested/child",
+        "folder move refreshes descendant paths");
+    Check(moveModel.FindByPath("Root/FolderA/Nested/child") == nullptr &&
+        moveModel.FindByPath("Root/FolderB/FolderA/Nested/child") == &nestedObject,
+        "folder old descendant path stops resolving and new path resolves");
+    const std::vector<std::string> remappedPaths =
+        movedSelection.GetSelectedPaths(moveModel);
+    Check(remappedPaths.size() == 2 &&
+        remappedPaths[0] == "Root/FolderB/FolderA" &&
+        remappedPaths[1] == "Root/FolderB/FolderA/Nested/child",
+        "selected node and descendant paths remap after folder move");
+    Check(movedSelection.IsSelected(&folderA) &&
+        movedSelection.IsSelected(&nestedObject),
+        "remapped selection resolves deterministically");
+
+    std::string movedSnapshot;
+    EditorTreeModel movedRoundTrip;
+    Check(SerializeEditorTreeSnapshot(moveModel, movedSnapshot, &moveReason) &&
+        DeserializeEditorTreeSnapshot(movedRoundTrip, movedSnapshot, &moveReason),
+        "moved model survives snapshot round trip");
+    Check(movedRoundTrip.FindByPath(
+        "Root/FolderB/FolderA/Nested/child") != nullptr,
+        "moved descendant path survives snapshot round trip");
+
     EditorSelectionModel selection;
     EditorTreeNode* selectedActor =
         queryModel.FindByPath("Scene (demo data)/Objects/actor");

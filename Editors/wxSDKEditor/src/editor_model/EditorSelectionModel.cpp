@@ -110,3 +110,19 @@ void EditorSelectionModel::Prune(const EditorTreeModel& model)
     for (const EditorTreeNode* node : nodes)
         paths_.push_back(node->Path());
 }
+
+void EditorSelectionModel::RemapPathPrefix(
+    const std::string& oldPrefix, const std::string& newPrefix)
+{
+    if (oldPrefix.empty())
+        return;
+
+    for (std::string& path : paths_)
+    {
+        if (path.size() < oldPrefix.size() ||
+            !EqualIgnoringCase(path.substr(0, oldPrefix.size()), oldPrefix) ||
+            (path.size() != oldPrefix.size() && path[oldPrefix.size()] != '/'))
+            continue;
+        path = newPrefix + path.substr(oldPrefix.size());
+    }
+}

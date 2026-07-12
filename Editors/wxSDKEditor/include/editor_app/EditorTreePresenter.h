@@ -10,6 +10,7 @@
 #include <functional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 class IDialogService;
 class IEditorTree;
@@ -28,6 +29,8 @@ public:
     void RefreshSelection();
     void AddDemoNode(const char* baseName, const char* category);
     void DeleteSelected();
+    std::vector<std::string> GetMoveDestinations() const;
+    bool MoveSelectedTo(const std::string& newParentPath);
     bool RenameNode(EditorTreeNode& node, std::string newName,
         std::string* reason = nullptr);
     bool LoadSnapshot(const std::filesystem::path& path);

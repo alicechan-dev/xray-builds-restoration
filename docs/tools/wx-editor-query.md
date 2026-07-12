@@ -60,3 +60,8 @@ GUI, and it does not load SDK assets or game data.
 Query is read-only and does not alter [wx Editor Selection](wx-editor-selection.md).
 Presenter search selects its first result through the same single-selection
 model used by direct tree interaction.
+
+Move destination discovery reuses an empty read-only query to traverse nodes,
+then asks `EditorTreeModel::CanMoveNode` to admit only valid Root/Folder
+destinations. Query itself remains unaware of mutation rules. See
+[wx Editor Tree Move](wx-editor-move.md).

@@ -37,6 +37,12 @@ audited kinds rather than the historical non-null-payload proxy.
 Read-only queries do not affect selection. Matching paths can resolve across a
 replacement model; `Prune` removes paths absent from the current model.
 
+Successful hierarchy moves use `RemapPathPrefix(oldPath, newPath)`. It remaps
+only an exact canonical path or a descendant at a `/` component boundary, so a
+selected moved folder and selected descendants follow the new hierarchy while
+stale old paths disappear. This is separate from the raw prefix filter accepted
+by collection methods. See [wx Editor Tree Move](wx-editor-move.md).
+
 ## Current UI Seam
 
 The wx tree remains single-selection. Each view selection replaces the neutral
@@ -50,7 +56,8 @@ neutral selection, and property panel. No wx multi-select behavior is claimed.
 
 Headless tests cover selection mutation, duplicate suppression, deterministic
 order, label/path collection, prefix and kind filters, clearing, stale pruning,
-replacement resolution, presenter synchronization, reporting, and clear action.
+replacement resolution, move-prefix remapping, presenter synchronization,
+reporting, and clear action.
 They require no wxWidgets package.
 
 This is a model migration seam, not a port of ElPack selection state or real SDK

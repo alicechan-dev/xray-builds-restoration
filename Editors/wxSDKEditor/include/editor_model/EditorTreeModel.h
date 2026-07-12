@@ -57,6 +57,11 @@ public:
     bool CanDeleteNode(const EditorTreeNode& node,
         std::string* reason = nullptr) const;
     bool DeleteNode(EditorTreeNode& node, std::string* reason = nullptr);
+    bool CanMoveNode(const EditorTreeNode& node,
+        const EditorTreeNode& newParent,
+        std::string* reason = nullptr) const;
+    bool MoveNode(EditorTreeNode& node, EditorTreeNode& newParent,
+        std::string* reason = nullptr);
 
     static EditorTreeModel CreateDemoScene();
 

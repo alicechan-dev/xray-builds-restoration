@@ -206,6 +206,14 @@ int RunEditorTreePresenterTests()
     check(tree.GetSelectedLabel() == "Scene (demo data)", "initial root selected");
     check(ContainsText(properties.text, "Path: Scene (demo data)"),
         "initial selection refreshes properties");
+    check(presenter.GetMoveDestinations().empty(),
+        "root has no valid move destinations");
+    const int clearsBeforeRootMove = tree.clearCount;
+    check(!presenter.MoveSelectedTo("Scene (demo data)/Lights"),
+        "presenter rejects root move");
+    check(tree.clearCount == clearsBeforeRootMove &&
+        tree.GetSelectedLabel() == "Scene (demo data)",
+        "failed root move preserves model view and selection");
 
     check(presenter.FindFirst("ACT") == 1,
         "search finds case-insensitive label substring");
@@ -223,6 +231,40 @@ int RunEditorTreePresenterTests()
     check(ContainsText(status, "No matching tree items"),
         "no-result search reports non-fatal status");
 
+    const std::vector<std::string> moveDestinations =
+        presenter.GetMoveDestinations();
+    check(std::find(moveDestinations.begin(), moveDestinations.end(),
+        "Scene (demo data)/Lights") != moveDestinations.end(),
+        "presenter exposes valid folder destination");
+    check(std::find(moveDestinations.begin(), moveDestinations.end(),
+        "Scene (demo data)/Objects") == moveDestinations.end(),
+        "presenter excludes current parent destination");
+    output.clear();
+    const int clearsBeforeMove = tree.clearCount;
+    check(presenter.MoveSelectedTo("Scene (demo data)/Lights"),
+        "presenter moves selected object");
+    check(tree.clearCount == clearsBeforeMove + 1,
+        "successful move rebuilds tree");
+    check(tree.GetSelectedLabel() == "actor",
+        "moved node remains selected");
+    check(ContainsText(properties.text,
+        "Path: Scene (demo data)/Lights/actor"),
+        "move refreshes property path");
+    check(ContainsText(status, "Moved 'actor'") &&
+        ContainsText(output, "Moved 'actor'"),
+        "successful move reports status and output");
+    const int clearsBeforeRejectedMove = tree.clearCount;
+    check(!presenter.MoveSelectedTo("Scene (demo data)/Lights/sun"),
+        "presenter rejects object destination");
+    check(tree.clearCount == clearsBeforeRejectedMove &&
+        tree.GetSelectedLabel() == "actor" &&
+        ContainsText(properties.text, "Lights/actor"),
+        "failed move preserves selection, properties, and model view");
+    check(ContainsText(dialogs.lastWarning, "Only the root or a folder"),
+        "failed move reports model reason through dialogs");
+    check(presenter.MoveSelectedTo("Scene (demo data)/Objects"),
+        "presenter can move object back to original folder");
+
     output.clear();
     presenter.ReportSelection();
     check(ContainsText(output, "Scene (demo data)/Objects/actor"),
@@ -234,6 +276,10 @@ int RunEditorTreePresenterTests()
     check(properties.text.empty(), "clear selection clears properties");
     check(ContainsText(status, "Selection cleared"),
         "clear selection reports status");
+    check(!presenter.MoveSelectedTo("Scene (demo data)/Lights"),
+        "move without selection is safe");
+    check(ContainsText(dialogs.lastWarning, "No tree node is selected"),
+        "move without selection reports warning");
 
     check(tree.SelectByLabel("Objects"), "objects group selectable");
     presenter.RefreshSelection();

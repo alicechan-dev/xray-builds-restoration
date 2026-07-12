@@ -220,6 +220,15 @@ updates properties/status without filtering the tree. UI sorting, selection
 callbacks, drawing, and drag/drop remain excluded. See [wx Editor Tree
 Query](wx-editor-query.md).
 
+`EditorSelectionModel` adds the corresponding wx-free selection seam. The
+historical widget returned full names or backing keys, applied a raw prefix
+check, and used non-null payload as an object proxy. The neutral model stores
+canonical paths, resolves selected nodes in model pre-order, exposes labels and
+paths separately, and provides optional raw prefix and audited kind filters.
+Presenter integration remains single-selection; report/clear actions prove the
+seam without emulating ElPack multi-select, callbacks, expansion, or form
+storage. See [wx Editor Selection Model](wx-editor-selection.md).
+
 `BUILD_XR_WX_SDK_EDITOR_MODEL_TESTS` adds the headless
 `wxSDKEditorModelTests` executable. It compiles only the independent model and
 snapshot/import sources plus the wx-free presenter, requires no wxWidgets
@@ -463,6 +472,15 @@ Do not use runtime target changes to bypass SDK GUI blockers. The editor
 dependency roots are target-local diagnostics/probes, and the runtime-heavy
 targets should remain on their own restoration path.
 
+The wx experiment has now extracted one additional neutral hierarchy seam from
+the historical ElPack boundary: model-level move/reparent. Root and Folder are
+the only destinations; ownership transfer preserves node addresses and complete
+subtrees; generated paths and selected path prefixes refresh after success;
+logical failures are non-mutating. The wx shell uses a menu/choice dialog only.
+Historical drag images, mouse callbacks, widget selection/expansion, popup
+menus, and FolderLib's merge behavior are not ported. Tests-only mode remains
+wxWidgets-free. See [wx Editor Tree Move](wx-editor-move.md).
+
 ## Related Documents
 
 * [Tools and SDK Status](status.md)
@@ -481,6 +499,7 @@ targets should remain on their own restoration path.
 * [xrDO_Light CMake Shell](xrdolight-cmake.md)
 * [FreeImage Dependency](freeimage-dependency.md)
 * [Gauss CMake Shell](gauss-cmake.md)
+* [wx Editor Tree Move](wx-editor-move.md)
 * [Local Editor Dependency Inventory](editor-dependencies.md)
 * [Archive Unpacker Plan](unpacker-plan.md)
 * [Archive Formats](../formats/archives.md)

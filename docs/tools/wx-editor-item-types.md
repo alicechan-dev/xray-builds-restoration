@@ -65,3 +65,12 @@ metadata loading remains future work, and the Borland/VCL path stays separate.
 `EditorItemKind` can now be used as an optional read-only filter through
 [wx Editor Tree Query](wx-editor-query.md). Filtering does not add historical
 caller-mode meanings or mutate model nodes.
+
+The same kind filter is available when collecting [selected paths and
+labels](wx-editor-selection.md), replacing the historical non-null payload
+pointer proxy with explicit audited semantics.
+
+Hierarchy containment now uses the same audited distinction: `Root` and
+`Folder` may accept moved children, while `Object` and `Unknown` may not. The
+policy is documented in [wx Editor Tree Move](wx-editor-move.md) and does not
+invent child semantics for unknown historical caller types.

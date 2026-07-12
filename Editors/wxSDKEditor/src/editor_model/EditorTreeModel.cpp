@@ -37,6 +37,20 @@ bool Fail(std::string* reason, const char* message)
         *reason = message;
     return false;
 }
+
+bool ContainsNode(const EditorTreeNode* root, const EditorTreeNode* candidate)
+{
+    if (!root)
+        return false;
+    if (root == candidate)
+        return true;
+    for (const auto& child : root->ChildrenView())
+    {
+        if (ContainsNode(child.get(), candidate))
+            return true;
+    }
+    return false;
+}
 }
 
 EditorTreeNode::EditorTreeNode(
@@ -165,6 +179,65 @@ bool EditorTreeModel::DeleteNode(EditorTreeNode& node, std::string* reason)
             return candidate.get() == &node;
         });
     siblings.erase(owned);
+    if (reason)
+        reason->clear();
+    return true;
+}
+
+bool EditorTreeModel::CanMoveNode(const EditorTreeNode& node,
+    const EditorTreeNode& newParent, std::string* reason) const
+{
+    if (!root_ || !ContainsNode(root_.get(), &node) ||
+        !ContainsNode(root_.get(), &newParent))
+        return Fail(reason, "Both nodes must belong to this model.");
+    if (&node == root_.get())
+        return Fail(reason, "The root node cannot be moved.");
+    if (&node == &newParent)
+        return Fail(reason, "A node cannot be moved under itself.");
+    if (!IsGroupKind(newParent.kind_))
+        return Fail(reason, "Only the root or a folder can contain children.");
+    if (node.parent_ == &newParent)
+        return Fail(reason, "The node already belongs to this parent.");
+
+    for (const EditorTreeNode* ancestor = &newParent; ancestor;
+         ancestor = ancestor->parent_)
+    {
+        if (ancestor == &node)
+            return Fail(reason, "A node cannot be moved under one of its descendants.");
+    }
+
+    for (const auto& child : newParent.children_)
+    {
+        if (EqualIgnoringCase(child->label_, node.label_))
+            return Fail(reason, "A child with this name already exists at the destination.");
+    }
+
+    if (reason)
+        reason->clear();
+    return true;
+}
+
+bool EditorTreeModel::MoveNode(EditorTreeNode& node,
+    EditorTreeNode& newParent, std::string* reason)
+{
+    if (!CanMoveNode(node, newParent, reason))
+        return false;
+
+    auto& oldChildren = node.parent_->children_;
+    const auto owned = std::find_if(oldChildren.begin(), oldChildren.end(),
+        [&node](const std::unique_ptr<EditorTreeNode>& candidate) {
+            return candidate.get() == &node;
+        });
+    if (owned == oldChildren.end())
+        return Fail(reason, "The node is not owned by its recorded parent.");
+
+    newParent.children_.reserve(newParent.children_.size() + 1);
+    std::unique_ptr<EditorTreeNode> moved = std::move(*owned);
+    oldChildren.erase(owned);
+    moved->parent_ = &newParent;
+    moved->RefreshPath();
+    newParent.children_.push_back(std::move(moved));
+
     if (reason)
         reason->clear();
     return true;

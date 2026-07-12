@@ -30,6 +30,8 @@ public:
     std::vector<std::string> GetSelectedLabels(const EditorTreeModel& model,
         std::string prefix = {},
         std::optional<EditorItemKind> kind = std::nullopt) const;
+    void RemapPathPrefix(const std::string& oldPrefix,
+        const std::string& newPrefix);
     void Prune(const EditorTreeModel& model);
 
 private:

@@ -8,6 +8,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <vector>
+#include <wx/choicdlg.h>
 #include <wx/filedlg.h>
 #include <wx/menu.h>
 #include <wx/panel.h>
@@ -26,6 +28,7 @@ enum
     IdAddDemoObject,
     IdAddDemoGroup,
     IdDeleteSelected,
+    IdMoveSelected,
     IdSaveSnapshot,
     IdLoadSnapshot,
     IdImportPathList,
@@ -93,6 +96,7 @@ void wxSDKEditorFrame::CreateMenus()
     toolsMenu->Append(IdAddDemoObject, "Add Demo &Object");
     toolsMenu->Append(IdAddDemoGroup, "Add Demo &Group");
     toolsMenu->Append(IdDeleteSelected, "&Delete Selected");
+    toolsMenu->Append(IdMoveSelected, "&Move Selected To...");
     toolsMenu->Append(IdFindItem, "&Find Item...");
     toolsMenu->Append(IdShowSelection, "Show Selected &Path");
     toolsMenu->Append(IdClearSelection, "&Clear Selection");
@@ -112,6 +116,7 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoObject, this, IdAddDemoObject);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoGroup, this, IdAddDemoGroup);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnDeleteSelected, this, IdDeleteSelected);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnMoveSelected, this, IdMoveSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAdapterStatus, this, IdAdapterStatus);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveSnapshot, this, IdSaveSnapshot);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnLoadSnapshot, this, IdLoadSnapshot);
@@ -204,6 +209,29 @@ void wxSDKEditorFrame::OnAdapterStatus(wxCommandEvent&)
 void wxSDKEditorFrame::OnDeleteSelected(wxCommandEvent&)
 {
     treePresenter_->DeleteSelected();
+}
+
+void wxSDKEditorFrame::OnMoveSelected(wxCommandEvent&)
+{
+    const std::vector<std::string> destinations =
+        treePresenter_->GetMoveDestinations();
+    if (destinations.empty())
+    {
+        dialogService_.Warning("Move rejected",
+            "No valid destination folders are available for the selection.");
+        return;
+    }
+
+    wxArrayString choices;
+    for (const std::string& path : destinations)
+        choices.Add(wxString::FromUTF8(path.c_str()));
+
+    wxSingleChoiceDialog dialog(this, "Choose the new parent folder",
+        "Move Selected To", choices);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+    treePresenter_->MoveSelectedTo(
+        destinations[static_cast<std::size_t>(dialog.GetSelection())]);
 }
 
 void wxSDKEditorFrame::OnLoadSnapshot(wxCommandEvent&)

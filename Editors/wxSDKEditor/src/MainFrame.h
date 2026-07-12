@@ -28,6 +28,7 @@ private:
     void OnAddDemoObject(wxCommandEvent& event);
     void OnAdapterStatus(wxCommandEvent& event);
     void OnDeleteSelected(wxCommandEvent& event);
+    void OnMoveSelected(wxCommandEvent& event);
     void OnImportPathList(wxCommandEvent& event);
     void OnFindItem(wxCommandEvent& event);
     void OnClearSelection(wxCommandEvent& event);

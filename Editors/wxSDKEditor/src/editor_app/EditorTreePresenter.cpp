@@ -134,6 +134,60 @@ void EditorTreePresenter::DeleteSelected()
     SetStatus("Deleted '" + label + "'.");
 }
 
+std::vector<std::string> EditorTreePresenter::GetMoveDestinations() const
+{
+    std::vector<std::string> paths;
+    const EditorTreeNode* selected = SelectedNode();
+    if (!selected)
+        return paths;
+
+    EditorTreeQueryOptions options;
+    const EditorTreeQueryResult nodes = QueryEditorTree(model_, options);
+    for (const EditorTreeNode* node : nodes)
+    {
+        std::string reason;
+        if (model_.CanMoveNode(*selected, *node, &reason))
+            paths.push_back(node->Path());
+    }
+    return paths;
+}
+
+bool EditorTreePresenter::MoveSelectedTo(const std::string& newParentPath)
+{
+    EditorTreeNode* selected = SelectedNode();
+    if (!selected)
+    {
+        dialogs_.Warning("Move rejected", "No tree node is selected.");
+        SetStatus("Move rejected: no tree node is selected.");
+        return false;
+    }
+
+    EditorTreeNode* newParent = model_.FindByPath(newParentPath);
+    if (!newParent)
+    {
+        dialogs_.Warning("Move rejected", "The destination no longer exists.");
+        SetStatus("Move rejected: destination not found.");
+        return false;
+    }
+
+    const std::string oldPath = selected->Path();
+    const std::string label = selected->Label();
+    std::string reason;
+    if (!model_.MoveNode(*selected, *newParent, &reason))
+    {
+        dialogs_.Warning("Move rejected", reason.c_str());
+        SetStatus("Move rejected: " + reason);
+        return false;
+    }
+
+    selection_.RemapPathPrefix(oldPath, selected->Path());
+    Rebuild(selected);
+    if (output_)
+        output_("Moved '" + label + "' to '" + newParent->Path() + "'.");
+    SetStatus("Moved '" + label + "' to '" + newParent->Path() + "'.");
+    return true;
+}
+
 bool EditorTreePresenter::RenameNode(
     EditorTreeNode& node, std::string newName, std::string* reason)
 {
