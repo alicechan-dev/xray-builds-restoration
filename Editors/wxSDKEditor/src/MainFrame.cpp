@@ -4,10 +4,12 @@
 #include "editor_model/EditorTreeSnapshot.h"
 #include "editor_assets/EditorMetadataCatalogAdapter.h"
 #include "editor_assets/EditorMetadataLoader.h"
+#include "editor_scene/EditorHistoricalSceneProbe.h"
 #include "wxEditorTree.h"
 #include "wxAssetBrowser.h"
 #include "wxEditorViewport.h"
 #include "wxPropertyPanel.h"
+#include "wxSceneInspector.h"
 
 #include <filesystem>
 #include <fstream>
@@ -38,6 +40,7 @@ enum
     IdDeleteSelected,
     IdMoveSelected,
     IdImportPathList,
+    IdInspectHistoricalScene,
     IdFindItem,
     IdClearSelection,
     IdShowSelection,
@@ -45,6 +48,7 @@ enum
     IdViewProperties,
     IdViewOutput,
     IdViewAssetBrowser,
+    IdViewSceneInspector,
     IdResetLayout,
     IdToggleViewportGrid,
     IdResetViewportCamera,
@@ -63,6 +67,7 @@ const char* SceneTreePane = "scene_tree";
 const char* PropertiesPane = "properties";
 const char* OutputPane = "output";
 const char* AssetBrowserPane = "asset_browser";
+const char* SceneInspectorPane = "scene_inspector";
 const char* ViewportPane = "viewport";
 const char* PerspectiveKey = "/layout/aui_perspective";
 
@@ -101,6 +106,8 @@ void wxSDKEditorFrame::CreateMenus()
     fileMenu->Append(wxID_SAVEAS, "Save &As...\tCtrl+Shift+S");
     fileMenu->AppendSeparator();
     fileMenu->Append(IdImportPathList, "&Import Demo Path List...");
+    fileMenu->Append(IdInspectHistoricalScene,
+        "Inspect &Historical Scene...");
     fileMenu->AppendSeparator();
     fileMenu->Append(wxID_EXIT, "E&xit\tAlt-X");
     menuBar->Append(fileMenu, "&File");
@@ -115,6 +122,7 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendCheckItem(IdViewProperties, "&Properties");
     viewMenu->AppendCheckItem(IdViewOutput, "&Output");
     viewMenu->AppendCheckItem(IdViewAssetBrowser, "&Asset Browser");
+    viewMenu->AppendCheckItem(IdViewSceneInspector, "Scene &Inspector");
     viewMenu->AppendSeparator();
     viewMenu->Append(IdResetLayout, "&Reset Layout");
     viewMenu->AppendSeparator();
@@ -170,6 +178,8 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdViewOutput);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleAssetBrowser,
         this, IdViewAssetBrowser);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleSceneInspector,
+        this, IdViewSceneInspector);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnResetLayout,
         this, IdResetLayout);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateSceneTree,
@@ -180,6 +190,8 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdViewOutput);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateAssetBrowser,
         this, IdViewAssetBrowser);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateSceneInspector,
+        this, IdViewSceneInspector);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleViewportGrid,
         this, IdToggleViewportGrid);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnResetViewportCamera,
@@ -207,6 +219,8 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnMoveSelected, this, IdMoveSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAdapterStatus, this, IdAdapterStatus);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnImportPathList, this, IdImportPathList);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnInspectHistoricalScene,
+        this, IdInspectHistoricalScene);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnFindItem, this, IdFindItem);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnShowSelection, this, IdShowSelection);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnClearSelection, this, IdClearSelection);
@@ -304,6 +318,7 @@ void wxSDKEditorFrame::CreateWorkspace()
         "wxSDKEditor experimental shell ready.", wxDefaultPosition,
         wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
     assetBrowser_ = new wxAssetBrowser(this);
+    sceneInspector_ = new wxSceneInspector(this);
 
     auiManager_.AddPane(treePanel, wxAuiPaneInfo().Name(SceneTreePane)
         .Caption("Scene / Objects").Left().Layer(1).Position(0)
@@ -321,6 +336,11 @@ void wxSDKEditorFrame::CreateWorkspace()
         .Caption("Asset Browser").Left().Layer(1).Position(1)
         .BestSize(280, 420).MinSize(220, 220).CloseButton(true)
         .MaximizeButton(true).Resizable(true));
+    auiManager_.AddPane(sceneInspector_,
+        wxAuiPaneInfo().Name(SceneInspectorPane).Caption("Scene Inspector")
+        .Right().Layer(2).Position(1).BestSize(380, 500)
+        .MinSize(260, 220).CloseButton(true).MaximizeButton(true)
+        .Resizable(true).Hide());
     auiManager_.AddPane(viewport_, wxAuiPaneInfo().Name(ViewportPane)
         .Caption("Viewport").CenterPane().PaneBorder(false)
         .CloseButton(false).Floatable(false).Dockable(false));
@@ -559,6 +579,11 @@ void wxSDKEditorFrame::OnToggleAssetBrowser(wxCommandEvent&)
     TogglePane(AssetBrowserPane);
 }
 
+void wxSDKEditorFrame::OnToggleSceneInspector(wxCommandEvent&)
+{
+    TogglePane(SceneInspectorPane);
+}
+
 void wxSDKEditorFrame::OnResetLayout(wxCommandEvent&)
 {
     ResetLayout();
@@ -582,6 +607,11 @@ void wxSDKEditorFrame::OnUpdateOutput(wxUpdateUIEvent& event)
 void wxSDKEditorFrame::OnUpdateAssetBrowser(wxUpdateUIEvent& event)
 {
     UpdatePaneMenu(event, AssetBrowserPane);
+}
+
+void wxSDKEditorFrame::OnUpdateSceneInspector(wxUpdateUIEvent& event)
+{
+    UpdatePaneMenu(event, SceneInspectorPane);
 }
 
 void wxSDKEditorFrame::OnLoadMetadata()
@@ -816,6 +846,43 @@ void wxSDKEditorFrame::OnImportPathList(wxCommandEvent&)
         std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
     if (treePresenter_->ImportPathList(text, dialog.GetPath().ToStdString()))
         SetToolMode(EditorToolMode::Select);
+}
+
+void wxSDKEditorFrame::OnInspectHistoricalScene(wxCommandEvent&)
+{
+    wxFileDialog dialog(this, "Inspect historical X-Ray scene", wxEmptyString,
+        wxEmptyString,
+        "Historical X-Ray scenes (*.level)|*.level|All files (*.*)|*.*",
+        wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    EditorSceneManifest manifest;
+    std::string reason;
+    EditorHistoricalSceneProbe probe;
+    if (!probe.ProbeSceneFile(
+        std::filesystem::path(dialog.GetPath().ToStdWstring()),
+        manifest, &reason))
+    {
+        dialogService_.Error("Historical scene inspection failed",
+            reason.c_str());
+        SetStatusText("Historical scene inspection failed: " + reason);
+        return;
+    }
+
+    inspectedScene_ = std::move(manifest);
+    sceneInspector_->SetManifest(inspectedScene_);
+    wxAuiPaneInfo& pane = auiManager_.GetPane(SceneInspectorPane);
+    if (pane.IsOk())
+        pane.Show(true);
+    auiManager_.Update();
+
+    const std::string summary = "Historical scene inspected read-only: chunks=" +
+        std::to_string(inspectedScene_.chunks.size()) + ", objects=" +
+        std::to_string(inspectedScene_.objects.size()) + ", warnings=" +
+        std::to_string(inspectedScene_.diagnostics.size()) + ".";
+    output_->AppendText("\n" + wxString::FromUTF8(summary) + "\n");
+    SetStatusText(summary);
 }
 
 void wxSDKEditorFrame::OnFindItem(wxCommandEvent&)

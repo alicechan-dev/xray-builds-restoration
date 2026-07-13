@@ -78,3 +78,7 @@ Snapshot v4 needs no revision for imported placement: placed nodes store only
 their `imported.section.*` asset ID and ordinary node fields. A missing session
 catalog is an unresolved descriptor, not a load error; no provenance path or
 metadata contents are serialized.
+
+Historical scene inspection is also application-session state, not document
+state. Inspecting or failing to inspect a `.level` file does not replace the
+tree model, clear history, change the save point, or mark the snapshot dirty.

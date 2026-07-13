@@ -611,3 +611,15 @@ stores only their stable ID. The application does not auto-scan or persist the
 root, and no source metadata is modified. Real SDK construction, object
 libraries, levels, meshes, textures, and renderer integration remain future
 work.
+
+## wxSDKEditor Historical Scene Inspection Checkpoint
+
+The active build-1935 LevelEditor writer and `xrCore` chunk framing have been
+audited into a narrow evidence ladder. A bounded wx-free probe now inventories
+one explicitly selected `.level` file and confirms common object class, name,
+and transform records only in proved containers. A separate dockable inspector
+shows that session manifest without changing the document or loading assets.
+Compressed known containers, unsupported versions, malformed bounds, and
+resource-limit violations fail closed. Historical object construction, full
+tool decoding, scene import/edit/save, and runtime integration remain future
+audited phases.

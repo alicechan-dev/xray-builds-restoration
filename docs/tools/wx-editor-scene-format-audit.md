@@ -1,0 +1,56 @@
+# Build 1935 LevelEditor Scene Format Audit
+
+This audit records only structures proved by the active historical source
+under `Editors/LevelEditor` and `Editors/ECore`. It does not describe a full
+scene loader and does not infer layouts from chunk IDs alone.
+
+## Canonical File And Chunk Framing
+
+The active `Editors/LevelEditor/Edit/SceneIO.cpp` identifies scene version 5
+and writes `.level` files as X-Ray chunks. `xrCore/FS.cpp` and `FS.h` define a
+chunk as little-endian `u32 id`, little-endian `u32 payload size`, then exactly
+that many payload bytes. Bit 31 of the ID is the compression marker.
+
+The confirmed top-level scene chunks are:
+
+| ID | Meaning | Evidence |
+|---|---|---|
+| `0x00009DF3` | Scene version (`u32`, expected 5) | `SceneIO.cpp` |
+| `0x00007712` | Declared object count (`u32`) | `SceneIO.cpp` |
+| `0x00007708` | Legacy object-list container | compatibility load path in `SceneIO.cpp` |
+| `0x00008000 + class` | Per-tool data | canonical save path in `SceneIO.cpp` |
+
+`SceneClassList.h` proves object tool classes 0 through 11. Classes 12 through
+14 are specialized tool data and are inventoried but not decoded by the probe.
+
+## Confirmed Object Records
+
+`ESceneCustomOToolsIO.cpp` proves that an object-tool payload contains chunk
+`0x00000002` for its object count and chunk `0x00000003` for numbered object
+records. `SceneIO.cpp::SaveObject` proves that each record contains:
+
+- `0x00007703`: object class as one `u32`;
+- `0x00007777`: object body container.
+
+`CustomObject.cpp` proves two common body fields used by the first manifest
+reader:
+
+- `0x0000F907`: zero-terminated object name;
+- `0x0000F903`: position, rotation, and scale as nine 32-bit floats.
+
+All other chunks remain inventory records. The reader does not recursively
+interpret an unknown payload, resolve a class factory, or load referenced
+assets.
+
+## Evidence Ladder
+
+1. Top-level chunk inventory, version, and declared count.
+2. Confirmed object wrappers and class IDs in the legacy list or object-tool
+   classes 0 through 11.
+3. Common object names.
+4. Common transforms.
+
+Advancing beyond this ladder requires a separate source audit. In particular,
+the current probe does not support compressed scene containers, specialized
+tool classes, object-specific bodies, or historical save/write behavior.
+

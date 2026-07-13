@@ -37,3 +37,7 @@ read-only LTX metadata. Safe, unambiguous `$spawn` sections are adapted under
 the `imported.section.*` namespace and may place inert synthetic Spawn markers;
 invalid entries remain read-only. No runtime class semantics are inferred. See
 [Imported Spawn Prototypes](wx-editor-imported-prototypes.md).
+
+Scene manifest records are not asset descriptors. The Scene Inspector never
+adds entries to either catalog and never resolves names or class IDs through
+runtime assets.

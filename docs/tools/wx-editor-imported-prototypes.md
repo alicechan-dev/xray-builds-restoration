@@ -31,3 +31,7 @@ browseable but are non-placeable and carry an explicit diagnostic.
 
 This is a metadata prototype only. No object factory, script, mesh, texture,
 archive, level, or runtime class is loaded.
+
+Historical `.level` inspection is a separate read-only manifest path. A
+confirmed scene object is not converted to an imported spawn prototype and no
+prototype is inferred from scene class IDs.

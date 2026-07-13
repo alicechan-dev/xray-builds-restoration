@@ -53,3 +53,6 @@ unknown IDs. No level, mesh, texture, object library, archive, DLL, or script is
 loaded, and no runtime file is written or normalized. See [Imported Spawn
 Prototypes](wx-editor-imported-prototypes.md) and [Imported Prototype
 Placement](wx-editor-imported-placement.md).
+
+Binary `.level` probing is intentionally independent of this LTX import. It
+does not follow metadata includes or derive prototypes from inspected scenes.

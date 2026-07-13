@@ -5,6 +5,7 @@
 #include "editor_app/EditorDocument.h"
 #include "editor_app/EditorToolMode.h"
 #include "editor_assets/EditorImportedMetadata.h"
+#include "editor_scene/EditorSceneManifest.h"
 
 #include <memory>
 #include <string>
@@ -17,6 +18,7 @@ class wxAssetBrowser;
 class wxEditorViewport;
 class wxKeyEvent;
 class wxPropertyPanel;
+class wxSceneInspector;
 class wxTextCtrl;
 class wxTreeEvent;
 class wxCloseEvent;
@@ -84,6 +86,9 @@ private:
     void OnDeleteSelected(wxCommandEvent& event);
     void OnMoveSelected(wxCommandEvent& event);
     void OnImportPathList(wxCommandEvent& event);
+    void OnInspectHistoricalScene(wxCommandEvent& event);
+    void OnToggleSceneInspector(wxCommandEvent& event);
+    void OnUpdateSceneInspector(wxUpdateUIEvent& event);
     void OnFindItem(wxCommandEvent& event);
     void OnClearSelection(wxCommandEvent& event);
     void OnShowSelection(wxCommandEvent& event);
@@ -96,10 +101,12 @@ private:
     wxPropertyPanel* propertyPanel_ = nullptr;
     wxTextCtrl* output_ = nullptr;
     wxEditorViewport* viewport_ = nullptr;
+    wxSceneInspector* sceneInspector_ = nullptr;
     wxAuiManager auiManager_;
     wxString defaultPerspective_;
     EditorDocument document_;
     EditorImportedMetadata importedMetadata_;
+    EditorSceneManifest inspectedScene_;
     wxDialogService dialogService_;
     std::unique_ptr<EditorTreePresenter> treePresenter_;
 };

@@ -5,6 +5,9 @@ set(XR_WX_SDK_EDITOR_MODEL_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorImportedPrototype.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorMetadataLoader.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorMetadataCatalogAdapter.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_scene/EditorBinaryReader.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_scene/EditorSceneManifest.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_scene/EditorHistoricalSceneProbe.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorCommandHistory.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorDocument.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorModelCommand.cpp"
@@ -37,6 +40,9 @@ set(XR_WX_SDK_EDITOR_MODEL_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorImportedPrototype.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorMetadataLoader.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorMetadataCatalogAdapter.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_scene/EditorBinaryReader.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_scene/EditorSceneManifest.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_scene/EditorHistoricalSceneProbe.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorCommandHistory.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorDocument.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorModelCommand.h"
@@ -81,6 +87,7 @@ set(XR_WX_SDK_EDITOR_SOURCES
   src/wxEditorTree.cpp
   src/wxEditorViewport.cpp
   src/wxPropertyPanel.cpp
+  src/wxSceneInspector.cpp
 )
 
 set(XR_WX_SDK_EDITOR_HEADERS
@@ -95,6 +102,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   src/wxEditorTree.h
   src/wxEditorViewport.h
   src/wxPropertyPanel.h
+  src/wxSceneInspector.h
 )
 
 set(XR_WX_SDK_EDITOR_LIBRARIES)

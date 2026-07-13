@@ -57,3 +57,7 @@ The synthetic Asset Browser adds a left-docked, closable, resizable AUI pane.
 Its `asset_browser` identity participates in the existing perspective, its View
 menu check follows actual visibility, and Reset Layout restores it. Browser
 filters and selection are UI state and never dirty the document.
+
+The read-only Scene Inspector adds a hidden-by-default right-docked pane. Its
+visibility participates in the AUI perspective, while its inspected manifest
+does not. Reset Layout hides the pane and inspection never dirties a document.

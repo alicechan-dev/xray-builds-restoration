@@ -310,3 +310,10 @@ provenance-bearing inert Spawn prototypes; malformed or ambiguous records stay
 read-only and other sections are counted as unsupported. Placement uses normal
 history and snapshot v4 IDs. Imported state is session-local, and clearing it
 leaves placed markers unresolved without changing documents or runtime files.
+
+The wx experiment now also includes a source-audited, wx-free read-only probe
+for build-1935 `.level` scenes and a dockable Scene Inspector. It inventories
+bounded chunks and confirms only object wrappers, names, and transforms proved
+by the active historical writer. It does not replace the development document,
+construct objects, load assets, or write scene data. Synthetic malformed-input
+and atomic-result tests pass in the wx-free test target.

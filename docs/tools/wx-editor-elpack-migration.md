@@ -240,3 +240,9 @@ preserved spawn frame proves enough label/identity semantics to create an inert
 synthetic Spawn marker through the neutral placement seam, but not enough to
 construct a historical runtime object. Real object-library and factory
 semantics remain separately blocked.
+
+The historical Scene Inspector is another neutral read-only seam. Its chunk
+and object manifest is rendered by a dedicated wx tree without calling
+`TElTree`, `ItemListHelper`, `FolderLib`, xrEProps, or old LevelEditor code.
+This does not port historical scene editing or grant object-construction
+semantics to the manifest.

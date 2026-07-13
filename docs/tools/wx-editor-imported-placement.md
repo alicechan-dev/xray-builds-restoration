@@ -22,3 +22,6 @@ Placed markers continue to load and render as Spawn previews by their
 This bridge does not create a real X-Ray object. Runtime class resolution,
 visuals, scripts, object-library integration, and level serialization remain
 future work requiring separate historical evidence.
+
+The historical Scene Inspector does not feed this placement path. It exposes
+only a session-local manifest and cannot place, import, or serialize objects.

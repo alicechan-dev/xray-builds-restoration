@@ -383,3 +383,11 @@ root-contained; the frame supplies only dialogs and compact Output diagnostics. 
 [Metadata Import](wx-editor-metadata-import.md) and
 [Metadata Security](wx-editor-metadata-security.md). No runtime construction,
 asset loading, or snapshot-format change is implied.
+
+The shell also has an explicit read-only probe for canonical build-1935
+`.level` scenes. A bounded wx-free reader produces a session-only chunk/object
+manifest displayed by the dockable Scene Inspector. It does not construct
+objects, load references, replace the development document, or write scenes.
+See [Scene Format Audit](wx-editor-scene-format-audit.md), [Scene
+Probe](wx-editor-scene-probe.md), and [Scene
+Inspector](wx-editor-scene-inspector.md).

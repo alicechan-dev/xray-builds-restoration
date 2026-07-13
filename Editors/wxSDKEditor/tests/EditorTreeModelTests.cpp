@@ -38,6 +38,7 @@ int RunEditorViewportControllerTests();
 int RunEditorPreviewSceneTests();
 int RunEditorToolControllerTests();
 int RunEditorMetadataTests();
+int RunEditorSceneProbeTests();
 
 int main()
 {
@@ -560,6 +561,7 @@ int main()
     failures += RunEditorPreviewSceneTests();
     failures += RunEditorToolControllerTests();
     failures += RunEditorMetadataTests();
+    failures += RunEditorSceneProbeTests();
 
     if (failures)
     {
