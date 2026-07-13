@@ -22,3 +22,8 @@ or X-Ray asset loading. The catalog remains available across document
 operations; New/Open/Import reset the active tool to Select while the browser
 selection can remain visible.
 
+The browser also provides **Load Metadata...** and **Clear Imported**. Loading
+requires explicit root and entry-file choices. Categories are distinguished as
+`Synthetic/` and `Imported/Spawn Metadata`. Imported details show source file,
+section, line, selected key summaries, and `Placeable: no`; activation reports
+read-only status instead of entering placement.

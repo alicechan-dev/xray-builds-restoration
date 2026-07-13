@@ -32,3 +32,7 @@ remain readable with empty IDs. Unknown IDs are retained during load/save and
 use normal category fallback in the preview, so opening a document never
 requires the current catalog to contain every prototype.
 
+A separate session catalog can now be populated from explicitly selected,
+read-only LTX metadata. Only `$spawn` sections are conservatively adapted under
+the `imported.section.*` namespace, and all remain non-placeable. See
+[Read-Only Metadata Import](wx-editor-metadata-import.md).

@@ -599,3 +599,13 @@ Headless tests cover catalog, selection, placement metadata, history,
 properties, preview mapping, and serialization without discovering wxWidgets.
 Real X-Ray asset libraries, thumbnails, filesystem scanning, `xrEProps`, and
 LevelEditor integration remain future audited work.
+
+## wxSDKEditor Read-Only Metadata Checkpoint
+
+A wx-free loader now parses an explicitly selected, root-contained build-1935
+LTX include graph with cycle and resource limits. A conservative adapter
+exposes only `$spawn` sections as non-placeable `imported.section.*`
+descriptors with provenance and compact diagnostics. The application does not
+auto-scan or persist the root, and no source metadata is modified. Real SDK
+construction, object libraries, levels, meshes, textures, and renderer
+integration remain future work.

@@ -2,6 +2,8 @@
 
 #include "editor_app/EditorTreePresenter.h"
 #include "editor_model/EditorTreeSnapshot.h"
+#include "editor_assets/EditorMetadataCatalogAdapter.h"
+#include "editor_assets/EditorMetadataLoader.h"
 #include "wxEditorTree.h"
 #include "wxAssetBrowser.h"
 #include "wxEditorViewport.h"
@@ -14,6 +16,7 @@
 #include <wx/artprov.h>
 #include <wx/choicdlg.h>
 #include <wx/config.h>
+#include <wx/dirdlg.h>
 #include <wx/filedlg.h>
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
@@ -352,6 +355,12 @@ void wxSDKEditorFrame::CreateWorkspace()
         if (treePresenter_->SelectAsset(assetId))
             SetToolMode(EditorToolMode::PlaceAsset);
     });
+    assetBrowser_->SetLoadHandler([this]() { OnLoadMetadata(); });
+    assetBrowser_->SetClearHandler([this]() { OnClearImportedMetadata(); });
+    assetBrowser_->SetStatusHandler([this](const std::string& message) {
+        SetStatusText(message);
+        output_->AppendText("\n" + wxString::FromUTF8(message) + "\n");
+    });
     treePresenter_->InitializeDemo();
     SetToolMode(EditorToolMode::Select);
 }
@@ -573,6 +582,69 @@ void wxSDKEditorFrame::OnUpdateOutput(wxUpdateUIEvent& event)
 void wxSDKEditorFrame::OnUpdateAssetBrowser(wxUpdateUIEvent& event)
 {
     UpdatePaneMenu(event, AssetBrowserPane);
+}
+
+void wxSDKEditorFrame::OnLoadMetadata()
+{
+    wxDirDialog rootDialog(this, "Choose metadata root", wxEmptyString,
+        wxDD_DIR_MUST_EXIST);
+    if (rootDialog.ShowModal() != wxID_OK)
+        return;
+    wxFileDialog entryDialog(this, "Choose entry LTX file",
+        rootDialog.GetPath(), "system.ltx",
+        "X-Ray metadata (*.ltx)|*.ltx|All files (*.*)|*.*",
+        wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (entryDialog.ShowModal() != wxID_OK)
+        return;
+
+    EditorImportedMetadata loaded;
+    std::string reason;
+    EditorMetadataLoader loader;
+    if (!loader.LoadMetadataRoot(
+        std::filesystem::path(rootDialog.GetPath().ToStdWstring()),
+        std::filesystem::path(entryDialog.GetPath().ToStdWstring()),
+        loaded, &reason))
+    {
+        dialogService_.Error("Metadata import failed", reason.c_str());
+        SetStatusText("Metadata import failed: " + reason);
+        return;
+    }
+
+    EditorMetadataCatalogResult catalog = BuildEditorMetadataCatalog(loaded);
+    const std::size_t catalogDiagnostics = catalog.diagnostics.size();
+    std::vector<EditorMetadataDiagnostic> diagnostics = loaded.diagnostics;
+    diagnostics.insert(diagnostics.end(), catalog.diagnostics.begin(),
+        catalog.diagnostics.end());
+    importedMetadata_ = loaded;
+    assetBrowser_->SetImportedMetadata(importedMetadata_, std::move(catalog));
+    const std::string summary = "Metadata loaded read-only: files=" +
+        std::to_string(loaded.files.size()) + ", sections=" +
+        std::to_string(loaded.sections.size()) + ", includes=" +
+        std::to_string(loaded.includesFollowed) + ", warnings=" +
+        std::to_string(loaded.diagnostics.size() + catalogDiagnostics) + ".";
+    output_->AppendText("\n" + wxString::FromUTF8(summary) + "\n");
+    constexpr std::size_t DiagnosticPreviewLimit = 20;
+    for (std::size_t index = 0;
+        index < diagnostics.size() && index < DiagnosticPreviewLimit; ++index)
+    {
+        const EditorMetadataDiagnostic& diagnostic = diagnostics[index];
+        output_->AppendText(wxString::FromUTF8(
+            diagnostic.sourceFile + ":" +
+            std::to_string(diagnostic.sourceLine) + ": " +
+            diagnostic.message + "\n"));
+    }
+    if (diagnostics.size() > DiagnosticPreviewLimit)
+        output_->AppendText(wxString::Format(
+            "... %zu additional metadata diagnostics omitted.\n",
+            diagnostics.size() - DiagnosticPreviewLimit));
+    SetStatusText(summary);
+}
+
+void wxSDKEditorFrame::OnClearImportedMetadata()
+{
+    importedMetadata_ = {};
+    assetBrowser_->ClearImportedMetadata();
+    SetStatusText("Imported metadata cleared; synthetic assets retained.");
 }
 
 void wxSDKEditorFrame::OnToggleViewportGrid(wxCommandEvent&)

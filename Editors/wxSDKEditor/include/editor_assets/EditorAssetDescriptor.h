@@ -6,6 +6,7 @@
 #include "editor_view/EditorPreviewScene.h"
 
 #include <string>
+#include <cstddef>
 
 enum class EditorAssetPlacementType { Object, Light, Marker, Spawn };
 
@@ -22,6 +23,9 @@ struct EditorAssetDescriptor
     EditorPreviewKind previewKind = EditorPreviewKind::Unknown;
     EditorAssetPlacementType placementType = EditorAssetPlacementType::Object;
     bool placeable = true;
+    std::string sourceFile;
+    std::string sourceSection;
+    std::size_t sourceLine = 0;
 };
 
 #endif

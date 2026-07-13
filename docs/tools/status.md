@@ -303,3 +303,9 @@ category filtering and case-insensitive search. `PlaceAsset` generalizes
 descriptor-driven placement, snapshot v4 persists optional stable IDs, older
 v1/v2/v3 files remain readable, and unknown IDs use category preview fallback.
 No gamedata, archive, mesh, texture, or historical SDK asset is loaded.
+
+The first real-metadata bridge now reads an explicitly selected, root-contained
+build-1935 LTX include graph. Only `$spawn` sections become namespaced,
+provenance-bearing, non-placeable browser entries; other sections are counted
+as unsupported. Imported state is session-local and never changes documents or
+runtime files.

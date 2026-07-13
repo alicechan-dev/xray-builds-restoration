@@ -69,3 +69,7 @@ v1/v2/v3 remain supported and assign an empty ID. Unknown IDs are accepted and
 round-trip atomically; catalog membership is not a precondition for opening a
 document. The catalog itself is application state, not serialized document
 content.
+
+Imported metadata is application-session state, not document state. Loading,
+searching, or clearing it does not change the model, history, save point, or
+snapshot. New/Open/Save retain it; restart requires explicit reload.

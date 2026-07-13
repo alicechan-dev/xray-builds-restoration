@@ -4,6 +4,7 @@
 #include "wxDialogService.h"
 #include "editor_app/EditorDocument.h"
 #include "editor_app/EditorToolMode.h"
+#include "editor_assets/EditorImportedMetadata.h"
 
 #include <memory>
 #include <string>
@@ -59,6 +60,8 @@ private:
     void OnUpdateProperties(wxUpdateUIEvent& event);
     void OnUpdateOutput(wxUpdateUIEvent& event);
     void OnUpdateAssetBrowser(wxUpdateUIEvent& event);
+    void OnLoadMetadata();
+    void OnClearImportedMetadata();
     void OnToggleViewportGrid(wxCommandEvent& event);
     void OnResetViewportCamera(wxCommandEvent& event);
     void OnFocusViewport(wxCommandEvent& event);
@@ -96,6 +99,7 @@ private:
     wxAuiManager auiManager_;
     wxString defaultPerspective_;
     EditorDocument document_;
+    EditorImportedMetadata importedMetadata_;
     wxDialogService dialogService_;
     std::unique_ptr<EditorTreePresenter> treePresenter_;
 };

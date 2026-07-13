@@ -22,3 +22,7 @@ descriptor. The legacy Object and Light commands remain available and route to
 `demo.physic_object` and `demo.point_light` metadata while preserving their
 familiar naming behavior. Asset Browser activation selects a descriptor and
 enters `PlaceAsset`; Escape returns to Select without committing a command.
+
+Imported descriptors do not extend placement. They are non-placeable, the
+wx-free selection model rejects them, and browser activation emits only a
+read-only status message.

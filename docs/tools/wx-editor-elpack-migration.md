@@ -233,3 +233,8 @@ not a reconstruction of `TElTree`, `ItemListHelper`, `FolderLib`, or historical
 object libraries. Stable IDs and descriptor metadata let future audited model
 adapters feed the same placement path without fake ElPack headers. Old
 `xrEProps` and LevelEditor sources remain preserved and untouched.
+
+The metadata bridge reads only audited build-1935 LTX text. It does not call
+old object factories, `ItemListHelper`, `FolderLib`, ElPack, or VCL. `$spawn`
+is browse classification only; imported entries remain non-placeable until
+historical construction semantics are separately audited.
