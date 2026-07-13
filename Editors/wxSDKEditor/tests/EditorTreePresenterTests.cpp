@@ -5,6 +5,7 @@
 #include "editor_ui/IPropertyPanel.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -347,6 +348,23 @@ int RunEditorTreePresenterTests()
         "category edit redo restores property value");
     check(!properties.Apply("path", "forbidden"),
         "presenter rejects read-only property edit");
+
+    const std::string actorPath =
+        "Scene (demo data)/Objects/property_actor";
+    EditorTransform moved = document.Model().FindByPath(actorPath)->Transform();
+    const float originalX = moved.x;
+    moved.x += 3.0f;
+    check(presenter.SetLogicalTransform(actorPath, moved) &&
+        document.Model().FindByPath(actorPath)->Transform().NearlyEquals(moved) &&
+        tree.GetSelectedLabel() == "property_actor",
+        "transform command applies once and preserves selection");
+    check(presenter.Undo() &&
+        std::fabs(document.Model().FindByPath(actorPath)->Transform().x -
+            originalX) < 0.001f,
+        "transform command undo restores starting position");
+    check(presenter.Redo() &&
+        document.Model().FindByPath(actorPath)->Transform().NearlyEquals(moved),
+        "transform command redo restores moved position");
 
     output.clear();
     presenter.ReportSelection();

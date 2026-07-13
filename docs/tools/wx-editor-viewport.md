@@ -53,3 +53,7 @@ primitives; `wxEditorViewport` alone maps those primitives to wx colors. See
 Left-button presses now use shared wx-free projection/pick shapes to select a
 preview path. Right-button camera rotation remains separate. See [wxSDKEditor
 Preview Picking](wx-editor-picking.md).
+
+Selected preview objects now expose X/Z move handles. Dragging previews
+temporarily, release commits once, Escape cancels, and optional 1.0-unit grid
+snap defaults off. No real renderer or 3D gizmo is connected.

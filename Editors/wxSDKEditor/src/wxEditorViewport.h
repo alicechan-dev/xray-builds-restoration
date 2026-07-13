@@ -4,6 +4,7 @@
 #include "editor_view/EditorViewportController.h"
 #include "editor_view/EditorPreviewRenderer.h"
 #include "editor_view/EditorPreviewScene.h"
+#include "editor_view/EditorMoveGizmo.h"
 
 #include <memory>
 #include <functional>
@@ -27,8 +28,13 @@ public:
     void TogglePreviewLabels();
     bool ArePreviewLabelsVisible() const;
     bool FrameSelected();
+    void ToggleMoveSnap();
+    bool IsMoveSnapEnabled() const { return moveSnapEnabled_; }
     void SetSelectionHandler(std::function<void(const std::string&)> handler)
     { selectionHandler_ = std::move(handler); }
+    void SetTransformHandler(std::function<bool(
+        const std::string&, const EditorTransform&)> handler)
+    { transformHandler_ = std::move(handler); }
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -48,6 +54,10 @@ private:
     EditorViewportController controller_;
     wxTimer timer_;
     std::function<void(const std::string&)> selectionHandler_;
+    std::function<bool(const std::string&, const EditorTransform&)>
+        transformHandler_;
+    EditorMoveGizmo moveGizmo_;
+    bool moveSnapEnabled_ = false;
 };
 
 #endif

@@ -2,6 +2,7 @@
 #define XR_WX_SDK_EDITOR_EDITOR_TREE_MODEL_H
 
 #include "editor_model/EditorItemType.h"
+#include "editor_model/EditorTransform.h"
 
 #include <memory>
 #include <string>
@@ -19,6 +20,7 @@ public:
     EditorTreeNode* Parent() { return parent_; }
     const EditorTreeNode* Parent() const { return parent_; }
     const Children& ChildrenView() const { return children_; }
+    const EditorTransform& Transform() const { return transform_; }
 
 private:
     friend class EditorTreeModel;
@@ -33,6 +35,7 @@ private:
     std::string path_;
     EditorTreeNode* parent_ = nullptr; // Non-owning; the model owns every node.
     Children children_;
+    EditorTransform transform_;
 };
 
 class EditorTreeModel
@@ -55,6 +58,8 @@ public:
     bool RenameNode(EditorTreeNode& node, std::string newName,
         std::string* reason = nullptr);
     void SetNodeCategory(EditorTreeNode& node, std::string category);
+    bool SetNodeTransform(EditorTreeNode& node, const EditorTransform& transform,
+        std::string* reason = nullptr);
     bool CanDeleteNode(const EditorTreeNode& node,
         std::string* reason = nullptr) const;
     bool DeleteNode(EditorTreeNode& node, std::string* reason = nullptr);

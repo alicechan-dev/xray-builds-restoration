@@ -39,3 +39,6 @@ coordination. Tests-only builds remain wxWidgets-free.
 
 Real levels, assets, renderer targets, picking rays, depth, lasso selection,
 gizmos, `xrEProps`, and LevelEditor remain outside this boundary.
+
+The move gizmo now has priority over object picking. Outside an active drag or
+axis hit, object and empty-space behavior is unchanged.

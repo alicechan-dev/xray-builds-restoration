@@ -133,6 +133,41 @@ bool EditorTreePresenter::SelectLogicalPath(const std::string& logicalPath)
     return true;
 }
 
+bool EditorTreePresenter::SetLogicalTransform(
+    const std::string& path, const EditorTransform& transform)
+{
+    EditorTreeNode* node = model_.FindByPath(path);
+    if (!node)
+        return false;
+    std::string reason;
+    auto command = std::make_unique<EditorModelCommand>(model_,
+        "Move " + node->Label(), path,
+        [this, path, transform](
+            std::string* selection, std::string* mutationReason) {
+            EditorTreeNode* current = model_.FindByPath(path);
+            if (!current)
+            {
+                if (mutationReason)
+                    *mutationReason = "Node no longer exists.";
+                return false;
+            }
+            if (!model_.SetNodeTransform(
+                *current, transform, mutationReason))
+                return false;
+            *selection = path;
+            return true;
+        });
+    if (!history_.Execute(std::move(command), &reason))
+    {
+        dialogs_.Warning("Move rejected", reason.c_str());
+        return false;
+    }
+    RebuildByPath(path);
+    NotifyDocumentChanged();
+    SetStatus("Moved preview object: " + path);
+    return true;
+}
+
 void EditorTreePresenter::SetStatus(const std::string& message) const
 {
     if (status_)

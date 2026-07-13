@@ -571,3 +571,11 @@ pick shapes. Left clicks resolve the last-drawn hit to a canonical model path,
 then reuse presenter tree/property selection; empty space clears selection.
 This adds no document mutation, command, ray casting, depth, or renderer SDK
 dependency. See [wxSDKEditor Preview Picking](wx-editor-picking.md).
+
+## wxSDKEditor Transform And Gizmo Checkpoint
+
+Nodes now own finite wx-free transforms persisted by snapshot v3; v1/v2 load
+defaults. Position properties and command undo/redo are tested headlessly. The
+synthetic viewport adds X/Z handles, temporary drag preview, Escape cancellation,
+and optional fixed grid snap. Real SDK objects, level data, rotation/scale,
+geometry snapping, and renderer APIs remain future work.

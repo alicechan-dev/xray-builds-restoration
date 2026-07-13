@@ -63,3 +63,7 @@ state. See [wxSDKEditor Dockable Layout](wx-editor-layout.md).
 Successful label/category applies now change the owning `EditorDocument` model
 and therefore its exact snapshot-based dirty state. Rejected or read-only
 applies leave the saved-state comparison unchanged.
+
+Object-like nodes expose editable `position.x/y/z`. Values must be finite
+floats. Successful edits refresh preview and enter command history; rejected
+values leave the model unchanged.

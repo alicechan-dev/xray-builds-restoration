@@ -5,7 +5,11 @@
 #include <vector>
 
 enum class EditorViewportPrimitiveType { Line, Rectangle, Circle, Text };
-enum class EditorViewportStyle { Object, Marker, Light, Spawn, Selected, Label };
+enum class EditorViewportStyle
+{
+    Object, Marker, Light, Spawn, Selected, Label,
+    GizmoX, GizmoZ, GizmoActive
+};
 
 struct EditorViewportPrimitive
 {

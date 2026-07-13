@@ -44,7 +44,8 @@ enum
     IdFocusViewport,
     IdRebuildPreview,
     IdTogglePreviewLabels,
-    IdFrameSelected
+    IdFrameSelected,
+    IdToggleMoveSnap
 };
 
 const char* SceneTreePane = "scene_tree";
@@ -110,6 +111,7 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->Append(IdRebuildPreview, "&Rebuild Preview Scene");
     viewMenu->AppendCheckItem(IdTogglePreviewLabels, "Preview &Labels");
     viewMenu->Append(IdFrameSelected, "Frame &Selected");
+    viewMenu->AppendCheckItem(IdToggleMoveSnap, "Snap Move To &Grid");
     menuBar->Append(viewMenu, "&View");
 
     auto* toolsMenu = new wxMenu();
@@ -171,6 +173,10 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdFrameSelected);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdatePreviewLabels,
         this, IdTogglePreviewLabels);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleMoveSnap,
+        this, IdToggleMoveSnap);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateMoveSnap,
+        this, IdToggleMoveSnap);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAbout, this, wxID_ABOUT);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoObject, this, IdAddDemoObject);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAddDemoGroup, this, IdAddDemoGroup);
@@ -239,6 +245,10 @@ void wxSDKEditorFrame::CreateWorkspace()
         }, [this](const std::string&) { UpdateDocumentTitle(); },
         [this](const EditorTreeModel& model, const std::string& selectedPath) {
             viewport_->RebuildPreview(model, selectedPath);
+        });
+    viewport_->SetTransformHandler(
+        [this](const std::string& path, const EditorTransform& transform) {
+            return treePresenter_->SetLogicalTransform(path, transform);
         });
     treePresenter_->InitializeDemo();
 }
@@ -487,6 +497,19 @@ void wxSDKEditorFrame::OnFrameSelected(wxCommandEvent&)
 void wxSDKEditorFrame::OnUpdatePreviewLabels(wxUpdateUIEvent& event)
 {
     event.Check(viewport_ && viewport_->ArePreviewLabelsVisible());
+}
+
+void wxSDKEditorFrame::OnToggleMoveSnap(wxCommandEvent&)
+{
+    viewport_->ToggleMoveSnap();
+    SetStatusText(viewport_->IsMoveSnapEnabled()
+        ? "Move gizmo grid snapping enabled (1.0 unit)."
+        : "Move gizmo grid snapping disabled.");
+}
+
+void wxSDKEditorFrame::OnUpdateMoveSnap(wxUpdateUIEvent& event)
+{
+    event.Check(viewport_ && viewport_->IsMoveSnapEnabled());
 }
 
 void wxSDKEditorFrame::OnAbout(wxCommandEvent&)

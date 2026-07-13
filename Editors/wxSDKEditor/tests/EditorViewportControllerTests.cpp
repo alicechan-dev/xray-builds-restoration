@@ -1,5 +1,6 @@
 #include "editor_view/EditorViewportController.h"
 #include "editor_view/IEditorViewportRenderer.h"
+#include "editor_view/EditorMoveGizmo.h"
 
 #include <cmath>
 #include <iostream>
@@ -128,5 +129,9 @@ int RunEditorViewportControllerTests()
     controller.OnResize(0, 0);
     check(controller.OnPrimaryClick(25, 30).empty(),
         "invalid dimensions suppress picking");
+    EditorMoveGizmo gizmo; EditorTransform gt; gt.x=2; gt.z=3;
+    check(gizmo.Hit(100,100,130,100)==EditorGizmoAxis::X && gizmo.Hit(100,100,100,70)==EditorGizmoAxis::Z && gizmo.Hit(100,100,50,50)==EditorGizmoAxis::None,"gizmo axis hit testing");
+    gizmo.Begin(EditorGizmoAxis::X,100,100,gt); check(gizmo.Update(180,100,false).x==4,"gizmo X drag delta");
+    gizmo.Begin(EditorGizmoAxis::Z,100,100,gt); check(gizmo.Update(100,160,true).z==5,"gizmo Z snapped delta"); gizmo.Cancel(); check(!gizmo.Active(),"gizmo cancel");
     return failures;
 }

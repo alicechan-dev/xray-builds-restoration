@@ -59,6 +59,10 @@ int RunEditorPreviewSceneTests()
         folder, "spawn", "spawn element", EditorItemKind::Object);
     EditorTreeNode& marker = model.AddChild(
         folder, "marker", "custom", EditorItemKind::Unknown);
+    EditorTransform transform; transform.x=-4; transform.z=-5; model.SetNodeTransform(object,transform);
+    transform.x=-2; transform.y=2; model.SetNodeTransform(light,transform);
+    transform.x=0; transform.y=0; model.SetNodeTransform(spawn,transform);
+    transform.x=2; model.SetNodeTransform(marker,transform);
 
     EditorPreviewScene adapted = BuildEditorPreviewScene(model, light.Path());
     check(adapted.GetObjects().size() == 4 &&

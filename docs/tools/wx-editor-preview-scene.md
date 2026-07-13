@@ -55,3 +55,8 @@ runtime renderer targets remain explicitly outside this pass.
 The same projection now produces wx-free pick shapes. Left-click selection uses
 canonical paths and reverse draw order, while empty space clears selection. See
 [wxSDKEditor Preview Picking](wx-editor-picking.md).
+
+Preview positions now come from node-owned transforms rather than traversal
+indices. Demo positions are explicit, and selected objects emit semantic X/Z
+gizmo lines. See [Transforms](wx-editor-transforms.md) and
+[Move Gizmo](wx-editor-gizmo.md).

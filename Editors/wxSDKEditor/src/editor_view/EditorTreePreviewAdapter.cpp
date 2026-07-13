@@ -33,10 +33,10 @@ void AddNodes(const EditorTreeNode& node, EditorPreviewScene& scene,
     if (node.Kind() != EditorItemKind::Root &&
         node.Kind() != EditorItemKind::Folder)
     {
-        const float x = static_cast<float>(renderedIndex % 5) * 2.0f - 4.0f;
-        const float z = -5.0f + static_cast<float>(renderedIndex / 5) * 2.0f;
+        const float x = node.Transform().x;
+        const float z = node.Transform().z;
         const EditorPreviewKind kind = KindFor(node);
-        const float y = kind == EditorPreviewKind::Light ? 2.0f : 0.0f;
+        const float y = node.Transform().y;
         scene.AddObject({node.Path(), node.Label(), x, y, z,
             1.0f, 1.0f, 1.0f, kind});
         ++renderedIndex;

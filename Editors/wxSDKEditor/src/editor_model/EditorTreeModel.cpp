@@ -174,6 +174,15 @@ void EditorTreeModel::SetNodeCategory(
     node.category_ = std::move(category);
 }
 
+bool EditorTreeModel::SetNodeTransform(EditorTreeNode& node,
+    const EditorTransform& transform, std::string* reason)
+{
+    if (!transform.IsFinite()) return Fail(reason, "Transform values must be finite.");
+    node.transform_ = transform;
+    if (reason) reason->clear();
+    return true;
+}
+
 bool EditorTreeModel::DeleteNode(EditorTreeNode& node, std::string* reason)
 {
     if (!CanDeleteNode(node, reason))
@@ -255,16 +264,16 @@ EditorTreeModel EditorTreeModel::CreateDemoScene()
     EditorTreeNode& scene = model.CreateRoot("Scene (demo data)", "demo scene root");
 
     EditorTreeNode& objects = model.AddChild(scene, "Objects", "demo group");
-    model.AddChild(objects, "actor", "demo scene object");
-    model.AddChild(objects, "level_changer", "demo scene object");
-    model.AddChild(objects, "physic_object", "demo scene object");
+    EditorTreeNode& actor=model.AddChild(objects,"actor","demo scene object"); actor.transform_.x=-4; actor.transform_.z=-5;
+    EditorTreeNode& changer=model.AddChild(objects,"level_changer","demo scene object"); changer.transform_.x=-2; changer.transform_.z=-5;
+    EditorTreeNode& physical=model.AddChild(objects,"physic_object","demo scene object"); physical.transform_.z=-5;
 
     EditorTreeNode& lights = model.AddChild(scene, "Lights", "demo group");
-    model.AddChild(lights, "sun", "demo light");
-    model.AddChild(lights, "point_light", "demo light");
+    EditorTreeNode& sun=model.AddChild(lights,"sun","demo light"); sun.transform_.x=2; sun.transform_.y=2; sun.transform_.z=-5;
+    EditorTreeNode& point=model.AddChild(lights,"point_light","demo light"); point.transform_.x=4; point.transform_.y=2; point.transform_.z=-5;
 
     EditorTreeNode& sounds = model.AddChild(scene, "Sounds", "demo group");
-    model.AddChild(sounds, "ambient", "demo sound");
+    EditorTreeNode& ambient=model.AddChild(sounds,"ambient","demo sound"); ambient.transform_.x=-4; ambient.transform_.z=-3;
     model.AddChild(scene, "Sectors / Portals", "demo group");
     model.AddChild(scene, "Spawn Elements", "demo group");
     return model;

@@ -355,3 +355,8 @@ The synthetic surface now supports wx-free click picking with shared projection
 rules. Hits select the corresponding tree path and refresh properties/highlight;
 empty space clears selection. Reverse draw order resolves overlaps. See
 [wxSDKEditor Preview Picking](wx-editor-picking.md).
+
+The development model now owns transforms and writes snapshot v3 while reading
+v1/v2 with defaults. Finite position fields and a tested X/Z move gizmo use one
+command per committed drag. See [Transforms](wx-editor-transforms.md) and
+[Move Gizmo](wx-editor-gizmo.md).

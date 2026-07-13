@@ -61,6 +61,8 @@ private:
     void OnTogglePreviewLabels(wxCommandEvent& event);
     void OnFrameSelected(wxCommandEvent& event);
     void OnUpdatePreviewLabels(wxUpdateUIEvent& event);
+    void OnToggleMoveSnap(wxCommandEvent& event);
+    void OnUpdateMoveSnap(wxUpdateUIEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnAddDemoGroup(wxCommandEvent& event);
     void OnAddDemoObject(wxCommandEvent& event);

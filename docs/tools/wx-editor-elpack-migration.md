@@ -221,3 +221,6 @@ or rendering behavior. See [wxSDKEditor Preview Scene](wx-editor-preview-scene.m
 
 Picking likewise uses neutral logical paths and screen-space preview shapes; it
 does not emulate ElPack widget hit testing or historical scene ray casting.
+
+Transforms and gizmos remain neutral development-model boundaries. Old
+`xrEProps`, LevelEditor, VCL, ElPack, and runtime renderer sources are untouched.

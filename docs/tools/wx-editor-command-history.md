@@ -34,3 +34,6 @@ remain wx-free. See [wxSDKEditor Dockable Layout](wx-editor-layout.md).
 model baseline. Command history itself remains concerned only with execution,
 undo, redo, and selection restoration; document dirtiness becomes clean when
 undo returns to that baseline. See [wxSDKEditor Document Layer](wx-editor-document.md).
+
+Move-gizmo motion is preview-only. Release submits one transform command;
+Escape submits none. Undo/redo restores both position and logical selection.

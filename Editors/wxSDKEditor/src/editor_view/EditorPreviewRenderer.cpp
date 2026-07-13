@@ -59,14 +59,36 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
         }
 
         if (object.selected)
+        {
             drawList_.Add({EditorViewportPrimitiveType::Rectangle,
                 EditorViewportStyle::Selected,
                 x - 19.0f, y - 15.0f, x + 19.0f, y + 15.0f});
+            drawList_.Add({EditorViewportPrimitiveType::Line,
+                activeGizmoAxis_ == EditorGizmoAxis::X
+                    ? EditorViewportStyle::GizmoActive
+                    : EditorViewportStyle::GizmoX,
+                x, y, x + 45.0f, y});
+            drawList_.Add({EditorViewportPrimitiveType::Line,
+                activeGizmoAxis_ == EditorGizmoAxis::Z
+                    ? EditorViewportStyle::GizmoActive
+                    : EditorViewportStyle::GizmoZ,
+                x, y, x, y - 45.0f});
+        }
         if (labelsVisible_)
             drawList_.Add({EditorViewportPrimitiveType::Text,
                 EditorViewportStyle::Label, x + 18.0f, y - 8.0f,
                 0.0f, 0.0f, 0.0f, object.label});
     }
+}
+
+EditorPreviewProjectedPoint EditorPreviewRenderer::SelectedPoint() const
+{
+    if (!scene_)
+        return {};
+    const EditorPreviewObject* object =
+        scene_->FindByLogicalPath(scene_->SelectedPath());
+    return object ? ProjectEditorPreviewObject(*object, projection_)
+                  : EditorPreviewProjectedPoint{};
 }
 
 EditorPreviewPickResult EditorPreviewRenderer::Pick(float x, float y) const

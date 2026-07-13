@@ -4,6 +4,7 @@
 #include "editor_view/EditorViewportDrawList.h"
 #include "editor_view/IEditorViewportRenderer.h"
 #include "editor_view/EditorPreviewPicking.h"
+#include "editor_view/EditorMoveGizmo.h"
 
 class EditorPreviewScene;
 
@@ -15,6 +16,8 @@ public:
     bool LabelsVisible() const { return labelsVisible_; }
     const EditorViewportDrawList& DrawList() const { return drawList_; }
     EditorPreviewPickResult Pick(float x, float y) const;
+    EditorPreviewProjectedPoint SelectedPoint() const;
+    void SetActiveGizmoAxis(EditorGizmoAxis axis) { activeGizmoAxis_ = axis; }
 
     void Resize(int width, int height) override;
     void Render(const EditorViewportState& state) override;
@@ -27,6 +30,7 @@ private:
     int height_ = 0;
     EditorPreviewProjectionContext projection_;
     std::vector<EditorPreviewPickShape> pickShapes_;
+    EditorGizmoAxis activeGizmoAxis_ = EditorGizmoAxis::None;
 };
 
 #endif

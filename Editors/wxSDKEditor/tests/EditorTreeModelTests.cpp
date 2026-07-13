@@ -7,6 +7,7 @@
 #include "editor_model/EditorTreeSnapshot.h"
 
 #include <iostream>
+#include <cmath>
 #include <string>
 
 namespace
@@ -133,9 +134,11 @@ int main()
         EditorTreeNode& propertyChild = propertyModel.AddChild(
             *propertyActor, "child", "demo scene object", EditorItemKind::Object);
         EditorPropertySet propertySet = BuildEditorNodePropertySet(*propertyActor);
-        Check(propertySet.Properties().size() == 4 &&
+        Check(propertySet.Properties().size() == 7 &&
             propertySet.Find("LABEL") && propertySet.Find("category") &&
-            propertySet.Find("kind") && propertySet.Find("path"),
+            propertySet.Find("kind") && propertySet.Find("path") &&
+            propertySet.Find("position.x") && propertySet.Find("position.y") &&
+            propertySet.Find("position.z"),
             "node property set contains stable keys");
         Check(!propertySet.Find("label")->readOnly &&
             !propertySet.Find("category")->readOnly &&
@@ -171,6 +174,10 @@ int main()
         apply = ApplyEditorNodeProperty(propertyModel, *propertyActor, "path", "other");
         Check(!apply.success && propertyActor->Path() == acceptedPath,
             "read-only path property rejected");
+        apply=ApplyEditorNodeProperty(propertyModel,*propertyActor,"position.x","12.5");
+        Check(apply.success && propertyActor->Transform().x==12.5f,"position property applies");
+        apply=ApplyEditorNodeProperty(propertyModel,*propertyActor,"position.x","nan");
+        Check(!apply.success && propertyActor->Transform().x==12.5f,"non-finite position rejected atomically");
     }
 
     std::string reason;
@@ -181,8 +188,8 @@ int main()
     std::string snapshot;
     Check(SerializeEditorTreeSnapshot(model, snapshot, &reason),
         "snapshot serialization succeeds");
-    Check(snapshot.find("# wxSDKEditor tree snapshot v2\n") == 0,
-        "snapshot writer emits v2 header");
+    Check(snapshot.find("# wxSDKEditor tree snapshot v3\n") == 0,
+        "snapshot writer emits v3 header");
 
     EditorTreeModel loaded;
     Check(DeserializeEditorTreeSnapshot(loaded, snapshot, &reason),
@@ -191,7 +198,9 @@ int main()
         "known path survives snapshot round trip");
     Check(loaded.FindByPath("Scene (demo data)/Objects/actor")->Kind() ==
         EditorItemKind::Object,
-        "item kind survives v2 snapshot round trip");
+        "item kind survives v3 snapshot round trip");
+    Check(loaded.FindByPath("Scene (demo data)/Objects/actor")->Transform().x==-4.0f,
+        "transform survives v3 snapshot round trip");
     EditorTreeNode* loadedEscaped = loaded.FindByLabel(escaped.Label());
     Check(loadedEscaped != nullptr, "escaped label survives snapshot round trip");
     Check(loadedEscaped && loadedEscaped->Category() == "category\tvalue",
@@ -218,6 +227,11 @@ int main()
     Check(RejectsSnapshot(preserved, std::string(Header) +
         "node depth=0 label=\"Root\" category=\"root\" path=\"Wrong\"\n"),
         "stored path mismatch rejected");
+    Check(RejectsSnapshot(preserved,
+        "# wxSDKEditor tree snapshot v3\n"
+        "node depth=0 kind=\"root\" label=\"Root\" category=\"root\" "
+        "path=\"Root\" transform=\"nan 0 0 0 0 0 1 1 1\"\n"),
+        "non-finite v3 transform rejected atomically");
 
     const std::string legacySnapshot = std::string(Header) +
         "node depth=0 label=\"Legacy\" category=\"custom root\" path=\"Legacy\"\n"
@@ -234,6 +248,19 @@ int main()
     Check(legacyLoaded.FindByPath("Legacy/Folder/Item")->Kind() ==
         EditorItemKind::Unknown,
         "v1 custom category remains unknown kind");
+    Check(legacyLoaded.FindByPath("Legacy/Folder/Item")->Transform()
+        .NearlyEquals(EditorTransform{}),
+        "v1 nodes receive default transforms");
+
+    const std::string v2Snapshot =
+        "# wxSDKEditor tree snapshot v2\n"
+        "node depth=0 kind=\"root\" label=\"V2\" category=\"root\" path=\"V2\"\n"
+        "node depth=1 kind=\"object\" label=\"Item\" category=\"object\" path=\"V2/Item\"\n";
+    EditorTreeModel v2Loaded;
+    Check(DeserializeEditorTreeSnapshot(v2Loaded, v2Snapshot, &reason) &&
+        v2Loaded.FindByPath("V2/Item")->Transform()
+            .NearlyEquals(EditorTransform{}),
+        "v2 nodes remain readable with default transforms");
 
     const std::string pathList =
         "# wxSDKEditor path list v1\n"

@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <cctype>
 #include <utility>
+#include <cstdlib>
+#include <cerrno>
+#include <cmath>
 
 namespace
 {
@@ -16,6 +19,12 @@ bool EqualIgnoringCase(std::string_view left, std::string_view right)
             [](unsigned char a, unsigned char b) {
                 return std::tolower(a) == std::tolower(b);
             });
+}
+
+bool ParseFiniteFloat(const std::string& text, float& value)
+{
+    char* end=nullptr; errno=0; value=std::strtof(text.c_str(),&end);
+    return end!=text.c_str() && *end=='\0' && errno!=ERANGE && std::isfinite(value);
 }
 
 EditorProperty MakeProperty(const char* key, const char* label,
@@ -58,6 +67,19 @@ EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node)
         std::string(ToString(node.Kind())), true, "Audited structural item kind."));
     properties.Add(MakeProperty("path", "Path", EditorPropertyType::ReadOnlyText,
         node.Path(), true, "Generated canonical hierarchy path."));
+    if (!IsGroupKind(node.Kind()))
+    {
+        const EditorTransform& transform = node.Transform();
+        properties.Add(MakeProperty("position.x", "Position X",
+            EditorPropertyType::String, std::to_string(transform.x), false,
+            "Development transform X."));
+        properties.Add(MakeProperty("position.y", "Position Y",
+            EditorPropertyType::String, std::to_string(transform.y), false,
+            "Development transform Y."));
+        properties.Add(MakeProperty("position.z", "Position Z",
+            EditorPropertyType::String, std::to_string(transform.z), false,
+            "Development transform Z."));
+    }
     return properties;
 }
 
@@ -87,6 +109,26 @@ EditorPropertyApplyResult ApplyEditorNodeProperty(EditorTreeModel& model,
     else if (EqualIgnoringCase(key, "category"))
     {
         model.SetNodeCategory(node, std::move(value));
+    }
+    else if (key.rfind("position.", 0) == 0)
+    {
+        float parsed = 0.0f;
+        if (!ParseFiniteFloat(value, parsed))
+        {
+            result.reason = "Position must be a finite number.";
+            return result;
+        }
+        EditorTransform transform = node.Transform();
+        if (EqualIgnoringCase(key, "position.x")) transform.x = parsed;
+        else if (EqualIgnoringCase(key, "position.y")) transform.y = parsed;
+        else if (EqualIgnoringCase(key, "position.z")) transform.z = parsed;
+        else
+        {
+            result.reason = "Unknown position property.";
+            return result;
+        }
+        if (!model.SetNodeTransform(node, transform, &result.reason))
+            return result;
     }
 
     result.success = true;

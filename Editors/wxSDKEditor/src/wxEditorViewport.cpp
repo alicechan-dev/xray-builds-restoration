@@ -114,6 +114,11 @@ bool wxEditorViewport::FrameSelected()
     return true;
 }
 
+void wxEditorViewport::ToggleMoveSnap()
+{
+    moveSnapEnabled_ = !moveSnapEnabled_;
+}
+
 void wxEditorViewport::OnPaint(wxPaintEvent&)
 {
     wxAutoBufferedPaintDC dc(this);
@@ -147,6 +152,12 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
             colour = wxColour(255, 145, 55);
         else if (primitive.style == EditorViewportStyle::Label)
             colour = wxColour(215, 220, 225);
+        else if (primitive.style == EditorViewportStyle::GizmoX)
+            colour = wxColour(225, 70, 70);
+        else if (primitive.style == EditorViewportStyle::GizmoZ)
+            colour = wxColour(70, 145, 235);
+        else if (primitive.style == EditorViewportStyle::GizmoActive)
+            colour = wxColour(255, 225, 70);
         dc.SetPen(wxPen(colour,
             primitive.style == EditorViewportStyle::Selected ? 2 : 1));
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
@@ -218,6 +229,20 @@ void wxEditorViewport::OnMouseLeave(wxMouseEvent& event)
 void wxEditorViewport::OnMouseMove(wxMouseEvent& event)
 {
     controller_.OnMouseMove(event.GetX(), event.GetY());
+    if (moveGizmo_.Active())
+    {
+        EditorPreviewObject* selected =
+            previewScene_.FindByLogicalPath(previewScene_.SelectedPath());
+        if (selected)
+        {
+            const EditorTransform preview = moveGizmo_.Update(
+                event.GetX(), event.GetY(), moveSnapEnabled_);
+            selected->x = preview.x;
+            selected->y = preview.y;
+            selected->z = preview.z;
+            controller_.Render();
+        }
+    }
     Refresh(false);
     event.Skip();
 }
@@ -226,9 +251,48 @@ void wxEditorViewport::OnMouseButton(wxMouseEvent& event)
 {
     SetFocus();
     const bool pressed = event.ButtonDown();
+    const bool left = event.GetButton() == wxMOUSE_BTN_LEFT;
+    if (pressed && left)
+    {
+        const EditorPreviewProjectedPoint origin = renderer_.SelectedPoint();
+        const EditorPreviewObject* selected =
+            previewScene_.FindByLogicalPath(previewScene_.SelectedPath());
+        const EditorGizmoAxis axis = origin.visible
+            ? moveGizmo_.Hit(origin.x, origin.y,
+                static_cast<float>(event.GetX()),
+                static_cast<float>(event.GetY()))
+            : EditorGizmoAxis::None;
+        if (axis != EditorGizmoAxis::None && selected)
+        {
+            EditorTransform start;
+            start.x = selected->x;
+            start.y = selected->y;
+            start.z = selected->z;
+            moveGizmo_.Begin(axis, event.GetX(), event.GetY(), start);
+            renderer_.SetActiveGizmoAxis(axis);
+        }
+        else if (selectionHandler_)
+            selectionHandler_(controller_.OnPrimaryClick(
+                event.GetX(), event.GetY()));
+    }
+    else if (!pressed && left && moveGizmo_.Active())
+    {
+        const std::string path = previewScene_.SelectedPath();
+        const EditorPreviewObject* selected =
+            previewScene_.FindByLogicalPath(path);
+        EditorTransform result = moveGizmo_.Start();
+        if (selected)
+        {
+            result.x = selected->x;
+            result.y = selected->y;
+            result.z = selected->z;
+        }
+        moveGizmo_.Cancel();
+        renderer_.SetActiveGizmoAxis(EditorGizmoAxis::None);
+        if (transformHandler_ && !result.NearlyEquals(moveGizmo_.Start()))
+            transformHandler_(path, result);
+    }
     controller_.OnMouseButton(MapButton(event.GetButton()), pressed);
-    if (pressed && event.GetButton() == wxMOUSE_BTN_LEFT && selectionHandler_)
-        selectionHandler_(controller_.OnPrimaryClick(event.GetX(), event.GetY()));
     if (pressed && !HasCapture())
         CaptureMouse();
     else if (!event.LeftIsDown() && !event.RightIsDown() &&
@@ -247,6 +311,23 @@ void wxEditorViewport::OnMouseWheel(wxMouseEvent& event)
 
 void wxEditorViewport::OnKeyDown(wxKeyEvent& event)
 {
+    if (event.GetKeyCode() == WXK_ESCAPE && moveGizmo_.Active())
+    {
+        EditorPreviewObject* selected =
+            previewScene_.FindByLogicalPath(previewScene_.SelectedPath());
+        if (selected)
+        {
+            const EditorTransform& start = moveGizmo_.Start();
+            selected->x = start.x;
+            selected->y = start.y;
+            selected->z = start.z;
+        }
+        moveGizmo_.Cancel();
+        renderer_.SetActiveGizmoAxis(EditorGizmoAxis::None);
+        controller_.Render();
+        Refresh(false);
+        return;
+    }
     EditorViewportKey key;
     if (MapKey(event.GetKeyCode(), key))
     {

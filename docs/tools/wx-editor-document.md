@@ -55,3 +55,6 @@ and do not change snapshot v2. See [wxSDKEditor Preview Scene](wx-editor-preview
 
 Preview picking changes only logical selection. Hits and empty-space clears do
 not affect the saved snapshot baseline or command history.
+
+Node transforms are now document state persisted by snapshot v3. v1/v2 readers
+assign defaults. Temporary gizmo motion is not document state until release.

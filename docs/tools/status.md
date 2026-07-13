@@ -286,3 +286,8 @@ Synthetic preview picking now shares renderer projection and selects current
 tree paths through the presenter. Box/circle/tolerant-marker hits use reverse
 draw order; empty space clears selection without dirtiness/history changes.
 Headless tests remain wx-free. See [wxSDKEditor Preview Picking](wx-editor-picking.md).
+
+The wx experiment now has node-owned finite transforms, snapshot v3 with v1/v2
+compatibility, editable position properties, and a semantic X/Z move gizmo.
+Drag is temporary, release commits once, Escape cancels, and 1.0-unit snapping
+is optional and off by default. Tests-only builds remain wxWidgets-free.
