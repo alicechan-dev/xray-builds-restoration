@@ -1,5 +1,7 @@
 #include "editor_model/EditorPropertySet.h"
 
+#include "editor_assets/EditorAssetDescriptor.h"
+#include "editor_assets/EditorImportedPrototype.h"
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorTreeModel.h"
 
@@ -56,7 +58,8 @@ const EditorProperty* EditorPropertySet::Find(std::string_view key) const
     return found == properties_.end() ? nullptr : &*found;
 }
 
-EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node)
+EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
+    const EditorAssetDescriptor* resolvedAsset)
 {
     EditorPropertySet properties;
     properties.Add(MakeProperty("label", "Label", EditorPropertyType::String,
@@ -71,6 +74,26 @@ EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node)
         EditorPropertyType::ReadOnlyText,
         node.AssetId().empty() ? "none" : node.AssetId(), true,
         "Optional synthetic catalog prototype identity."));
+    if (IsImportedAssetId(node.AssetId()))
+    {
+        const bool resolved = resolvedAsset && resolvedAsset->sourceKind ==
+            EditorAssetSourceKind::ImportedSpawnMetadata;
+        const std::string section = resolved &&
+                !resolvedAsset->sourceSection.empty()
+            ? resolvedAsset->sourceSection
+            : ImportedSectionFromAssetId(node.AssetId());
+        properties.Add(MakeProperty("prototype_section", "Prototype Section",
+            EditorPropertyType::ReadOnlyText, section, true,
+            "Stable imported metadata section identity."));
+        properties.Add(MakeProperty("metadata_resolution", "Metadata",
+            EditorPropertyType::ReadOnlyText,
+            resolved ? "resolved" : "unresolved", true,
+            "Whether the session catalog currently resolves this prototype."));
+        if (resolved && !resolvedAsset->sourceFile.empty())
+            properties.Add(MakeProperty("metadata_source", "Metadata Source",
+                EditorPropertyType::ReadOnlyText, resolvedAsset->sourceFile,
+                true, "Read-only metadata provenance for this session."));
+    }
     if (!IsGroupKind(node.Kind()))
     {
         const EditorTransform& transform = node.Transform();

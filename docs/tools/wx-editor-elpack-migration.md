@@ -235,6 +235,8 @@ adapters feed the same placement path without fake ElPack headers. Old
 `xrEProps` and LevelEditor sources remain preserved and untouched.
 
 The metadata bridge reads only audited build-1935 LTX text. It does not call
-old object factories, `ItemListHelper`, `FolderLib`, ElPack, or VCL. `$spawn`
-is browse classification only; imported entries remain non-placeable until
-historical construction semantics are separately audited.
+old object factories, `ItemListHelper`, `FolderLib`, ElPack, or VCL. The
+preserved spawn frame proves enough label/identity semantics to create an inert
+synthetic Spawn marker through the neutral placement seam, but not enough to
+construct a historical runtime object. Real object-library and factory
+semantics remain separately blocked.

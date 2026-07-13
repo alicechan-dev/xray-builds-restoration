@@ -1,4 +1,5 @@
 #include "editor_assets/EditorMetadataCatalogAdapter.h"
+#include "editor_assets/EditorImportedPrototype.h"
 
 #include <algorithm>
 #include <cctype>
@@ -6,18 +7,6 @@
 
 namespace
 {
-std::string ImportedId(std::string name)
-{
-    std::transform(name.begin(), name.end(), name.begin(),
-        [](unsigned char character) {
-            if (std::isalnum(character) || character == '.' ||
-                character == '_' || character == '-')
-                return static_cast<char>(std::tolower(character));
-            return '_';
-        });
-    return "imported.section." + name;
-}
-
 std::string Summary(const EditorMetadataSection& section)
 {
     std::ostringstream output;
@@ -37,25 +26,38 @@ EditorMetadataCatalogResult BuildEditorMetadataCatalog(
     EditorMetadataCatalogResult result;
     for (const EditorMetadataSection& section : metadata.sections)
     {
-        const EditorMetadataEntry* spawn = section.FindFirst("$spawn");
-        if (!spawn || spawn->value.empty())
+        if (!section.FindFirst("$spawn"))
         {
             ++result.unsupportedSections;
             continue;
         }
+        const EditorImportedPrototype prototype =
+            ClassifyImportedSpawnPrototype(section);
         EditorAssetDescriptor descriptor;
-        descriptor.id = ImportedId(section.name);
-        descriptor.displayName = section.name;
-        descriptor.categoryPath = "Imported/Spawn Metadata";
+        descriptor.id = prototype.assetId;
+        descriptor.displayName = prototype.displayName.empty()
+            ? section.name : prototype.displayName;
+        descriptor.categoryPath = prototype.categoryPath.empty()
+            ? "Imported/Invalid Spawn Metadata" : prototype.categoryPath;
         descriptor.description = Summary(section);
-        descriptor.baseNodeName = section.name;
+        descriptor.baseNodeName = prototype.baseNodeName;
         descriptor.itemKind = EditorItemKind::Object;
-        descriptor.nodeCategory = "imported metadata";
-        descriptor.previewKind = EditorPreviewKind::Unknown;
-        descriptor.placeable = false;
+        descriptor.nodeCategory = "imported spawn";
+        descriptor.previewKind = EditorPreviewKind::Spawn;
+        descriptor.placementType = EditorAssetPlacementType::Spawn;
+        descriptor.placeable = prototype.placeableAsSynthetic;
         descriptor.sourceFile = section.sourceFile;
         descriptor.sourceSection = section.name;
         descriptor.sourceLine = section.sourceLine;
+        descriptor.sourceKind = EditorAssetSourceKind::ImportedSpawnMetadata;
+        descriptor.rawSpawnValue = prototype.rawSpawnValue;
+        descriptor.placeabilityReason = prototype.placeabilityReason;
+        if (!prototype.placeableAsSynthetic)
+            result.diagnostics.push_back({
+                EditorMetadataDiagnosticSeverity::Warning,
+                section.sourceFile, section.sourceLine,
+                "imported prototype is read-only: " +
+                    prototype.placeabilityReason});
         if (!result.catalog.Add(std::move(descriptor)))
             result.diagnostics.push_back({
                 EditorMetadataDiagnosticSeverity::Warning,

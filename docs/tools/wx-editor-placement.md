@@ -24,3 +24,9 @@ optional snapping are combined with descriptor defaults, including Point
 Light's Y=1. The old Object/Light tools route through matching built-ins while
 keeping `new_object` and `new_light` naming. Undo/redo restores the complete
 metadata and selection.
+
+Audited imported `$spawn` prototypes reuse this exact command path. They place
+only inert Spawn markers and persist the stable `imported.section.*` ID; no
+runtime object factory or second placement system is involved. Clearing the
+session catalog leaves existing markers and history intact. See [Imported
+Prototype Placement](wx-editor-imported-placement.md).

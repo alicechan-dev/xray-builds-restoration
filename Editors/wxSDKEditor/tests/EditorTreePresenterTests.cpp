@@ -1,4 +1,5 @@
 #include "editor_app/EditorTreePresenter.h"
+#include "editor_assets/EditorMetadataCatalogAdapter.h"
 #include "editor_model/EditorPropertySet.h"
 #include "editor_ui/IDialogService.h"
 #include "editor_ui/IEditorTree.h"
@@ -551,6 +552,80 @@ int RunEditorTreePresenterTests()
     check(presenter.GetToolMode() == EditorToolMode::Select &&
         !document.IsModified(),
         "New resets tool mode without dirtying the document");
+
+    {
+        FakeEditorTree importedTree;
+        FakePropertyPanel importedProperties;
+        FakeDialogService importedDialogs;
+        EditorDocument importedDocument;
+        EditorTreePresenter importedPresenter(importedDocument, importedTree,
+            importedProperties, importedDialogs, {}, {});
+        importedPresenter.InitializeDemo();
+        EditorImportedMetadata metadata;
+        metadata.sections.push_back({"wpn_ak74", "weapons.ltx", 12,
+            {{"$spawn", "\"weapons\\ak-74\"", "weapons.ltx", 13}}});
+        EditorMetadataCatalogResult imported =
+            BuildEditorMetadataCatalog(metadata);
+        importedPresenter.SetImportedAssetCatalog(imported.catalog);
+        check(!importedDocument.IsModified() &&
+            !importedPresenter.CanUndo() &&
+            importedPresenter.SelectAsset("imported.section.wpn_ak74") &&
+            importedPresenter.GetToolMode() == EditorToolMode::PlaceAsset,
+            "session import selects an audited placeable prototype without document mutation");
+
+        const std::size_t nodesBeforeCancel = importedTree.items.size();
+        check(importedPresenter.CancelActiveTool() &&
+            !importedPresenter.PlaceAt({}) &&
+            importedTree.items.size() == nodesBeforeCancel,
+            "canceling imported placement does not mutate the document");
+        check(importedPresenter.SelectAsset("imported.section.wpn_ak74"),
+            "imported prototype can be selected again after cancellation");
+        EditorTransform importedPlacement;
+        importedPlacement.x = 3.0f;
+        importedPlacement.z = 6.0f;
+        check(importedPresenter.PlaceAt(importedPlacement) &&
+            importedTree.Contains("wpn_ak74"),
+            "imported prototype places through the generic command path");
+        EditorTreeNode* importedNode =
+            importedDocument.Model().FindByLabel("wpn_ak74");
+        check(importedNode &&
+            importedNode->AssetId() == "imported.section.wpn_ak74" &&
+            importedNode->Category() == "imported spawn" &&
+            importedNode->Kind() == EditorItemKind::Object &&
+            importedNode->Transform().NearlyEquals(importedPlacement),
+            "placed marker preserves prototype identity, category, kind, and transform");
+        check(importedPresenter.Undo() &&
+            !importedTree.Contains("wpn_ak74") &&
+            importedPresenter.Redo() && importedTree.Contains("wpn_ak74") &&
+            importedDocument.Model().FindByLabel("wpn_ak74")->AssetId() ==
+                "imported.section.wpn_ak74",
+            "imported placement undo/redo preserves prototype identity");
+        check(importedPresenter.PlaceAt(importedPlacement) &&
+            importedTree.Contains("wpn_ak74_1"),
+            "repeated imported placement uses deterministic unique names");
+
+        const bool dirtyBeforeClear = importedDocument.IsModified();
+        const bool undoBeforeClear = importedPresenter.CanUndo();
+        importedPresenter.ClearImportedAssetCatalog();
+        check(importedDocument.Model().FindByLabel("wpn_ak74") &&
+            importedDocument.IsModified() == dirtyBeforeClear &&
+            importedPresenter.CanUndo() == undoBeforeClear &&
+            importedPresenter.GetToolMode() == EditorToolMode::Select &&
+            importedProperties.lastProperties.Find("metadata_resolution") &&
+            importedProperties.lastProperties.Find("metadata_resolution")->value ==
+                "unresolved",
+            "clearing session catalog preserves placed nodes, history, and dirty state");
+
+        EditorAssetCatalog blockedCatalog;
+        EditorAssetDescriptor blocked;
+        blocked.id = "imported.section.blocked";
+        blocked.displayName = "Blocked";
+        blocked.placeable = false;
+        blockedCatalog.Add(std::move(blocked));
+        importedPresenter.SetImportedAssetCatalog(std::move(blockedCatalog));
+        check(!importedPresenter.SelectAsset("imported.section.blocked"),
+            "non-placeable imported descriptor cannot enter placement mode");
+    }
 
     return failures;
 }

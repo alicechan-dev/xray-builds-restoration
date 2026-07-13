@@ -2,6 +2,7 @@
 #include "editor_assets/EditorAssetSelectionModel.h"
 #include "editor_assets/EditorMetadataCatalogAdapter.h"
 #include "editor_assets/EditorMetadataLoader.h"
+#include "editor_assets/EditorImportedPrototype.h"
 
 #include <chrono>
 #include <filesystem>
@@ -50,7 +51,7 @@ int RunEditorMetadataTests()
     std::string reason;
     check(loader.ParseMetadataText(
         "; comment\n[Weapon]\nclass = W_AK74 ; inline\n"
-        "$spawn = weapons\\ak-74\nmusic\\amb01\n", "memory.ltx",
+        "$spawn = \"weapons\\ak-74\"\nmusic\\amb01\n", "memory.ltx",
         parsed, &reason) && parsed.sections.size() == 1 &&
         parsed.sections[0].name == "weapon" &&
         parsed.sections[0].entries.size() == 3 &&
@@ -131,10 +132,16 @@ int RunEditorMetadataTests()
     check(catalogResult.catalog.Entries().size() == 1 &&
         catalogResult.unsupportedSections == 0 &&
         catalogResult.catalog.Entries()[0].id == "imported.section.weapon" &&
-        !catalogResult.catalog.Entries()[0].placeable &&
+        catalogResult.catalog.Entries()[0].placeable &&
+        catalogResult.catalog.Entries()[0].previewKind ==
+            EditorPreviewKind::Spawn &&
+        catalogResult.catalog.Entries()[0].sourceKind ==
+            EditorAssetSourceKind::ImportedSpawnMetadata &&
+        catalogResult.catalog.Entries()[0].rawSpawnValue ==
+            "\"weapons\\ak-74\"" &&
         catalogResult.catalog.Entries()[0].sourceFile == "memory.ltx" &&
         catalogResult.catalog.Entries()[0].sourceLine == 2,
-        "$spawn section becomes namespaced non-placeable descriptor with provenance");
+        "audited $spawn section becomes placeable synthetic descriptor with provenance");
     EditorImportedMetadata unsupported;
     unsupported.sections.push_back({"sound", "sound.ltx", 1,
         {{"class", "SOUND", "sound.ltx", 2}}});
@@ -146,21 +153,47 @@ int RunEditorMetadataTests()
         "unsupported raw section is counted and synthetic catalog is unaffected");
 
     EditorImportedMetadata duplicates;
-    duplicates.sections.push_back({"a b", "one.ltx", 1,
-        {{"$spawn", "one", "one.ltx", 2}}});
-    duplicates.sections.push_back({"a_b", "two.ltx", 1,
-        {{"$spawn", "two", "two.ltx", 2}}});
+    duplicates.sections.push_back({"A", "one.ltx", 1,
+        {{"$spawn", "\"one\"", "one.ltx", 2}}});
+    duplicates.sections.push_back({"a", "two.ltx", 1,
+        {{"$spawn", "\"two\"", "two.ltx", 2}}});
     catalogResult = BuildEditorMetadataCatalog(duplicates);
     check(catalogResult.catalog.Entries().size() == 1 &&
         catalogResult.diagnostics.size() == 1,
-        "normalized imported ID collision is diagnosed and skipped");
+        "case-normalized imported ID collision is diagnosed and skipped");
+
+    const EditorImportedPrototype prototype =
+        ClassifyImportedSpawnPrototype(parsed.sections[0]);
+    check(prototype.placeableAsSynthetic &&
+        prototype.spawnLabel == "weapons\\ak-74" &&
+        prototype.categoryPath == "Imported/weapons" &&
+        prototype.baseNodeName == "weapon" &&
+        prototype.displayName == "ak-74 [weapon]",
+        "quoted build-1935 $spawn label has conservative hierarchy mapping");
+    check(MakeSafeImportedNodeName("Wpn AK/74") == "wpn_ak_74" &&
+        MakeSafeImportedNodeName("\t") == "imported_spawn",
+        "imported placement names are deterministic and filesystem-independent");
+
+    EditorImportedMetadata invalid;
+    invalid.sections.push_back({"unsafe", "unsafe.ltx", 1,
+        {{"$spawn", "../not-quoted", "unsafe.ltx", 2}}});
+    invalid.sections.push_back({"duplicate", "unsafe.ltx", 3,
+        {{"$spawn", "\"one\"", "unsafe.ltx", 4},
+         {"$spawn", "\"two\"", "unsafe.ltx", 5}}});
+    const EditorMetadataCatalogResult invalidResult =
+        BuildEditorMetadataCatalog(invalid);
+    check(invalidResult.catalog.Entries().size() == 2 &&
+        !invalidResult.catalog.Entries()[0].placeable &&
+        !invalidResult.catalog.Entries()[1].placeable &&
+        invalidResult.diagnostics.size() == 2,
+        "malformed and ambiguous $spawn metadata remains browseable but non-placeable");
 
     const EditorAssetCatalog synthetic = EditorAssetCatalog::CreateBuiltIn();
     EditorAssetSelectionModel selection;
     check(selection.Select(synthetic, "demo.actor") &&
-        !selection.Select(catalogResult.catalog, "imported.section.a_b") &&
+        !selection.Select(invalidResult.catalog, "imported.section.unsafe") &&
         selection.SelectedId() == "demo.actor",
-        "non-placeable import activation cannot replace synthetic selection");
+        "invalid imported activation cannot replace synthetic selection");
     EditorDocument document;
     BuildEditorMetadataCatalog(parsed);
     check(!document.IsModified(),

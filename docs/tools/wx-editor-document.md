@@ -73,3 +73,8 @@ content.
 Imported metadata is application-session state, not document state. Loading,
 searching, or clearing it does not change the model, history, save point, or
 snapshot. New/Open/Save retain it; restart requires explicit reload.
+
+Snapshot v4 needs no revision for imported placement: placed nodes store only
+their `imported.section.*` asset ID and ordinary node fields. A missing session
+catalog is an unresolved descriptor, not a load error; no provenance path or
+metadata contents are serialized.

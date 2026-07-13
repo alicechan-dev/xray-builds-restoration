@@ -5,6 +5,7 @@
 
 class EditorTreeModel;
 class EditorTreeNode;
+struct EditorAssetDescriptor;
 
 class EditorPropertySet
 {
@@ -25,7 +26,8 @@ struct EditorPropertyApplyResult
     bool requiresPropertyRefresh = false;
 };
 
-EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node);
+EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
+    const EditorAssetDescriptor* resolvedAsset = nullptr);
 EditorPropertyApplyResult ApplyEditorNodeProperty(EditorTreeModel& model,
     EditorTreeNode& node, std::string_view key, std::string value);
 

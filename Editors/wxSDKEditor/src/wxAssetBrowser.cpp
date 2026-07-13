@@ -100,7 +100,10 @@ void wxAssetBrowser::UpdateDetails()
         detail += "\n\nSource: " + descriptor->sourceFile + ":" +
             std::to_string(descriptor->sourceLine) +
             "\nSection: [" + descriptor->sourceSection + "]" +
-            "\nPlaceable: no";
+            "\n$spawn: " + descriptor->rawSpawnValue;
+        detail += "\nPlaceable: ";
+        detail += descriptor->placeable ? "synthetic Spawn" : "no";
+        detail += "\nPolicy: " + descriptor->placeabilityReason;
     }
     details_->SetLabel(wxString::FromUTF8(detail));
     place_->Enable(descriptor->placeable);
@@ -116,7 +119,9 @@ void wxAssetBrowser::ActivateSelected()
     if (!descriptor->placeable)
     {
         if (statusHandler_)
-            statusHandler_("Imported metadata is read-only in this stage.");
+            statusHandler_(descriptor->placeabilityReason.empty()
+                ? "Imported metadata is read-only in this stage."
+                : descriptor->placeabilityReason);
         return;
     }
     if (activateHandler_)

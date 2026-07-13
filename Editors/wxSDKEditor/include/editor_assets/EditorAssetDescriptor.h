@@ -9,6 +9,7 @@
 #include <cstddef>
 
 enum class EditorAssetPlacementType { Object, Light, Marker, Spawn };
+enum class EditorAssetSourceKind { Synthetic, ImportedSpawnMetadata };
 
 struct EditorAssetDescriptor
 {
@@ -26,6 +27,9 @@ struct EditorAssetDescriptor
     std::string sourceFile;
     std::string sourceSection;
     std::size_t sourceLine = 0;
+    EditorAssetSourceKind sourceKind = EditorAssetSourceKind::Synthetic;
+    std::string rawSpawnValue;
+    std::string placeabilityReason;
 };
 
 #endif

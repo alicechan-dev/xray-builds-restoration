@@ -374,9 +374,12 @@ persisted by snapshot v4 while v1/v2/v3 and unknown IDs remain supported. See
 [Synthetic Asset Catalog](wx-editor-assets.md) and
 [Asset Browser](wx-editor-asset-browser.md). No real X-Ray assets are loaded.
 
-An explicit read-only LTX bridge can inspect one user-selected include graph
-and expose conservatively recognized `$spawn` sections as non-placeable
-metadata. Parser, model, and adapter remain wx-free, bounded, and root-contained;
-the frame supplies only dialogs and compact Output diagnostics. See
+An explicit read-only LTX bridge can inspect one user-selected include graph.
+The preserved LevelEditor proves that `$spawn` is a quoted browser hierarchy
+and that its section is the stable item identity. Safe, unambiguous records may
+therefore place inert synthetic Spawn markers; malformed records remain
+read-only. Parser, model, classifier, and adapter remain wx-free, bounded, and
+root-contained; the frame supplies only dialogs and compact Output diagnostics. See
 [Metadata Import](wx-editor-metadata-import.md) and
-[Metadata Security](wx-editor-metadata-security.md).
+[Metadata Security](wx-editor-metadata-security.md). No runtime construction,
+asset loading, or snapshot-format change is implied.

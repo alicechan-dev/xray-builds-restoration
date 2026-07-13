@@ -616,6 +616,7 @@ void wxSDKEditorFrame::OnLoadMetadata()
     diagnostics.insert(diagnostics.end(), catalog.diagnostics.begin(),
         catalog.diagnostics.end());
     importedMetadata_ = loaded;
+    treePresenter_->SetImportedAssetCatalog(catalog.catalog);
     assetBrowser_->SetImportedMetadata(importedMetadata_, std::move(catalog));
     const std::string summary = "Metadata loaded read-only: files=" +
         std::to_string(loaded.files.size()) + ", sections=" +
@@ -643,6 +644,7 @@ void wxSDKEditorFrame::OnLoadMetadata()
 void wxSDKEditorFrame::OnClearImportedMetadata()
 {
     importedMetadata_ = {};
+    treePresenter_->ClearImportedAssetCatalog();
     assetBrowser_->ClearImportedMetadata();
     SetStatusText("Imported metadata cleared; synthetic assets retained.");
 }

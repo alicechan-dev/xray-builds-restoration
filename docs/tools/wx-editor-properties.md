@@ -72,3 +72,8 @@ The property set also exposes `asset_id` as read-only. Empty IDs display as
 `none`; unknown IDs remain visible unchanged. Asset reassignment is not an
 editable property in this pass. Path and item kind remain read-only, while
 label, category, and finite position fields retain their existing policies.
+
+Nodes with `imported.section.*` IDs also expose read-only `prototype_section`
+and `metadata_resolution`. While the session catalog is loaded they may expose
+the relative `metadata_source`; after it is cleared they report `unresolved`
+without losing identity or preventing snapshot loading.

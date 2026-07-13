@@ -46,3 +46,7 @@ Catalog placement adds the stable asset ID and descriptor-derived metadata to
 that same command snapshot. Delete/undo, subtree restoration, rename, move,
 and property edits therefore preserve asset identity without a separate asset
 command type.
+
+Imported prototype placement uses the same command. Catalog load/clear and
+asset selection are session UI state and never enter history. Clearing the
+catalog does not invalidate undo/redo for already placed imported markers.

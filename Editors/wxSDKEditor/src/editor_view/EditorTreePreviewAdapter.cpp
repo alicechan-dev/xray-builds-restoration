@@ -1,6 +1,7 @@
 #include "editor_view/EditorTreePreviewAdapter.h"
 
 #include "editor_assets/EditorAssetCatalog.h"
+#include "editor_assets/EditorImportedPrototype.h"
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorTreeModel.h"
 
@@ -20,6 +21,8 @@ EditorPreviewKind KindFor(const EditorTreeNode& node)
 {
     if (!node.AssetId().empty())
     {
+        if (IsImportedAssetId(node.AssetId()))
+            return EditorPreviewKind::Spawn;
         static const EditorAssetCatalog catalog =
             EditorAssetCatalog::CreateBuiltIn();
         if (const EditorAssetDescriptor* descriptor =

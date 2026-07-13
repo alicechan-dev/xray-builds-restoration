@@ -602,10 +602,12 @@ LevelEditor integration remain future audited work.
 
 ## wxSDKEditor Read-Only Metadata Checkpoint
 
-A wx-free loader now parses an explicitly selected, root-contained build-1935
-LTX include graph with cycle and resource limits. A conservative adapter
-exposes only `$spawn` sections as non-placeable `imported.section.*`
-descriptors with provenance and compact diagnostics. The application does not
-auto-scan or persist the root, and no source metadata is modified. Real SDK
-construction, object libraries, levels, meshes, textures, and renderer
-integration remain future work.
+A wx-free loader parses an explicitly selected, root-contained build-1935 LTX
+include graph with cycle and resource limits. Historical spawn-frame evidence
+now permits safe, unambiguous `$spawn` sections to become inert synthetic Spawn
+prototypes under `imported.section.*`; invalid records remain read-only with
+diagnostics. The existing command/history path places them and snapshot v4
+stores only their stable ID. The application does not auto-scan or persist the
+root, and no source metadata is modified. Real SDK construction, object
+libraries, levels, meshes, textures, and renderer integration remain future
+work.

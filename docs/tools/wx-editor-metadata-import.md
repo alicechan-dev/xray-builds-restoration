@@ -34,19 +34,22 @@ records warn and are ignored; duplicate keys are retained with warnings.
 
 ## Imported Catalog Policy
 
-Only sections with a non-empty `$spawn` record become descriptors. Preserved
-LevelEditor/ActorEditor code enumerates this key for editor choices, but that
-does not prove real construction semantics, so every imported descriptor is
-non-placeable.
+Only sections with a `$spawn` record become descriptors. The preserved
+LevelEditor uses the quote-stripped value as an editor label hierarchy and the
+section as item identity. Exactly one safe quoted label plus a safe section
+identity may therefore be placed as an inert synthetic Spawn marker. This does
+not imply runtime construction semantics.
 
-IDs use `imported.section.<normalized-section-name>` and cannot replace
-synthetic `demo.*` entries. Collisions are diagnosed and skipped. Other
+IDs use `imported.section.<lowercase-section-name>` and cannot replace synthetic
+`demo.*` entries. Collisions are diagnosed and skipped. Malformed or ambiguous
+`$spawn` sections remain browseable and non-placeable with a reason. Other
 sections are counted as unsupported raw metadata. Descriptors retain source
-file, section, and line plus a short `$spawn`, `class`, and `visual` summary.
+file, section, line, and raw `$spawn` provenance.
 
 Imported metadata belongs to the application session. New/Open/Save retain it,
 Clear Imported Metadata is explicit, and restart does not reload it. Snapshots
 still store only optional asset IDs, so unavailable imported IDs remain valid
 unknown IDs. No level, mesh, texture, object library, archive, DLL, or script is
-loaded, and no runtime file is written or normalized.
-
+loaded, and no runtime file is written or normalized. See [Imported Spawn
+Prototypes](wx-editor-imported-prototypes.md) and [Imported Prototype
+Placement](wx-editor-imported-placement.md).

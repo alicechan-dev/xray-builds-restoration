@@ -23,6 +23,8 @@ descriptor. The legacy Object and Light commands remain available and route to
 familiar naming behavior. Asset Browser activation selects a descriptor and
 enters `PlaceAsset`; Escape returns to Select without committing a command.
 
-Imported descriptors do not extend placement. They are non-placeable, the
-wx-free selection model rejects them, and browser activation emits only a
-read-only status message.
+Imported descriptors extend placement only when their historical `$spawn`
+label and section identity pass the conservative classifier. They create inert
+synthetic Spawn markers. Malformed or ambiguous descriptors remain
+non-placeable, the wx-free selection model rejects them, and browser activation
+reports the exact read-only reason.

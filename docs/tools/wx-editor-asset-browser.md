@@ -24,6 +24,7 @@ selection can remain visible.
 
 The browser also provides **Load Metadata...** and **Clear Imported**. Loading
 requires explicit root and entry-file choices. Categories are distinguished as
-`Synthetic/` and `Imported/Spawn Metadata`. Imported details show source file,
-section, line, selected key summaries, and `Placeable: no`; activation reports
-read-only status instead of entering placement.
+`Synthetic/` and evidence-derived `Imported/<spawn-group>` paths. Imported
+details show source file, section, line, raw `$spawn`, placeability, and policy
+reason. Safe descriptors enter generic inert Spawn placement; invalid or
+ambiguous descriptors report their read-only reason instead.

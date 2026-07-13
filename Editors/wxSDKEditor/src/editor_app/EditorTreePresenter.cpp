@@ -63,13 +63,52 @@ bool EditorTreePresenter::CancelActiveTool()
 
 bool EditorTreePresenter::SelectAsset(const std::string& assetId)
 {
-    if (!assetSelection_.Select(assetCatalog_, assetId))
+    const EditorAssetDescriptor* descriptor = assetCatalog_.FindById(assetId);
+    const EditorAssetCatalog* catalog = &assetCatalog_;
+    if (!descriptor)
+    {
+        descriptor = importedAssetCatalog_.FindById(assetId);
+        catalog = &importedAssetCatalog_;
+    }
+    if (!descriptor || !assetSelection_.Select(*catalog, assetId))
         return false;
     tools_.SetMode(EditorToolMode::PlaceAsset);
-    const EditorAssetDescriptor* descriptor = SelectedAsset();
     SetStatus("Tool: Place Asset. Selected '" + descriptor->displayName +
         "' (" + descriptor->id + ").");
     return true;
+}
+
+void EditorTreePresenter::SetImportedAssetCatalog(EditorAssetCatalog catalog)
+{
+    importedAssetCatalog_ = std::move(catalog);
+    RefreshSelection();
+}
+
+void EditorTreePresenter::ClearImportedAssetCatalog()
+{
+    const bool selectedImported =
+        importedAssetCatalog_.FindById(assetSelection_.SelectedId()) != nullptr;
+    importedAssetCatalog_ = {};
+    if (selectedImported)
+    {
+        assetSelection_.Clear();
+        if (tools_.GetMode() == EditorToolMode::PlaceAsset)
+            tools_.SetMode(EditorToolMode::Select);
+    }
+    RefreshSelection();
+}
+
+const EditorAssetDescriptor* EditorTreePresenter::FindAsset(
+    const std::string& assetId) const
+{
+    if (const EditorAssetDescriptor* descriptor = assetCatalog_.FindById(assetId))
+        return descriptor;
+    return importedAssetCatalog_.FindById(assetId);
+}
+
+const EditorAssetDescriptor* EditorTreePresenter::SelectedAsset() const
+{
+    return FindAsset(assetSelection_.SelectedId());
 }
 
 std::string EditorTreePresenter::ResolvePlacementParentPath() const
@@ -217,7 +256,8 @@ void EditorTreePresenter::RefreshSelection()
         return;
     }
 
-    properties_.ShowProperties(BuildEditorNodePropertySet(*node));
+    properties_.ShowProperties(BuildEditorNodePropertySet(
+        *node, FindAsset(node->AssetId())));
 }
 
 void EditorTreePresenter::RefreshPreview() const

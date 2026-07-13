@@ -20,3 +20,8 @@ includes, cycles, traversal, absolute paths, depth/file/byte limits, malformed
 records, duplicate behavior, deterministic ordering, and atomic failure. They
 do not read `stalker-dream` or another runtime-data folder.
 
+Placement eligibility adds a second conservative boundary: section identities
+and quoted `$spawn` label segments are validated before a descriptor can enter
+placement. Invalid or duplicate records remain read-only. The placed document
+stores only a normalized namespaced ID and inert marker data, never source
+contents or an absolute metadata root.

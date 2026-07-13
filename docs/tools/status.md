@@ -304,8 +304,9 @@ descriptor-driven placement, snapshot v4 persists optional stable IDs, older
 v1/v2/v3 files remain readable, and unknown IDs use category preview fallback.
 No gamedata, archive, mesh, texture, or historical SDK asset is loaded.
 
-The first real-metadata bridge now reads an explicitly selected, root-contained
-build-1935 LTX include graph. Only `$spawn` sections become namespaced,
-provenance-bearing, non-placeable browser entries; other sections are counted
-as unsupported. Imported state is session-local and never changes documents or
-runtime files.
+The first real-metadata bridge reads an explicitly selected, root-contained
+build-1935 LTX include graph. Audited safe `$spawn` sections become namespaced,
+provenance-bearing inert Spawn prototypes; malformed or ambiguous records stay
+read-only and other sections are counted as unsupported. Placement uses normal
+history and snapshot v4 IDs. Imported state is session-local, and clearing it
+leaves placed markers unresolved without changing documents or runtime files.

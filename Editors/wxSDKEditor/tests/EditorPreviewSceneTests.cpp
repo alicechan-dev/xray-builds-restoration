@@ -63,15 +63,18 @@ int RunEditorPreviewSceneTests()
         folder, "asset-mapped", "custom", EditorItemKind::Object);
     EditorTreeNode& unknownAsset = model.AddChild(
         folder, "unknown-asset", "demo spawn", EditorItemKind::Object);
+    EditorTreeNode& importedAsset = model.AddChild(
+        folder, "imported-asset", "custom", EditorItemKind::Object);
     EditorTransform transform; transform.x=-4; transform.z=-5; model.SetNodeTransform(object,transform);
     transform.x=-2; transform.y=2; model.SetNodeTransform(light,transform);
     transform.x=0; transform.y=0; model.SetNodeTransform(spawn,transform);
     transform.x=2; model.SetNodeTransform(marker,transform);
     model.SetNodeAssetId(assetMapped, "demo.point_light");
     model.SetNodeAssetId(unknownAsset, "future.unknown");
+    model.SetNodeAssetId(importedAsset, "imported.section.wpn_ak74");
 
     EditorPreviewScene adapted = BuildEditorPreviewScene(model, light.Path());
-    check(adapted.GetObjects().size() == 6 &&
+    check(adapted.GetObjects().size() == 7 &&
         adapted.FindByLogicalPath(folder.Path()) == nullptr,
         "adapter excludes structural folders");
     check(adapted.FindByLogicalPath(object.Path())->kind == EditorPreviewKind::Box &&
@@ -85,6 +88,9 @@ int RunEditorPreviewSceneTests()
     check(adapted.FindByLogicalPath(unknownAsset.Path())->kind ==
             EditorPreviewKind::Spawn,
         "unknown asset id retains category fallback behavior");
+    check(adapted.FindByLogicalPath(importedAsset.Path())->kind ==
+            EditorPreviewKind::Spawn,
+        "imported prototype id retains inert Spawn preview without catalog");
     check(adapted.FindByLogicalPath(light.Path())->selected &&
         adapted.FindByLogicalPath(light.Path())->y == 2.0f,
         "light selection and elevated synthetic placement");

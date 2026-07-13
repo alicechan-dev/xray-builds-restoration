@@ -56,9 +56,10 @@ public:
     bool CancelActiveTool();
     bool PlaceAt(const EditorTransform& transform);
     bool SelectAsset(const std::string& assetId);
+    void SetImportedAssetCatalog(EditorAssetCatalog catalog);
+    void ClearImportedAssetCatalog();
     const EditorAssetCatalog& AssetCatalog() const { return assetCatalog_; }
-    const EditorAssetDescriptor* SelectedAsset() const
-    { return assetSelection_.Resolve(assetCatalog_); }
+    const EditorAssetDescriptor* SelectedAsset() const;
     std::string ResolvePlacementParentPath() const;
     bool Undo();
     bool Redo();
@@ -73,6 +74,7 @@ private:
         std::uintptr_t parentItem);
     void SetStatus(const std::string& message) const;
     void NotifyDocumentChanged() const;
+    const EditorAssetDescriptor* FindAsset(const std::string& assetId) const;
 
     IEditorTree& tree_;
     IPropertyPanel& properties_;
@@ -87,6 +89,7 @@ private:
     EditorCommandHistory& history_;
     EditorToolController tools_;
     EditorAssetCatalog assetCatalog_ = EditorAssetCatalog::CreateBuiltIn();
+    EditorAssetCatalog importedAssetCatalog_;
     EditorAssetSelectionModel assetSelection_;
 };
 

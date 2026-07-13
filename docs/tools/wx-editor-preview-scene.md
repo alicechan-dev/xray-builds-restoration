@@ -69,3 +69,8 @@ before consulting the node category. Unknown and empty IDs deliberately retain
 the old category fallback, keeping older and future documents visible. Generic
 placement markers use the descriptor preview kind; this remains semantic
 placeholder rendering, not a mesh or thumbnail preview.
+
+Nodes carrying an `imported.section.*` ID map to the existing inert Spawn
+preview even when the session catalog is unavailable. This keeps saved
+development documents inspectable without loading metadata and does not add
+mesh, texture, renderer, or runtime-class behavior.

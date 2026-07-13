@@ -1,5 +1,6 @@
 #include "editor_model/EditorTreeModel.h"
 #include "editor_model/EditorPropertySet.h"
+#include "editor_assets/EditorAssetDescriptor.h"
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorSelectionModel.h"
 #include "editor_model/EditorTreePathListImport.h"
@@ -149,6 +150,29 @@ int main()
             propertySet.Find("path")->readOnly &&
             propertySet.Find("asset_id")->readOnly,
             "node property editability");
+
+        propertyModel.SetNodeAssetId(
+            *propertyActor, "imported.section.wpn_ak74");
+        EditorAssetDescriptor importedDescriptor;
+        importedDescriptor.id = "imported.section.wpn_ak74";
+        importedDescriptor.sourceKind =
+            EditorAssetSourceKind::ImportedSpawnMetadata;
+        importedDescriptor.sourceSection = "wpn_ak74";
+        importedDescriptor.sourceFile = "weapons.ltx";
+        propertySet = BuildEditorNodePropertySet(
+            *propertyActor, &importedDescriptor);
+        Check(propertySet.Find("prototype_section") &&
+            propertySet.Find("prototype_section")->value == "wpn_ak74" &&
+            propertySet.Find("metadata_resolution")->value == "resolved" &&
+            propertySet.Find("metadata_source")->value == "weapons.ltx" &&
+            propertySet.Find("prototype_section")->readOnly,
+            "resolved imported prototype exposes read-only provenance");
+        propertySet = BuildEditorNodePropertySet(*propertyActor);
+        Check(propertySet.Find("metadata_resolution") &&
+            propertySet.Find("metadata_resolution")->value == "unresolved" &&
+            !propertySet.Find("metadata_source"),
+            "missing session catalog preserves imported identity as unresolved");
+        propertyModel.SetNodeAssetId(*propertyActor, "");
 
         EditorPropertyApplyResult apply = ApplyEditorNodeProperty(
             propertyModel, *propertyActor, "label", "stalker");
