@@ -119,6 +119,40 @@ void wxEditorViewport::ToggleMoveSnap()
     moveSnapEnabled_ = !moveSnapEnabled_;
 }
 
+bool wxEditorViewport::CancelTransientOperation()
+{
+    if (!moveGizmo_.Active())
+        return false;
+    EditorPreviewObject* selected =
+        previewScene_.FindByLogicalPath(previewScene_.SelectedPath());
+    if (selected)
+    {
+        const EditorTransform& start = moveGizmo_.Start();
+        selected->x = start.x;
+        selected->y = start.y;
+        selected->z = start.z;
+    }
+    moveGizmo_.Cancel();
+    renderer_.SetActiveGizmoAxis(EditorGizmoAxis::None);
+    controller_.Render();
+    Refresh(false);
+    return true;
+}
+
+void wxEditorViewport::SetToolMode(EditorToolMode mode)
+{
+    CancelTransientOperation();
+    toolMode_ = mode;
+    placementPreview_ = {};
+    renderer_.SetPlacementPreview(placementPreview_);
+    renderer_.SetGizmoVisible(mode == EditorToolMode::Move);
+    SetCursor(mode == EditorToolMode::PlaceObject ||
+        mode == EditorToolMode::PlaceLight
+        ? wxCursor(wxCURSOR_CROSS) : wxNullCursor);
+    controller_.Render();
+    Refresh(false);
+}
+
 void wxEditorViewport::OnPaint(wxPaintEvent&)
 {
     wxAutoBufferedPaintDC dc(this);
@@ -158,6 +192,8 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
             colour = wxColour(70, 145, 235);
         else if (primitive.style == EditorViewportStyle::GizmoActive)
             colour = wxColour(255, 225, 70);
+        else if (primitive.style == EditorViewportStyle::Placement)
+            colour = wxColour(90, 230, 180);
         dc.SetPen(wxPen(colour,
             primitive.style == EditorViewportStyle::Selected ? 2 : 1));
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
@@ -196,6 +232,12 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
         "Camera: (%.2f, %.2f, %.2f) yaw %.1f pitch %.1f speed %.1f",
         state.camera.x, state.camera.y, state.camera.z, state.camera.yaw,
         state.camera.pitch, state.camera.movementSpeed), 12, 74);
+    dc.DrawText("Tool: " + wxString::FromUTF8(EditorToolModeName(toolMode_)),
+        12, 94);
+    if (placementPreview_.valid)
+        dc.DrawText(wxString::Format("Place: %.2f, %.2f, %.2f",
+            placementPreview_.x, placementPreview_.y, placementPreview_.z),
+            12, 114);
 }
 
 void wxEditorViewport::OnSize(wxSizeEvent& event)
@@ -243,6 +285,19 @@ void wxEditorViewport::OnMouseMove(wxMouseEvent& event)
             controller_.Render();
         }
     }
+    else if (toolMode_ == EditorToolMode::PlaceObject ||
+        toolMode_ == EditorToolMode::PlaceLight)
+    {
+        const EditorPreviewProjectionContext projection =
+            MakeEditorPreviewProjectionContext(controller_.State(),
+                controller_.State().width, controller_.State().height);
+        placementPreview_ = UnprojectEditorPreviewToGround(
+            static_cast<float>(event.GetX()), static_cast<float>(event.GetY()),
+            projection, toolMode_ == EditorToolMode::PlaceLight ? 1.0f : 0.0f,
+            moveSnapEnabled_);
+        renderer_.SetPlacementPreview(placementPreview_);
+        controller_.Render();
+    }
     Refresh(false);
     event.Skip();
 }
@@ -254,6 +309,30 @@ void wxEditorViewport::OnMouseButton(wxMouseEvent& event)
     const bool left = event.GetButton() == wxMOUSE_BTN_LEFT;
     if (pressed && left)
     {
+        if (toolMode_ == EditorToolMode::PlaceObject ||
+            toolMode_ == EditorToolMode::PlaceLight)
+        {
+            const EditorViewportState& state = controller_.State();
+            const EditorPreviewProjectionContext projection =
+                MakeEditorPreviewProjectionContext(
+                    state, state.width, state.height);
+            placementPreview_ = UnprojectEditorPreviewToGround(
+                static_cast<float>(event.GetX()),
+                static_cast<float>(event.GetY()), projection,
+                toolMode_ == EditorToolMode::PlaceLight ? 1.0f : 0.0f,
+                moveSnapEnabled_);
+            renderer_.SetPlacementPreview(placementPreview_);
+            if (placementPreview_.valid && placementHandler_)
+            {
+                EditorTransform transform;
+                transform.x = placementPreview_.x;
+                transform.y = placementPreview_.y;
+                transform.z = placementPreview_.z;
+                placementHandler_(toolMode_, transform);
+            }
+        }
+        else
+        {
         const EditorPreviewProjectedPoint origin = renderer_.SelectedPoint();
         const EditorPreviewObject* selected =
             previewScene_.FindByLogicalPath(previewScene_.SelectedPath());
@@ -262,7 +341,8 @@ void wxEditorViewport::OnMouseButton(wxMouseEvent& event)
                 static_cast<float>(event.GetX()),
                 static_cast<float>(event.GetY()))
             : EditorGizmoAxis::None;
-        if (axis != EditorGizmoAxis::None && selected)
+        if (toolMode_ == EditorToolMode::Move &&
+            axis != EditorGizmoAxis::None && selected)
         {
             EditorTransform start;
             start.x = selected->x;
@@ -274,6 +354,7 @@ void wxEditorViewport::OnMouseButton(wxMouseEvent& event)
         else if (selectionHandler_)
             selectionHandler_(controller_.OnPrimaryClick(
                 event.GetX(), event.GetY()));
+        }
     }
     else if (!pressed && left && moveGizmo_.Active())
     {
@@ -311,22 +392,15 @@ void wxEditorViewport::OnMouseWheel(wxMouseEvent& event)
 
 void wxEditorViewport::OnKeyDown(wxKeyEvent& event)
 {
-    if (event.GetKeyCode() == WXK_ESCAPE && moveGizmo_.Active())
+    if (event.GetKeyCode() == WXK_ESCAPE)
     {
-        EditorPreviewObject* selected =
-            previewScene_.FindByLogicalPath(previewScene_.SelectedPath());
-        if (selected)
+        if (CancelTransientOperation())
+            return;
+        if (toolMode_ != EditorToolMode::Select && cancelToolHandler_)
         {
-            const EditorTransform& start = moveGizmo_.Start();
-            selected->x = start.x;
-            selected->y = start.y;
-            selected->z = start.z;
+            cancelToolHandler_();
+            return;
         }
-        moveGizmo_.Cancel();
-        renderer_.SetActiveGizmoAxis(EditorGizmoAxis::None);
-        controller_.Render();
-        Refresh(false);
-        return;
     }
     EditorViewportKey key;
     if (MapKey(event.GetKeyCode(), key))

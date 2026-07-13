@@ -57,3 +57,7 @@ Preview Picking](wx-editor-picking.md).
 Selected preview objects now expose X/Z move handles. Dragging previews
 temporarily, release commits once, Escape cancels, and optional 1.0-unit grid
 snap defaults off. No real renderer or 3D gizmo is connected.
+
+The viewport overlay reports the current tool and prospective placement
+coordinates. Placement uses the inverse of the same wx-free projection used by
+drawing/picking; crosshair feedback is transient. Right drag remains camera-only.

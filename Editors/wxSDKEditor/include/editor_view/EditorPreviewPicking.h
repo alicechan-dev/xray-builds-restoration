@@ -24,6 +24,14 @@ struct EditorPreviewProjectedPoint
     bool visible = false;
 };
 
+struct EditorPreviewWorldPoint
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+    bool valid = false;
+};
+
 struct EditorPreviewPickShape
 {
     std::string logicalPath;
@@ -50,6 +58,10 @@ EditorPreviewProjectionContext MakeEditorPreviewProjectionContext(
 EditorPreviewProjectedPoint ProjectEditorPreviewObject(
     const EditorPreviewObject& object,
     const EditorPreviewProjectionContext& context);
+EditorPreviewWorldPoint UnprojectEditorPreviewToGround(
+    float screenX, float screenY,
+    const EditorPreviewProjectionContext& context,
+    float worldY = 0.0f, bool snap = false, float snapStep = 1.0f);
 std::vector<EditorPreviewPickShape> BuildEditorPreviewPickShapes(
     const EditorPreviewScene& scene,
     const EditorPreviewProjectionContext& context);

@@ -2,6 +2,7 @@
 #define XR_WX_SDK_EDITOR_EDITOR_TREE_PRESENTER_H
 
 #include "editor_app/EditorDocument.h"
+#include "editor_app/EditorToolController.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -48,6 +49,11 @@ public:
     bool SelectLogicalPath(const std::string& logicalPath);
     bool SetLogicalTransform(const std::string& path,
         const EditorTransform& transform);
+    bool SetToolMode(EditorToolMode mode);
+    EditorToolMode GetToolMode() const { return tools_.GetMode(); }
+    bool CancelActiveTool();
+    bool PlaceAt(const EditorTransform& transform);
+    std::string ResolvePlacementParentPath() const;
     bool Undo();
     bool Redo();
     bool CanUndo() const { return history_.CanUndo(); }
@@ -73,6 +79,7 @@ private:
     EditorTreeModel& model_;
     EditorSelectionModel& selection_;
     EditorCommandHistory& history_;
+    EditorToolController tools_;
 };
 
 #endif

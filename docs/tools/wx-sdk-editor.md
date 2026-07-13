@@ -360,3 +360,8 @@ The development model now owns transforms and writes snapshot v3 while reading
 v1/v2 with defaults. Finite position fields and a tested X/Z move gizmo use one
 command per committed drag. See [Transforms](wx-editor-transforms.md) and
 [Move Gizmo](wx-editor-gizmo.md).
+
+The shell now exposes wx-free Select/Move/Place Object/Place Light modes through
+a standard wx toolbar. Synthetic placement uses shared projection, transient
+preview feedback, deterministic parenting/naming, and one command per click.
+See [Tool Modes](wx-editor-tools.md) and [Placement](wx-editor-placement.md).

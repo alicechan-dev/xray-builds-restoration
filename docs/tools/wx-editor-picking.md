@@ -42,3 +42,6 @@ gizmos, `xrEProps`, and LevelEditor remain outside this boundary.
 
 The move gizmo now has priority over object picking. Outside an active drag or
 axis hit, object and empty-space behavior is unchanged.
+
+Tool mode now defines the complete priority: active drag, Move handle,
+placement click, object pick, then empty space. Right-drag never places.

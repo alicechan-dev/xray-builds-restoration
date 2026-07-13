@@ -15,3 +15,6 @@ wx code only translates events and paints semantic primitives.
 
 This is a synthetic top-down prototype, not a real 3D gizmo, geometry snap,
 physics tool, or historical SDK transform binding.
+
+The gizmo is visible only in Move mode. Switching tools cancels an active drag
+before the new mode becomes active; Select and placement modes keep it hidden.

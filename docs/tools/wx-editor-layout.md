@@ -49,3 +49,6 @@ remains non-closable and non-dockable; reset layout always restores it. See
 
 The center surface now overlays derived preview boxes, markers, lights, labels,
 and selection highlighting while retaining the same fixed AUI pane policy.
+
+A normal frame toolbar now sits above the AUI workspace. It uses built-in wx
+art and is not part of the persisted AUI perspective; no icon assets are added.

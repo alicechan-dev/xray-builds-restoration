@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iterator>
 #include <vector>
+#include <wx/artprov.h>
 #include <wx/choicdlg.h>
 #include <wx/config.h>
 #include <wx/filedlg.h>
@@ -20,6 +21,7 @@
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include <wx/textdlg.h>
+#include <wx/toolbar.h>
 #include <wx/treectrl.h>
 
 namespace
@@ -45,7 +47,11 @@ enum
     IdRebuildPreview,
     IdTogglePreviewLabels,
     IdFrameSelected,
-    IdToggleMoveSnap
+    IdToggleMoveSnap,
+    IdToolSelect,
+    IdToolMove,
+    IdToolPlaceObject,
+    IdToolPlaceLight
 };
 
 const char* SceneTreePane = "scene_tree";
@@ -66,6 +72,7 @@ wxSDKEditorFrame::wxSDKEditorFrame() :
     dialogService_(this)
 {
     CreateMenus();
+    CreateEditorToolbar();
     CreateWorkspace();
     std::string selfCheckFailure;
     if (!RunEditorTreeModelSelfCheck(&selfCheckFailure))
@@ -115,6 +122,11 @@ void wxSDKEditorFrame::CreateMenus()
     menuBar->Append(viewMenu, "&View");
 
     auto* toolsMenu = new wxMenu();
+    toolsMenu->AppendRadioItem(IdToolSelect, "&Select Tool");
+    toolsMenu->AppendRadioItem(IdToolMove, "&Move Tool");
+    toolsMenu->AppendRadioItem(IdToolPlaceObject, "Place &Object Tool");
+    toolsMenu->AppendRadioItem(IdToolPlaceLight, "Place &Light Tool");
+    toolsMenu->AppendSeparator();
     toolsMenu->Append(IdAddDemoObject, "Add Demo &Object");
     toolsMenu->Append(IdAddDemoGroup, "Add Demo &Group");
     toolsMenu->Append(IdDeleteSelected, "&Delete Selected");
@@ -187,6 +199,54 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnFindItem, this, IdFindItem);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnShowSelection, this, IdShowSelection);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnClearSelection, this, IdClearSelection);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSelectTool, this, IdToolSelect);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnMoveTool, this, IdToolMove);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnPlaceObjectTool,
+        this, IdToolPlaceObject);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnPlaceLightTool,
+        this, IdToolPlaceLight);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateToolMode,
+        this, IdToolSelect, IdToolPlaceLight);
+}
+
+void wxSDKEditorFrame::CreateEditorToolbar()
+{
+    wxToolBar* toolbar = CreateToolBar(wxTB_HORIZONTAL | wxTB_FLAT | wxTB_TEXT);
+    toolbar->AddTool(IdToolSelect, "Select",
+        wxArtProvider::GetBitmap(wxART_TICK_MARK, wxART_TOOLBAR),
+        "Select preview objects", wxITEM_RADIO);
+    toolbar->AddTool(IdToolMove, "Move",
+        wxArtProvider::GetBitmap(wxART_GO_FORWARD, wxART_TOOLBAR),
+        "Move selected preview object", wxITEM_RADIO);
+    toolbar->AddTool(IdToolPlaceObject, "Object",
+        wxArtProvider::GetBitmap(wxART_PLUS, wxART_TOOLBAR),
+        "Place synthetic object", wxITEM_RADIO);
+    toolbar->AddTool(IdToolPlaceLight, "Light",
+        wxArtProvider::GetBitmap(wxART_TIP, wxART_TOOLBAR),
+        "Place synthetic light", wxITEM_RADIO);
+    toolbar->AddSeparator();
+    toolbar->AddTool(wxID_UNDO, "Undo",
+        wxArtProvider::GetBitmap(wxART_UNDO, wxART_TOOLBAR));
+    toolbar->AddTool(wxID_REDO, "Redo",
+        wxArtProvider::GetBitmap(wxART_REDO, wxART_TOOLBAR));
+    toolbar->AddSeparator();
+    toolbar->AddTool(IdDeleteSelected, "Delete",
+        wxArtProvider::GetBitmap(wxART_DELETE, wxART_TOOLBAR));
+    toolbar->AddTool(IdFrameSelected, "Frame",
+        wxArtProvider::GetBitmap(wxART_FIND, wxART_TOOLBAR));
+    toolbar->AddCheckTool(IdToggleMoveSnap, "Snap",
+        wxArtProvider::GetBitmap(wxART_LIST_VIEW, wxART_TOOLBAR),
+        wxNullBitmap, "Snap placement and move to 1.0-unit grid");
+    toolbar->Realize();
+    toolbar->ToggleTool(IdToolSelect, true);
+}
+
+void wxSDKEditorFrame::SetToolMode(EditorToolMode mode)
+{
+    if (treePresenter_)
+        treePresenter_->SetToolMode(mode);
+    if (viewport_)
+        viewport_->SetToolMode(mode);
 }
 
 void wxSDKEditorFrame::CreateWorkspace()
@@ -250,7 +310,18 @@ void wxSDKEditorFrame::CreateWorkspace()
         [this](const std::string& path, const EditorTransform& transform) {
             return treePresenter_->SetLogicalTransform(path, transform);
         });
+    viewport_->SetPlacementHandler(
+        [this](EditorToolMode mode, const EditorTransform& transform) {
+            if (treePresenter_->GetToolMode() != mode)
+                treePresenter_->SetToolMode(mode);
+            return treePresenter_->PlaceAt(transform);
+        });
+    viewport_->SetCancelToolHandler([this]() {
+        treePresenter_->CancelActiveTool();
+        viewport_->SetToolMode(EditorToolMode::Select);
+    });
     treePresenter_->InitializeDemo();
+    SetToolMode(EditorToolMode::Select);
 }
 
 wxSDKEditorFrame::~wxSDKEditorFrame()
@@ -330,6 +401,7 @@ void wxSDKEditorFrame::OnNewDocument(wxCommandEvent&)
     if (!ConfirmSaveChanges())
         return;
     treePresenter_->NewDocument();
+    SetToolMode(EditorToolMode::Select);
 }
 
 void wxSDKEditorFrame::OnOpenDocument(wxCommandEvent&)
@@ -341,8 +413,9 @@ void wxSDKEditorFrame::OnOpenDocument(wxCommandEvent&)
         wxEmptyString, SnapshotWildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     if (dialog.ShowModal() != wxID_OK)
         return;
-    treePresenter_->LoadSnapshot(
-        std::filesystem::path(dialog.GetPath().ToStdWstring()));
+    if (treePresenter_->LoadSnapshot(
+        std::filesystem::path(dialog.GetPath().ToStdWstring())))
+        SetToolMode(EditorToolMode::Select);
 }
 
 void wxSDKEditorFrame::OnSaveDocument(wxCommandEvent&)
@@ -376,7 +449,10 @@ bool wxSDKEditorFrame::SaveDocument()
 {
     if (!document_.HasFilePath())
         return SaveDocumentAs();
-    return treePresenter_->SaveSnapshot(document_.GetFilePath());
+    const bool saved = treePresenter_->SaveSnapshot(document_.GetFilePath());
+    if (saved)
+        SetToolMode(EditorToolMode::Select);
+    return saved;
 }
 
 bool wxSDKEditorFrame::SaveDocumentAs()
@@ -387,8 +463,11 @@ bool wxSDKEditorFrame::SaveDocumentAs()
         SnapshotWildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dialog.ShowModal() != wxID_OK)
         return false;
-    return treePresenter_->SaveSnapshot(
+    const bool saved = treePresenter_->SaveSnapshot(
         std::filesystem::path(dialog.GetPath().ToStdWstring()));
+    if (saved)
+        SetToolMode(EditorToolMode::Select);
+    return saved;
 }
 
 void wxSDKEditorFrame::UpdateDocumentTitle()
@@ -512,6 +591,40 @@ void wxSDKEditorFrame::OnUpdateMoveSnap(wxUpdateUIEvent& event)
     event.Check(viewport_ && viewport_->IsMoveSnapEnabled());
 }
 
+void wxSDKEditorFrame::OnSelectTool(wxCommandEvent&)
+{
+    SetToolMode(EditorToolMode::Select);
+}
+
+void wxSDKEditorFrame::OnMoveTool(wxCommandEvent&)
+{
+    SetToolMode(EditorToolMode::Move);
+}
+
+void wxSDKEditorFrame::OnPlaceObjectTool(wxCommandEvent&)
+{
+    SetToolMode(EditorToolMode::PlaceObject);
+}
+
+void wxSDKEditorFrame::OnPlaceLightTool(wxCommandEvent&)
+{
+    SetToolMode(EditorToolMode::PlaceLight);
+}
+
+void wxSDKEditorFrame::OnUpdateToolMode(wxUpdateUIEvent& event)
+{
+    if (!treePresenter_)
+        return;
+    EditorToolMode expected = EditorToolMode::Select;
+    if (event.GetId() == IdToolMove)
+        expected = EditorToolMode::Move;
+    else if (event.GetId() == IdToolPlaceObject)
+        expected = EditorToolMode::PlaceObject;
+    else if (event.GetId() == IdToolPlaceLight)
+        expected = EditorToolMode::PlaceLight;
+    event.Check(treePresenter_->GetToolMode() == expected);
+}
+
 void wxSDKEditorFrame::OnAbout(wxCommandEvent&)
 {
     dialogService_.Info("About wxSDKEditor",
@@ -585,7 +698,8 @@ void wxSDKEditorFrame::OnImportPathList(wxCommandEvent&)
 
     const std::string text{
         std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
-    treePresenter_->ImportPathList(text, dialog.GetPath().ToStdString());
+    if (treePresenter_->ImportPathList(text, dialog.GetPath().ToStdString()))
+        SetToolMode(EditorToolMode::Select);
 }
 
 void wxSDKEditorFrame::OnFindItem(wxCommandEvent&)

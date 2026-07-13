@@ -3,6 +3,7 @@
 
 #include "wxDialogService.h"
 #include "editor_app/EditorDocument.h"
+#include "editor_app/EditorToolMode.h"
 
 #include <memory>
 #include <string>
@@ -26,7 +27,9 @@ public:
 
 private:
     void CreateMenus();
+    void CreateEditorToolbar();
     void CreateWorkspace();
+    void SetToolMode(EditorToolMode mode);
     bool ConfirmSaveChanges();
     bool SaveDocument();
     bool SaveDocumentAs();
@@ -63,6 +66,11 @@ private:
     void OnUpdatePreviewLabels(wxUpdateUIEvent& event);
     void OnToggleMoveSnap(wxCommandEvent& event);
     void OnUpdateMoveSnap(wxUpdateUIEvent& event);
+    void OnSelectTool(wxCommandEvent& event);
+    void OnMoveTool(wxCommandEvent& event);
+    void OnPlaceObjectTool(wxCommandEvent& event);
+    void OnPlaceLightTool(wxCommandEvent& event);
+    void OnUpdateToolMode(wxUpdateUIEvent& event);
     void OnAbout(wxCommandEvent& event);
     void OnAddDemoGroup(wxCommandEvent& event);
     void OnAddDemoObject(wxCommandEvent& event);

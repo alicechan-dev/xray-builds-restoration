@@ -2,6 +2,7 @@
 #include "editor_app/EditorModelCommand.h"
 
 #include "editor_model/EditorTreePathListImport.h"
+#include "editor_model/EditorItemType.h"
 #include "editor_model/EditorPropertySet.h"
 #include "editor_model/EditorTreeQuery.h"
 #include "editor_model/EditorTreeSnapshot.h"
@@ -38,9 +39,95 @@ void EditorTreePresenter::InitializeDemo()
 void EditorTreePresenter::NewDocument()
 {
     document_.NewDocument();
+    tools_.Reset();
     Rebuild(nullptr, true);
     SetStatus("Created a new development document.");
     NotifyDocumentChanged();
+}
+
+bool EditorTreePresenter::SetToolMode(EditorToolMode mode)
+{
+    const bool changed = tools_.SetMode(mode);
+    SetStatus(std::string("Tool: ") + EditorToolModeName(mode) + ". " +
+        tools_.StatusText());
+    return changed;
+}
+
+bool EditorTreePresenter::CancelActiveTool()
+{
+    if (!tools_.CancelCurrentOperation())
+        return false;
+    SetStatus("Tool: Select. Placement canceled.");
+    return true;
+}
+
+std::string EditorTreePresenter::ResolvePlacementParentPath() const
+{
+    const EditorTreeNode* selected = SelectedNode();
+    if (selected && IsGroupKind(selected->Kind()))
+        return selected->Path();
+    if (selected && selected->Parent())
+        return selected->Parent()->Path();
+
+    const EditorTreeNode* objects = model_.FindByLabel("Objects");
+    if (objects && IsGroupKind(objects->Kind()))
+        return objects->Path();
+    return model_.Root() ? model_.Root()->Path() : std::string();
+}
+
+bool EditorTreePresenter::PlaceAt(const EditorTransform& transform)
+{
+    if (!tools_.IsPlacementMode() || !transform.IsFinite())
+        return false;
+
+    const bool light = tools_.GetMode() == EditorToolMode::PlaceLight;
+    const std::string parentPath = ResolvePlacementParentPath();
+    if (parentPath.empty())
+        return false;
+    EditorTreeNode* placementParent = model_.FindByPath(parentPath);
+    if (!placementParent || !IsGroupKind(placementParent->Kind()))
+        return false;
+    const std::string baseName = light ? "new_light" : "new_object";
+    const std::string category = light ? "demo light" : "demo scene object";
+    const std::string placedName = model_.MakeUniqueChildName(
+        *placementParent, baseName);
+    std::string reason;
+    auto command = std::make_unique<EditorModelCommand>(model_,
+        "Place " + placedName, parentPath,
+        [this, parentPath, placedName, category, transform](
+            std::string* selectionPath, std::string* mutationReason) {
+            EditorTreeNode* parent = model_.FindByPath(parentPath);
+            if (!parent || !IsGroupKind(parent->Kind()))
+            {
+                if (mutationReason)
+                    *mutationReason = "Placement parent is unavailable.";
+                return false;
+            }
+            if (model_.FindChildCaseInsensitive(*parent, placedName))
+            {
+                if (mutationReason)
+                    *mutationReason = "Placement name already exists.";
+                return false;
+            }
+            EditorTreeNode& placed = model_.AddChild(*parent, placedName,
+                category, EditorItemKind::Object);
+            if (!model_.SetNodeTransform(placed, transform, mutationReason))
+                return false;
+            *selectionPath = placed.Path();
+            return true;
+        });
+    if (!history_.Execute(std::move(command), &reason))
+    {
+        dialogs_.Warning("Placement rejected", reason.c_str());
+        return false;
+    }
+    RebuildByPath(history_.GetSelectionPath());
+    NotifyDocumentChanged();
+    SetStatus("Placed '" + placedName + "' at (" +
+        std::to_string(transform.x) + ", " +
+        std::to_string(transform.y) + ", " +
+        std::to_string(transform.z) + ").");
+    return true;
 }
 
 EditorTreeNode* EditorTreePresenter::SelectedNode() const
@@ -428,6 +515,7 @@ bool EditorTreePresenter::LoadSnapshot(const std::filesystem::path& path)
         return false;
     }
 
+    tools_.Reset();
     Rebuild(nullptr, true);
     SetStatus("Loaded demo tree snapshot.");
     NotifyDocumentChanged();
@@ -473,6 +561,7 @@ bool EditorTreePresenter::SaveSnapshot(const std::filesystem::path& path)
         SetStatus("Snapshot save failed: " + reason);
         return false;
     }
+    tools_.Reset();
     SetStatus("Saved demo tree snapshot.");
     NotifyDocumentChanged();
     return true;
@@ -489,6 +578,7 @@ bool EditorTreePresenter::ImportPathList(
         return false;
     }
 
+    tools_.Reset();
     Rebuild(nullptr, true);
     if (output_)
         output_("Imported development path list: " + sourceName);

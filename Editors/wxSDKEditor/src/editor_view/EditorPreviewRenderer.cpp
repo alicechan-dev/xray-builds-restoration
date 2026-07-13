@@ -63,21 +63,46 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
             drawList_.Add({EditorViewportPrimitiveType::Rectangle,
                 EditorViewportStyle::Selected,
                 x - 19.0f, y - 15.0f, x + 19.0f, y + 15.0f});
-            drawList_.Add({EditorViewportPrimitiveType::Line,
-                activeGizmoAxis_ == EditorGizmoAxis::X
-                    ? EditorViewportStyle::GizmoActive
-                    : EditorViewportStyle::GizmoX,
-                x, y, x + 45.0f, y});
-            drawList_.Add({EditorViewportPrimitiveType::Line,
-                activeGizmoAxis_ == EditorGizmoAxis::Z
-                    ? EditorViewportStyle::GizmoActive
-                    : EditorViewportStyle::GizmoZ,
-                x, y, x, y - 45.0f});
+            if (gizmoVisible_)
+            {
+                drawList_.Add({EditorViewportPrimitiveType::Line,
+                    activeGizmoAxis_ == EditorGizmoAxis::X
+                        ? EditorViewportStyle::GizmoActive
+                        : EditorViewportStyle::GizmoX,
+                    x, y, x + 45.0f, y});
+                drawList_.Add({EditorViewportPrimitiveType::Line,
+                    activeGizmoAxis_ == EditorGizmoAxis::Z
+                        ? EditorViewportStyle::GizmoActive
+                        : EditorViewportStyle::GizmoZ,
+                    x, y, x, y - 45.0f});
+            }
         }
         if (labelsVisible_)
             drawList_.Add({EditorViewportPrimitiveType::Text,
                 EditorViewportStyle::Label, x + 18.0f, y - 8.0f,
                 0.0f, 0.0f, 0.0f, object.label});
+    }
+
+    if (placementPreview_.valid)
+    {
+        EditorPreviewObject marker;
+        marker.x = placementPreview_.x;
+        marker.y = placementPreview_.y;
+        marker.z = placementPreview_.z;
+        const EditorPreviewProjectedPoint point =
+            ProjectEditorPreviewObject(marker, projection_);
+        if (point.visible)
+        {
+            drawList_.Add({EditorViewportPrimitiveType::Circle,
+                EditorViewportStyle::Placement, point.x, point.y,
+                0.0f, 0.0f, 8.0f});
+            drawList_.Add({EditorViewportPrimitiveType::Line,
+                EditorViewportStyle::Placement,
+                point.x - 12.0f, point.y, point.x + 12.0f, point.y});
+            drawList_.Add({EditorViewportPrimitiveType::Line,
+                EditorViewportStyle::Placement,
+                point.x, point.y - 12.0f, point.x, point.y + 12.0f});
+        }
     }
 }
 

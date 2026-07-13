@@ -49,12 +49,17 @@ Viewport focus, camera placeholders, frame ticks, and grid visibility are UI
 state and never modify `EditorDocument` or its dirty baseline. See [wxSDKEditor
 Viewport Host](wx-editor-viewport.md).
 
-Preview objects and their synthetic positions are derived from the current
-tree and selection. They are not document state, never mark the document dirty,
-and do not change snapshot v2. See [wxSDKEditor Preview Scene](wx-editor-preview-scene.md).
+Preview objects are derived from the current tree and selection. Their source
+node transforms are document state in snapshot v3, while preview draw data is
+transient. See [wxSDKEditor Preview Scene](wx-editor-preview-scene.md).
 
 Preview picking changes only logical selection. Hits and empty-space clears do
 not affect the saved snapshot baseline or command history.
 
 Node transforms are now document state persisted by snapshot v3. v1/v2 readers
 assign defaults. Temporary gizmo motion is not document state until release.
+
+Tool mode and placement preview are transient UI state. Accepted placements are
+ordinary snapshot-v3 nodes and therefore follow existing dirty, save, load,
+undo, and redo behavior. New, successful Open, and successful Import reset the
+tool to Select; successful Save does the same after capturing the save point.

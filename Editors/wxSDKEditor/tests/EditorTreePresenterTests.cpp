@@ -455,9 +455,12 @@ int RunEditorTreePresenterTests()
     check(ContainsText(dialogs.lastWarning, "root node cannot be deleted"),
         "root delete warning reported");
 
+    presenter.SetToolMode(EditorToolMode::PlaceObject);
     check(presenter.ImportPathList(
         "/Imported/Objects/item | imported object\n", "memory.wx_tree_paths"),
         "valid path list imported");
+    check(presenter.GetToolMode() == EditorToolMode::Select,
+        "successful import resets tool mode to Select");
     check(tree.Contains("Imported") && tree.Contains("item"),
         "successful import rebuilds tree");
     check(tree.GetSelectedLabel() == "Imported", "successful import selects root");
@@ -481,6 +484,54 @@ int RunEditorTreePresenterTests()
         "failed import preserves existing model view and command history");
     check(ContainsText(dialogs.lastError, "path must begin with"),
         "failed import reports reason through dialogs");
+
+    check(presenter.GetToolMode() == EditorToolMode::Select &&
+        presenter.SetToolMode(EditorToolMode::PlaceObject) &&
+        !document.History().CanRedo(),
+        "tool mode changes remain outside command history");
+    EditorTransform placement;
+    placement.x = 2.5f;
+    placement.z = -3.0f;
+    check(presenter.PlaceAt(placement) && tree.Contains("new_object") &&
+        tree.GetSelectedLabel() == "new_object",
+        "object placement creates and selects transformed node");
+    EditorTreeNode* placed = document.Model().FindByLabel("new_object");
+    check(placed && placed->Kind() == EditorItemKind::Object &&
+        placed->Category() == "demo scene object" &&
+        placed->Transform().NearlyEquals(placement),
+        "object placement preserves kind, category, and transform");
+    check(presenter.Undo() && !tree.Contains("new_object"),
+        "placement undo removes node");
+    check(presenter.Redo() && tree.Contains("new_object") &&
+        tree.GetSelectedLabel() == "new_object",
+        "placement redo recreates node and selection");
+    check(presenter.PlaceAt(placement) && tree.Contains("new_object_1"),
+        "repeated placement generates deterministic unique name");
+    EditorTreeNode* placedAgain = document.Model().FindByLabel("new_object_1");
+    check(placedAgain && placedAgain->Parent() &&
+        placedAgain->Parent()->Label() == "new_group",
+        "object selection places its successor under the object's parent");
+
+    check(presenter.SetToolMode(EditorToolMode::PlaceLight),
+        "light placement mode selected");
+    EditorTransform lightPlacement;
+    lightPlacement.x = 4.0f;
+    lightPlacement.y = 1.0f;
+    lightPlacement.z = 2.0f;
+    check(presenter.PlaceAt(lightPlacement) && tree.Contains("new_light"),
+        "light placement creates uniquely named node");
+    EditorTreeNode* light = document.Model().FindByLabel("new_light");
+    check(light && light->Category() == "demo light" &&
+        light->Transform().NearlyEquals(lightPlacement),
+        "light placement stores demo category and height");
+    check(presenter.CancelActiveTool() &&
+        presenter.GetToolMode() == EditorToolMode::Select,
+        "cancel returns presenter to Select without a command");
+    presenter.SetToolMode(EditorToolMode::Move);
+    presenter.NewDocument();
+    check(presenter.GetToolMode() == EditorToolMode::Select &&
+        !document.IsModified(),
+        "New resets tool mode without dirtying the document");
 
     return failures;
 }

@@ -18,6 +18,9 @@ public:
     EditorPreviewPickResult Pick(float x, float y) const;
     EditorPreviewProjectedPoint SelectedPoint() const;
     void SetActiveGizmoAxis(EditorGizmoAxis axis) { activeGizmoAxis_ = axis; }
+    void SetGizmoVisible(bool visible) { gizmoVisible_ = visible; }
+    void SetPlacementPreview(const EditorPreviewWorldPoint& point)
+    { placementPreview_ = point; }
 
     void Resize(int width, int height) override;
     void Render(const EditorViewportState& state) override;
@@ -31,6 +34,8 @@ private:
     EditorPreviewProjectionContext projection_;
     std::vector<EditorPreviewPickShape> pickShapes_;
     EditorGizmoAxis activeGizmoAxis_ = EditorGizmoAxis::None;
+    bool gizmoVisible_ = false;
+    EditorPreviewWorldPoint placementPreview_;
 };
 
 #endif

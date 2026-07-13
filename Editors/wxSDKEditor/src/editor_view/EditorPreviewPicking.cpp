@@ -27,6 +27,33 @@ EditorPreviewProjectedPoint ProjectEditorPreviewObject(
     return point;
 }
 
+EditorPreviewWorldPoint UnprojectEditorPreviewToGround(
+    float screenX, float screenY,
+    const EditorPreviewProjectionContext& context,
+    float worldY, bool snap, float snapStep)
+{
+    EditorPreviewWorldPoint point;
+    if (context.width <= 0 || context.height <= 0 ||
+        !std::isfinite(screenX) || !std::isfinite(screenY) ||
+        !std::isfinite(worldY) || !std::isfinite(context.cameraX) ||
+        !std::isfinite(context.cameraZ) || !std::isfinite(context.scale) ||
+        context.scale <= 0.0f || (snap && snapStep <= 0.0f))
+        return point;
+
+    point.x = context.cameraX +
+        (screenX - static_cast<float>(context.width) * 0.5f) / context.scale;
+    point.y = worldY;
+    point.z = context.cameraZ +
+        (screenY - static_cast<float>(context.height) * 0.5f) / context.scale;
+    if (snap)
+    {
+        point.x = std::round(point.x / snapStep) * snapStep;
+        point.z = std::round(point.z / snapStep) * snapStep;
+    }
+    point.valid = std::isfinite(point.x) && std::isfinite(point.z);
+    return point;
+}
+
 std::vector<EditorPreviewPickShape> BuildEditorPreviewPickShapes(
     const EditorPreviewScene& scene,
     const EditorPreviewProjectionContext& context)

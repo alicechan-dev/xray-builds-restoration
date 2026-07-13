@@ -291,3 +291,8 @@ The wx experiment now has node-owned finite transforms, snapshot v3 with v1/v2
 compatibility, editable position properties, and a semantic X/Z move gizmo.
 Drag is temporary, release commits once, Escape cancels, and 1.0-unit snapping
 is optional and off by default. Tests-only builds remain wxWidgets-free.
+
+Select, Move, Place Object, and Place Light now have a wx-free controller and a
+built-in-art wx toolbar. Synthetic clicks use shared screen-to-X/Z projection,
+deterministic parent/name policy, and one undoable command. Placement previews,
+tool changes, and cancellation remain transient and wx-free tests cover them.

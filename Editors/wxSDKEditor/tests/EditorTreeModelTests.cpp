@@ -35,6 +35,7 @@ int RunEditorTreePresenterTests();
 int RunEditorDocumentTests();
 int RunEditorViewportControllerTests();
 int RunEditorPreviewSceneTests();
+int RunEditorToolControllerTests();
 
 int main()
 {
@@ -505,6 +506,7 @@ int main()
     failures += RunEditorDocumentTests();
     failures += RunEditorViewportControllerTests();
     failures += RunEditorPreviewSceneTests();
+    failures += RunEditorToolControllerTests();
 
     if (failures)
     {

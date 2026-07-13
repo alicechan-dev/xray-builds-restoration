@@ -5,6 +5,7 @@
 #include "editor_view/EditorPreviewRenderer.h"
 #include "editor_view/EditorPreviewScene.h"
 #include "editor_view/EditorMoveGizmo.h"
+#include "editor_app/EditorToolMode.h"
 
 #include <memory>
 #include <functional>
@@ -30,11 +31,19 @@ public:
     bool FrameSelected();
     void ToggleMoveSnap();
     bool IsMoveSnapEnabled() const { return moveSnapEnabled_; }
+    void SetToolMode(EditorToolMode mode);
+    EditorToolMode GetToolMode() const { return toolMode_; }
+    bool CancelTransientOperation();
     void SetSelectionHandler(std::function<void(const std::string&)> handler)
     { selectionHandler_ = std::move(handler); }
     void SetTransformHandler(std::function<bool(
         const std::string&, const EditorTransform&)> handler)
     { transformHandler_ = std::move(handler); }
+    void SetPlacementHandler(std::function<bool(
+        EditorToolMode, const EditorTransform&)> handler)
+    { placementHandler_ = std::move(handler); }
+    void SetCancelToolHandler(std::function<void()> handler)
+    { cancelToolHandler_ = std::move(handler); }
 
 private:
     void OnPaint(wxPaintEvent& event);
@@ -56,7 +65,12 @@ private:
     std::function<void(const std::string&)> selectionHandler_;
     std::function<bool(const std::string&, const EditorTransform&)>
         transformHandler_;
+    std::function<bool(EditorToolMode, const EditorTransform&)>
+        placementHandler_;
+    std::function<void()> cancelToolHandler_;
     EditorMoveGizmo moveGizmo_;
+    EditorToolMode toolMode_ = EditorToolMode::Select;
+    EditorPreviewWorldPoint placementPreview_;
     bool moveSnapEnabled_ = false;
 };
 

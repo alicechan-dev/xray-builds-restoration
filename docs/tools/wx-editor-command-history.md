@@ -37,3 +37,7 @@ undo returns to that baseline. See [wxSDKEditor Document Layer](wx-editor-docume
 
 Move-gizmo motion is preview-only. Release submits one transform command;
 Escape submits none. Undo/redo restores both position and logical selection.
+
+Each placement click similarly creates one model command. Undo removes the
+placed node; redo recreates its parent/name/category/kind/transform and selection.
+Tool switches and canceled placement never enter history.

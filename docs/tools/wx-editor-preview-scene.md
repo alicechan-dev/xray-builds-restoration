@@ -60,3 +60,6 @@ Preview positions now come from node-owned transforms rather than traversal
 indices. Demo positions are explicit, and selected objects emit semantic X/Z
 gizmo lines. See [Transforms](wx-editor-transforms.md) and
 [Move Gizmo](wx-editor-gizmo.md).
+
+Placement modes add a transient semantic marker at the prospective X/Z point.
+It is not part of `EditorPreviewScene` or document state.

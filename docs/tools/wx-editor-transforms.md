@@ -17,3 +17,5 @@ Property and gizmo commits use command history and normal dirty/save points.
 This is development-model state only. It is not bound to historical X-Ray
 objects, real level formats, assets, `xrEProps`, or LevelEditor.
 
+Synthetic placement supplies the initial transform through the same validated
+model API; no additional snapshot field or format revision is required.

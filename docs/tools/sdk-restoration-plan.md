@@ -579,3 +579,11 @@ defaults. Position properties and command undo/redo are tested headlessly. The
 synthetic viewport adds X/Z handles, temporary drag preview, Escape cancellation,
 and optional fixed grid snap. Real SDK objects, level data, rotation/scale,
 geometry snapping, and renderer APIs remain future work.
+
+## wxSDKEditor Tool And Placement Checkpoint
+
+A wx-free mode controller now coordinates Select, Move, and two synthetic
+placement modes. A standard wx toolbar translates commands without external
+icons. Placement reuses inverse preview projection, deterministic parenting,
+and model-command history; overlays and cancellation remain transient. Real SDK
+object factories, assets, levels, and historical editor code remain out of scope.
