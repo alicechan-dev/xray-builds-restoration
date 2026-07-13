@@ -61,6 +61,17 @@ bool EditorTreePresenter::CancelActiveTool()
     return true;
 }
 
+bool EditorTreePresenter::SelectAsset(const std::string& assetId)
+{
+    if (!assetSelection_.Select(assetCatalog_, assetId))
+        return false;
+    tools_.SetMode(EditorToolMode::PlaceAsset);
+    const EditorAssetDescriptor* descriptor = SelectedAsset();
+    SetStatus("Tool: Place Asset. Selected '" + descriptor->displayName +
+        "' (" + descriptor->id + ").");
+    return true;
+}
+
 std::string EditorTreePresenter::ResolvePlacementParentPath() const
 {
     const EditorTreeNode* selected = SelectedNode();
@@ -80,21 +91,39 @@ bool EditorTreePresenter::PlaceAt(const EditorTransform& transform)
     if (!tools_.IsPlacementMode() || !transform.IsFinite())
         return false;
 
-    const bool light = tools_.GetMode() == EditorToolMode::PlaceLight;
+    const EditorAssetDescriptor* descriptor = nullptr;
+    if (tools_.GetMode() == EditorToolMode::PlaceAsset)
+        descriptor = SelectedAsset();
+    else if (tools_.GetMode() == EditorToolMode::PlaceLight)
+        descriptor = assetCatalog_.FindById("demo.point_light");
+    else
+        descriptor = assetCatalog_.FindById("demo.physic_object");
+    if (!descriptor || !descriptor->placeable)
+        return false;
+
     const std::string parentPath = ResolvePlacementParentPath();
     if (parentPath.empty())
         return false;
     EditorTreeNode* placementParent = model_.FindByPath(parentPath);
     if (!placementParent || !IsGroupKind(placementParent->Kind()))
         return false;
-    const std::string baseName = light ? "new_light" : "new_object";
-    const std::string category = light ? "demo light" : "demo scene object";
+    EditorTransform placedTransform = descriptor->defaultTransform;
+    placedTransform.x = transform.x;
+    placedTransform.z = transform.z;
+    const std::string baseName = tools_.GetMode() == EditorToolMode::PlaceAsset
+        ? descriptor->baseNodeName
+        : (tools_.GetMode() == EditorToolMode::PlaceLight
+            ? "new_light" : "new_object");
+    const std::string category = descriptor->nodeCategory;
+    const std::string assetId = descriptor->id;
+    const EditorItemKind itemKind = descriptor->itemKind;
     const std::string placedName = model_.MakeUniqueChildName(
         *placementParent, baseName);
     std::string reason;
     auto command = std::make_unique<EditorModelCommand>(model_,
         "Place " + placedName, parentPath,
-        [this, parentPath, placedName, category, transform](
+        [this, parentPath, placedName, category, assetId, itemKind,
+            placedTransform](
             std::string* selectionPath, std::string* mutationReason) {
             EditorTreeNode* parent = model_.FindByPath(parentPath);
             if (!parent || !IsGroupKind(parent->Kind()))
@@ -110,8 +139,10 @@ bool EditorTreePresenter::PlaceAt(const EditorTransform& transform)
                 return false;
             }
             EditorTreeNode& placed = model_.AddChild(*parent, placedName,
-                category, EditorItemKind::Object);
-            if (!model_.SetNodeTransform(placed, transform, mutationReason))
+                category, itemKind);
+            model_.SetNodeAssetId(placed, assetId);
+            if (!model_.SetNodeTransform(
+                placed, placedTransform, mutationReason))
                 return false;
             *selectionPath = placed.Path();
             return true;
@@ -124,9 +155,9 @@ bool EditorTreePresenter::PlaceAt(const EditorTransform& transform)
     RebuildByPath(history_.GetSelectionPath());
     NotifyDocumentChanged();
     SetStatus("Placed '" + placedName + "' at (" +
-        std::to_string(transform.x) + ", " +
-        std::to_string(transform.y) + ", " +
-        std::to_string(transform.z) + ").");
+        std::to_string(placedTransform.x) + ", " +
+        std::to_string(placedTransform.y) + ", " +
+        std::to_string(placedTransform.z) + ").");
     return true;
 }
 

@@ -12,6 +12,7 @@
 
 class EditorTreePresenter;
 class wxEditorTree;
+class wxAssetBrowser;
 class wxEditorViewport;
 class wxKeyEvent;
 class wxPropertyPanel;
@@ -52,10 +53,12 @@ private:
     void OnToggleSceneTree(wxCommandEvent& event);
     void OnToggleProperties(wxCommandEvent& event);
     void OnToggleOutput(wxCommandEvent& event);
+    void OnToggleAssetBrowser(wxCommandEvent& event);
     void OnResetLayout(wxCommandEvent& event);
     void OnUpdateSceneTree(wxUpdateUIEvent& event);
     void OnUpdateProperties(wxUpdateUIEvent& event);
     void OnUpdateOutput(wxUpdateUIEvent& event);
+    void OnUpdateAssetBrowser(wxUpdateUIEvent& event);
     void OnToggleViewportGrid(wxCommandEvent& event);
     void OnResetViewportCamera(wxCommandEvent& event);
     void OnFocusViewport(wxCommandEvent& event);
@@ -86,6 +89,7 @@ private:
     void OnTreeSelectionChanged(wxTreeEvent& event);
 
     wxEditorTree* editorTree_ = nullptr;
+    wxAssetBrowser* assetBrowser_ = nullptr;
     wxPropertyPanel* propertyPanel_ = nullptr;
     wxTextCtrl* output_ = nullptr;
     wxEditorViewport* viewport_ = nullptr;

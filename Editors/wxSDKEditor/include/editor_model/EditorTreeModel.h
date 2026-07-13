@@ -21,6 +21,7 @@ public:
     const EditorTreeNode* Parent() const { return parent_; }
     const Children& ChildrenView() const { return children_; }
     const EditorTransform& Transform() const { return transform_; }
+    const std::string& AssetId() const { return assetId_; }
 
 private:
     friend class EditorTreeModel;
@@ -36,6 +37,7 @@ private:
     EditorTreeNode* parent_ = nullptr; // Non-owning; the model owns every node.
     Children children_;
     EditorTransform transform_;
+    std::string assetId_;
 };
 
 class EditorTreeModel
@@ -60,6 +62,7 @@ public:
     void SetNodeCategory(EditorTreeNode& node, std::string category);
     bool SetNodeTransform(EditorTreeNode& node, const EditorTransform& transform,
         std::string* reason = nullptr);
+    void SetNodeAssetId(EditorTreeNode& node, std::string assetId);
     bool CanDeleteNode(const EditorTreeNode& node,
         std::string* reason = nullptr) const;
     bool DeleteNode(EditorTreeNode& node, std::string* reason = nullptr);

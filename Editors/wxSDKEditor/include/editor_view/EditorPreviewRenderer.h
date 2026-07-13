@@ -21,6 +21,8 @@ public:
     void SetGizmoVisible(bool visible) { gizmoVisible_ = visible; }
     void SetPlacementPreview(const EditorPreviewWorldPoint& point)
     { placementPreview_ = point; }
+    void SetPlacementPreviewKind(EditorPreviewKind kind)
+    { placementPreviewKind_ = kind; }
 
     void Resize(int width, int height) override;
     void Render(const EditorViewportState& state) override;
@@ -36,6 +38,7 @@ private:
     EditorGizmoAxis activeGizmoAxis_ = EditorGizmoAxis::None;
     bool gizmoVisible_ = false;
     EditorPreviewWorldPoint placementPreview_;
+    EditorPreviewKind placementPreviewKind_ = EditorPreviewKind::Marker;
 };
 
 #endif

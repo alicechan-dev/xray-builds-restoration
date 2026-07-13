@@ -1,4 +1,6 @@
 set(XR_WX_SDK_EDITOR_MODEL_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorAssetCatalog.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorAssetSelectionModel.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorCommandHistory.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorDocument.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_app/EditorModelCommand.cpp"
@@ -24,6 +26,9 @@ set(XR_WX_SDK_EDITOR_MODEL_SOURCES
 )
 
 set(XR_WX_SDK_EDITOR_MODEL_HEADERS
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorAssetDescriptor.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorAssetCatalog.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorAssetSelectionModel.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorCommandHistory.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorDocument.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_app/EditorModelCommand.h"
@@ -63,6 +68,7 @@ set(XR_WX_SDK_EDITOR_SOURCES
   ${XR_WX_SDK_EDITOR_MODEL_SOURCES}
   src/editor_app/EditorTreePresenter.cpp
   src/MainFrame.cpp
+  src/wxAssetBrowser.cpp
   src/wxDialogService.cpp
   src/wxEditorTree.cpp
   src/wxEditorViewport.cpp
@@ -76,6 +82,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   include/editor_app/EditorTreePresenter.h
   ${XR_WX_SDK_EDITOR_MODEL_HEADERS}
   src/MainFrame.h
+  src/wxAssetBrowser.h
   src/wxDialogService.h
   src/wxEditorTree.h
   src/wxEditorViewport.h

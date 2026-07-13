@@ -3,6 +3,7 @@
 #include "editor_app/EditorTreePresenter.h"
 #include "editor_model/EditorTreeSnapshot.h"
 #include "wxEditorTree.h"
+#include "wxAssetBrowser.h"
 #include "wxEditorViewport.h"
 #include "wxPropertyPanel.h"
 
@@ -40,6 +41,7 @@ enum
     IdViewSceneTree,
     IdViewProperties,
     IdViewOutput,
+    IdViewAssetBrowser,
     IdResetLayout,
     IdToggleViewportGrid,
     IdResetViewportCamera,
@@ -57,6 +59,7 @@ enum
 const char* SceneTreePane = "scene_tree";
 const char* PropertiesPane = "properties";
 const char* OutputPane = "output";
+const char* AssetBrowserPane = "asset_browser";
 const char* ViewportPane = "viewport";
 const char* PerspectiveKey = "/layout/aui_perspective";
 
@@ -108,6 +111,7 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendCheckItem(IdViewSceneTree, "Scene &Tree");
     viewMenu->AppendCheckItem(IdViewProperties, "&Properties");
     viewMenu->AppendCheckItem(IdViewOutput, "&Output");
+    viewMenu->AppendCheckItem(IdViewAssetBrowser, "&Asset Browser");
     viewMenu->AppendSeparator();
     viewMenu->Append(IdResetLayout, "&Reset Layout");
     viewMenu->AppendSeparator();
@@ -161,6 +165,8 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdViewProperties);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleOutput,
         this, IdViewOutput);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleAssetBrowser,
+        this, IdViewAssetBrowser);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnResetLayout,
         this, IdResetLayout);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateSceneTree,
@@ -169,6 +175,8 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdViewProperties);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateOutput,
         this, IdViewOutput);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateAssetBrowser,
+        this, IdViewAssetBrowser);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleViewportGrid,
         this, IdToggleViewportGrid);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnResetViewportCamera,
@@ -246,7 +254,22 @@ void wxSDKEditorFrame::SetToolMode(EditorToolMode mode)
     if (treePresenter_)
         treePresenter_->SetToolMode(mode);
     if (viewport_)
+    {
+        const EditorAssetDescriptor* descriptor = nullptr;
+        if (treePresenter_)
+        {
+            if (mode == EditorToolMode::PlaceObject)
+                descriptor = treePresenter_->AssetCatalog().FindById(
+                    "demo.physic_object");
+            else if (mode == EditorToolMode::PlaceLight)
+                descriptor = treePresenter_->AssetCatalog().FindById(
+                    "demo.point_light");
+            else if (mode == EditorToolMode::PlaceAsset)
+                descriptor = treePresenter_->SelectedAsset();
+        }
+        viewport_->SetPlacementDescriptor(descriptor);
         viewport_->SetToolMode(mode);
+    }
 }
 
 void wxSDKEditorFrame::CreateWorkspace()
@@ -277,6 +300,7 @@ void wxSDKEditorFrame::CreateWorkspace()
     output_ = new wxTextCtrl(this, wxID_ANY,
         "wxSDKEditor experimental shell ready.", wxDefaultPosition,
         wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
+    assetBrowser_ = new wxAssetBrowser(this);
 
     auiManager_.AddPane(treePanel, wxAuiPaneInfo().Name(SceneTreePane)
         .Caption("Scene / Objects").Left().Layer(1).Position(0)
@@ -289,6 +313,10 @@ void wxSDKEditorFrame::CreateWorkspace()
     auiManager_.AddPane(output_, wxAuiPaneInfo().Name(OutputPane)
         .Caption("Output").Bottom().Layer(1).Position(0)
         .BestSize(-1, 170).MinSize(240, 100).CloseButton(true)
+        .MaximizeButton(true).Resizable(true));
+    auiManager_.AddPane(assetBrowser_, wxAuiPaneInfo().Name(AssetBrowserPane)
+        .Caption("Asset Browser").Left().Layer(1).Position(1)
+        .BestSize(280, 420).MinSize(220, 220).CloseButton(true)
         .MaximizeButton(true).Resizable(true));
     auiManager_.AddPane(viewport_, wxAuiPaneInfo().Name(ViewportPane)
         .Caption("Viewport").CenterPane().PaneBorder(false)
@@ -319,6 +347,10 @@ void wxSDKEditorFrame::CreateWorkspace()
     viewport_->SetCancelToolHandler([this]() {
         treePresenter_->CancelActiveTool();
         viewport_->SetToolMode(EditorToolMode::Select);
+    });
+    assetBrowser_->SetActivateHandler([this](const std::string& assetId) {
+        if (treePresenter_->SelectAsset(assetId))
+            SetToolMode(EditorToolMode::PlaceAsset);
     });
     treePresenter_->InitializeDemo();
     SetToolMode(EditorToolMode::Select);
@@ -513,6 +545,11 @@ void wxSDKEditorFrame::OnToggleOutput(wxCommandEvent&)
     TogglePane(OutputPane);
 }
 
+void wxSDKEditorFrame::OnToggleAssetBrowser(wxCommandEvent&)
+{
+    TogglePane(AssetBrowserPane);
+}
+
 void wxSDKEditorFrame::OnResetLayout(wxCommandEvent&)
 {
     ResetLayout();
@@ -531,6 +568,11 @@ void wxSDKEditorFrame::OnUpdateProperties(wxUpdateUIEvent& event)
 void wxSDKEditorFrame::OnUpdateOutput(wxUpdateUIEvent& event)
 {
     UpdatePaneMenu(event, OutputPane);
+}
+
+void wxSDKEditorFrame::OnUpdateAssetBrowser(wxUpdateUIEvent& event)
+{
+    UpdatePaneMenu(event, AssetBrowserPane);
 }
 
 void wxSDKEditorFrame::OnToggleViewportGrid(wxCommandEvent&)

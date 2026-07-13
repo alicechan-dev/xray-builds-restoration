@@ -227,3 +227,9 @@ Transforms and gizmos remain neutral development-model boundaries. Old
 
 The tool controller and placement command are new neutral seams, not emulations
 of ElPack/VCL editor actions or real SDK object factories.
+
+The synthetic catalog and Asset Browser are likewise a modern adapter seam,
+not a reconstruction of `TElTree`, `ItemListHelper`, `FolderLib`, or historical
+object libraries. Stable IDs and descriptor metadata let future audited model
+adapters feed the same placement path without fake ElPack headers. Old
+`xrEProps` and LevelEditor sources remain preserved and untouched.

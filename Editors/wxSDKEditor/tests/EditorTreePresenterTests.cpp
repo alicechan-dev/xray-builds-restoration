@@ -498,7 +498,8 @@ int RunEditorTreePresenterTests()
     EditorTreeNode* placed = document.Model().FindByLabel("new_object");
     check(placed && placed->Kind() == EditorItemKind::Object &&
         placed->Category() == "demo scene object" &&
-        placed->Transform().NearlyEquals(placement),
+        placed->Transform().NearlyEquals(placement) &&
+        placed->AssetId() == "demo.physic_object",
         "object placement preserves kind, category, and transform");
     check(presenter.Undo() && !tree.Contains("new_object"),
         "placement undo removes node");
@@ -522,8 +523,26 @@ int RunEditorTreePresenterTests()
         "light placement creates uniquely named node");
     EditorTreeNode* light = document.Model().FindByLabel("new_light");
     check(light && light->Category() == "demo light" &&
-        light->Transform().NearlyEquals(lightPlacement),
+        light->Transform().NearlyEquals(lightPlacement) &&
+        light->AssetId() == "demo.point_light",
         "light placement stores demo category and height");
+    check(presenter.SelectAsset("demo.spawn") &&
+        presenter.GetToolMode() == EditorToolMode::PlaceAsset,
+        "catalog selection enters generic Place Asset mode");
+    EditorTransform spawnPlacement;
+    spawnPlacement.x = 7.0f;
+    spawnPlacement.z = 8.0f;
+    check(presenter.PlaceAt(spawnPlacement) && tree.Contains("spawn_element"),
+        "generic asset placement creates descriptor-named node");
+    EditorTreeNode* spawn = document.Model().FindByLabel("spawn_element");
+    check(spawn && spawn->AssetId() == "demo.spawn" &&
+        spawn->Category() == "demo spawn" &&
+        spawn->Transform().NearlyEquals(spawnPlacement),
+        "generic placement stores descriptor metadata and transform");
+    check(presenter.Undo() && !tree.Contains("spawn_element") &&
+        presenter.Redo() && tree.Contains("spawn_element") &&
+        document.Model().FindByLabel("spawn_element")->AssetId() == "demo.spawn",
+        "asset placement undo/redo preserves asset identity");
     check(presenter.CancelActiveTool() &&
         presenter.GetToolMode() == EditorToolMode::Select,
         "cancel returns presenter to Select without a command");

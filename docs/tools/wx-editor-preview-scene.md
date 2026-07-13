@@ -63,3 +63,9 @@ gizmo lines. See [Transforms](wx-editor-transforms.md) and
 
 Placement modes add a transient semantic marker at the prospective X/Z point.
 It is not part of `EditorPreviewScene` or document state.
+
+The adapter now resolves a known stable asset ID through the synthetic catalog
+before consulting the node category. Unknown and empty IDs deliberately retain
+the old category fallback, keeping older and future documents visible. Generic
+placement markers use the descriptor preview kind; this remains semantic
+placeholder rendering, not a mesh or thumbnail preview.

@@ -93,9 +93,14 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
             ProjectEditorPreviewObject(marker, projection_);
         if (point.visible)
         {
-            drawList_.Add({EditorViewportPrimitiveType::Circle,
-                EditorViewportStyle::Placement, point.x, point.y,
-                0.0f, 0.0f, 8.0f});
+            if (placementPreviewKind_ == EditorPreviewKind::Box)
+                drawList_.Add({EditorViewportPrimitiveType::Rectangle,
+                    EditorViewportStyle::Placement, point.x - 12.0f,
+                    point.y - 8.0f, point.x + 12.0f, point.y + 8.0f});
+            else if (placementPreviewKind_ == EditorPreviewKind::Light)
+                drawList_.Add({EditorViewportPrimitiveType::Circle,
+                    EditorViewportStyle::Placement, point.x, point.y,
+                    0.0f, 0.0f, 8.0f});
             drawList_.Add({EditorViewportPrimitiveType::Line,
                 EditorViewportStyle::Placement,
                 point.x - 12.0f, point.y, point.x + 12.0f, point.y});

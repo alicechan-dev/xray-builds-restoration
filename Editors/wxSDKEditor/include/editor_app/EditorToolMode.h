@@ -6,7 +6,8 @@ enum class EditorToolMode
     Select,
     Move,
     PlaceObject,
-    PlaceLight
+    PlaceLight,
+    PlaceAsset
 };
 
 const char* EditorToolModeName(EditorToolMode mode);

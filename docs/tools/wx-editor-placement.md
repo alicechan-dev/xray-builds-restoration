@@ -15,6 +15,12 @@ explicit.
 
 Each accepted click executes one `EditorModelCommand`, selects the new node,
 refreshes tree/properties/preview, and participates in normal dirty/save-point,
-undo, redo, and snapshot-v3 behavior. Cancellation and mode changes create no
+undo, redo, and snapshot-v4 behavior. Cancellation and mode changes create no
 command. No real SDK class, mesh, light, level, or asset is created.
 
+Generic asset placement derives label base, category, item kind, default
+transform, preview kind, and stable asset ID from one descriptor. Click X/Z and
+optional snapping are combined with descriptor defaults, including Point
+Light's Y=1. The old Object/Light tools route through matching built-ins while
+keeping `new_object` and `new_light` naming. Undo/redo restores the complete
+metadata and selection.

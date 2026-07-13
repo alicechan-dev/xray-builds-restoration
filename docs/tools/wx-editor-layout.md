@@ -52,3 +52,8 @@ and selection highlighting while retaining the same fixed AUI pane policy.
 
 A normal frame toolbar now sits above the AUI workspace. It uses built-in wx
 art and is not part of the persisted AUI perspective; no icon assets are added.
+
+The synthetic Asset Browser adds a left-docked, closable, resizable AUI pane.
+Its `asset_browser` identity participates in the existing perspective, its View
+menu check follows actual visibility, and Reset Layout restores it. Browser
+filters and selection are UI state and never dirty the document.

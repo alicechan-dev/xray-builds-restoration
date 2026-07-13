@@ -135,16 +135,18 @@ int main()
         EditorTreeNode& propertyChild = propertyModel.AddChild(
             *propertyActor, "child", "demo scene object", EditorItemKind::Object);
         EditorPropertySet propertySet = BuildEditorNodePropertySet(*propertyActor);
-        Check(propertySet.Properties().size() == 7 &&
+        Check(propertySet.Properties().size() == 8 &&
             propertySet.Find("LABEL") && propertySet.Find("category") &&
             propertySet.Find("kind") && propertySet.Find("path") &&
+            propertySet.Find("asset_id") &&
             propertySet.Find("position.x") && propertySet.Find("position.y") &&
             propertySet.Find("position.z"),
             "node property set contains stable keys");
         Check(!propertySet.Find("label")->readOnly &&
             !propertySet.Find("category")->readOnly &&
             propertySet.Find("kind")->readOnly &&
-            propertySet.Find("path")->readOnly,
+            propertySet.Find("path")->readOnly &&
+            propertySet.Find("asset_id")->readOnly,
             "node property editability");
 
         EditorPropertyApplyResult apply = ApplyEditorNodeProperty(
@@ -175,6 +177,10 @@ int main()
         apply = ApplyEditorNodeProperty(propertyModel, *propertyActor, "path", "other");
         Check(!apply.success && propertyActor->Path() == acceptedPath,
             "read-only path property rejected");
+        apply = ApplyEditorNodeProperty(
+            propertyModel, *propertyActor, "asset_id", "demo.actor");
+        Check(!apply.success && propertyActor->AssetId().empty(),
+            "read-only asset id property rejected");
         apply=ApplyEditorNodeProperty(propertyModel,*propertyActor,"position.x","12.5");
         Check(apply.success && propertyActor->Transform().x==12.5f,"position property applies");
         apply=ApplyEditorNodeProperty(propertyModel,*propertyActor,"position.x","nan");
@@ -186,11 +192,12 @@ int main()
 
     EditorTreeNode& escaped = model.AddChild(*model.Root(),
         "quoted\"\\line\nitem", "category\tvalue");
+    model.SetNodeAssetId(escaped, "unknown.prototype");
     std::string snapshot;
     Check(SerializeEditorTreeSnapshot(model, snapshot, &reason),
         "snapshot serialization succeeds");
-    Check(snapshot.find("# wxSDKEditor tree snapshot v3\n") == 0,
-        "snapshot writer emits v3 header");
+    Check(snapshot.find("# wxSDKEditor tree snapshot v4\n") == 0,
+        "snapshot writer emits v4 header");
 
     EditorTreeModel loaded;
     Check(DeserializeEditorTreeSnapshot(loaded, snapshot, &reason),
@@ -206,6 +213,8 @@ int main()
     Check(loadedEscaped != nullptr, "escaped label survives snapshot round trip");
     Check(loadedEscaped && loadedEscaped->Category() == "category\tvalue",
         "escaped category survives snapshot round trip");
+    Check(loadedEscaped && loadedEscaped->AssetId() == "unknown.prototype",
+        "unknown asset id survives v4 snapshot round trip");
 
     EditorTreeModel preserved = EditorTreeModel::CreateDemoScene();
     Check(RejectsSnapshot(preserved, "bad header\n"), "malformed header rejected");
@@ -233,6 +242,11 @@ int main()
         "node depth=0 kind=\"root\" label=\"Root\" category=\"root\" "
         "path=\"Root\" transform=\"nan 0 0 0 0 0 1 1 1\"\n"),
         "non-finite v3 transform rejected atomically");
+    Check(RejectsSnapshot(preserved,
+        "# wxSDKEditor tree snapshot v4\n"
+        "node depth=0 kind=\"root\" label=\"Root\" category=\"root\" "
+        "path=\"Root\" asset=\"broken transform=\"0 0 0 0 0 0 1 1 1\"\n"),
+        "malformed v4 asset id is rejected atomically");
 
     const std::string legacySnapshot = std::string(Header) +
         "node depth=0 label=\"Legacy\" category=\"custom root\" path=\"Legacy\"\n"
@@ -252,6 +266,8 @@ int main()
     Check(legacyLoaded.FindByPath("Legacy/Folder/Item")->Transform()
         .NearlyEquals(EditorTransform{}),
         "v1 nodes receive default transforms");
+    Check(legacyLoaded.FindByPath("Legacy/Folder/Item")->AssetId().empty(),
+        "v1 nodes receive empty asset ids");
 
     const std::string v2Snapshot =
         "# wxSDKEditor tree snapshot v2\n"
@@ -262,6 +278,17 @@ int main()
         v2Loaded.FindByPath("V2/Item")->Transform()
             .NearlyEquals(EditorTransform{}),
         "v2 nodes remain readable with default transforms");
+    Check(v2Loaded.FindByPath("V2/Item")->AssetId().empty(),
+        "v2 nodes receive empty asset ids");
+
+    const std::string v3Snapshot =
+        "# wxSDKEditor tree snapshot v3\n"
+        "node depth=0 kind=\"root\" label=\"V3\" category=\"root\" "
+        "path=\"V3\" transform=\"0 0 0 0 0 0 1 1 1\"\n";
+    EditorTreeModel v3Loaded;
+    Check(DeserializeEditorTreeSnapshot(v3Loaded, v3Snapshot, &reason) &&
+        v3Loaded.Root()->AssetId().empty(),
+        "v3 snapshot remains readable with empty asset id");
 
     const std::string pathList =
         "# wxSDKEditor path list v1\n"

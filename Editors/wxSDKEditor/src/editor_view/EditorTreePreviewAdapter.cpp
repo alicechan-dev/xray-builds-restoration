@@ -1,5 +1,6 @@
 #include "editor_view/EditorTreePreviewAdapter.h"
 
+#include "editor_assets/EditorAssetCatalog.h"
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorTreeModel.h"
 
@@ -17,6 +18,14 @@ std::string Lower(std::string value)
 
 EditorPreviewKind KindFor(const EditorTreeNode& node)
 {
+    if (!node.AssetId().empty())
+    {
+        static const EditorAssetCatalog catalog =
+            EditorAssetCatalog::CreateBuiltIn();
+        if (const EditorAssetDescriptor* descriptor =
+            catalog.FindById(node.AssetId()))
+            return descriptor->previewKind;
+    }
     const std::string category = Lower(node.Category());
     if (category.find("light") != std::string::npos)
         return EditorPreviewKind::Light;

@@ -1,4 +1,5 @@
 #include "editor_app/EditorToolController.h"
+#include "editor_assets/EditorAssetSelectionModel.h"
 #include "editor_view/EditorPreviewPicking.h"
 
 #include <cmath>
@@ -29,6 +30,29 @@ int RunEditorToolControllerTests()
         tools.GetMode() == EditorToolMode::Select,
         "cancel returns to Select");
     check(!tools.CancelCurrentOperation(), "cancel in Select is inert");
+
+    const EditorAssetCatalog catalog = EditorAssetCatalog::CreateBuiltIn();
+    check(catalog.Entries().size() == 6 &&
+        catalog.FindById("DEMO.ACTOR") &&
+        !catalog.FindById("missing.asset"),
+        "built-in catalog has deterministic unique entries and lookup");
+    check(catalog.CategoryPaths().size() == 5 &&
+        catalog.FilterByCategory("objects").size() == 2,
+        "catalog enumerates and filters categories");
+    check(catalog.Search("ACTOR").size() == 1 &&
+        catalog.Search("demo.").size() == 6,
+        "catalog search is case-insensitive across descriptor fields");
+    EditorAssetSelectionModel assetSelection;
+    check(assetSelection.Select(catalog, "demo.point_light") &&
+        assetSelection.HasPlaceableSelection(catalog) &&
+        assetSelection.Resolve(catalog)->defaultTransform.y == 1.0f,
+        "asset selection resolves placeable descriptor defaults");
+    check(!assetSelection.Select(catalog, "missing.asset") &&
+        assetSelection.SelectedId() == "demo.point_light",
+        "unknown asset selection is rejected without losing valid selection");
+    assetSelection.Clear();
+    check(!assetSelection.HasPlaceableSelection(catalog),
+        "asset selection clears explicitly");
 
     EditorPreviewProjectionContext projection;
     projection.width = 800;

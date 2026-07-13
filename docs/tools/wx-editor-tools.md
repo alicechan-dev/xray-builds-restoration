@@ -17,3 +17,8 @@ returns to Select without touching history.
 
 This is an experimental shell boundary, not a port of historical VCL tools.
 
+`PlaceAsset` generalizes placement for the selected synthetic catalog
+descriptor. The legacy Object and Light commands remain available and route to
+`demo.physic_object` and `demo.point_light` metadata while preserving their
+familiar naming behavior. Asset Browser activation selects a descriptor and
+enters `PlaceAsset`; Escape returns to Select without committing a command.

@@ -3,6 +3,8 @@
 
 #include "editor_app/EditorDocument.h"
 #include "editor_app/EditorToolController.h"
+#include "editor_assets/EditorAssetCatalog.h"
+#include "editor_assets/EditorAssetSelectionModel.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -53,6 +55,10 @@ public:
     EditorToolMode GetToolMode() const { return tools_.GetMode(); }
     bool CancelActiveTool();
     bool PlaceAt(const EditorTransform& transform);
+    bool SelectAsset(const std::string& assetId);
+    const EditorAssetCatalog& AssetCatalog() const { return assetCatalog_; }
+    const EditorAssetDescriptor* SelectedAsset() const
+    { return assetSelection_.Resolve(assetCatalog_); }
     std::string ResolvePlacementParentPath() const;
     bool Undo();
     bool Redo();
@@ -80,6 +86,8 @@ private:
     EditorSelectionModel& selection_;
     EditorCommandHistory& history_;
     EditorToolController tools_;
+    EditorAssetCatalog assetCatalog_ = EditorAssetCatalog::CreateBuiltIn();
+    EditorAssetSelectionModel assetSelection_;
 };
 
 #endif

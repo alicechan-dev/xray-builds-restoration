@@ -67,6 +67,10 @@ EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node)
         std::string(ToString(node.Kind())), true, "Audited structural item kind."));
     properties.Add(MakeProperty("path", "Path", EditorPropertyType::ReadOnlyText,
         node.Path(), true, "Generated canonical hierarchy path."));
+    properties.Add(MakeProperty("asset_id", "Asset ID",
+        EditorPropertyType::ReadOnlyText,
+        node.AssetId().empty() ? "none" : node.AssetId(), true,
+        "Optional synthetic catalog prototype identity."));
     if (!IsGroupKind(node.Kind()))
     {
         const EditorTransform& transform = node.Transform();

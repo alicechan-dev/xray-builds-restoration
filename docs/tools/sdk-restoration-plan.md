@@ -587,3 +587,15 @@ placement modes. A standard wx toolbar translates commands without external
 icons. Placement reuses inverse preview projection, deterministic parenting,
 and model-command history; overlays and cancellation remain transient. Real SDK
 object factories, assets, levels, and historical editor code remain out of scope.
+
+## wxSDKEditor Synthetic Asset Checkpoint
+
+A wx-free descriptor catalog and active selection model now define six
+development-only prototypes. The concrete wx Asset Browser provides search,
+category filtering, details, and activation in a persisted AUI pane. Generic
+placement consumes descriptor metadata and snapshot v4 stores optional stable
+asset IDs while preserving v1/v2/v3 readability and unknown-ID fallback.
+Headless tests cover catalog, selection, placement metadata, history,
+properties, preview mapping, and serialization without discovering wxWidgets.
+Real X-Ray asset libraries, thumbnails, filesystem scanning, `xrEProps`, and
+LevelEditor integration remain future audited work.

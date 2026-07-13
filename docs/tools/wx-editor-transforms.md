@@ -19,3 +19,8 @@ objects, real level formats, assets, `xrEProps`, or LevelEditor.
 
 Synthetic placement supplies the initial transform through the same validated
 model API; no additional snapshot field or format revision is required.
+
+Asset descriptors may provide a default transform. Placement replaces only
+the prospective X/Z coordinates (with optional snap) and preserves descriptor
+defaults such as Point Light Y=1. Snapshot v4 retains the same nine transform
+values and adds only the optional asset ID field.

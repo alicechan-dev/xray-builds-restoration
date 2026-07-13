@@ -60,6 +60,12 @@ Node transforms are now document state persisted by snapshot v3. v1/v2 readers
 assign defaults. Temporary gizmo motion is not document state until release.
 
 Tool mode and placement preview are transient UI state. Accepted placements are
-ordinary snapshot-v3 nodes and therefore follow existing dirty, save, load,
+ordinary snapshot-v4 nodes and therefore follow existing dirty, save, load,
 undo, and redo behavior. New, successful Open, and successful Import reset the
 tool to Select; successful Save does the same after capturing the save point.
+
+Snapshot v4 adds an optional escaped asset ID to each node record. Readers for
+v1/v2/v3 remain supported and assign an empty ID. Unknown IDs are accepted and
+round-trip atomically; catalog membership is not a precondition for opening a
+document. The catalog itself is application state, not serialized document
+content.

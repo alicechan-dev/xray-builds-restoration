@@ -14,6 +14,7 @@ namespace
 constexpr const char* SnapshotHeaderV1 = "# wxSDKEditor tree snapshot v1";
 constexpr const char* SnapshotHeaderV2 = "# wxSDKEditor tree snapshot v2";
 constexpr const char* SnapshotHeaderV3 = "# wxSDKEditor tree snapshot v3";
+constexpr const char* SnapshotHeaderV4 = "# wxSDKEditor tree snapshot v4";
 constexpr std::streamoff MaximumSnapshotSize = 8 * 1024 * 1024;
 
 bool Fail(std::string* reason, const std::string& message)
@@ -48,7 +49,8 @@ void SerializeNode(const EditorTreeNode& node, unsigned int depth,
         " kind=\"" + std::string(ToString(node.Kind())) +
         "\" label=\"" + Escape(node.Label()) +
         "\" category=\"" + Escape(node.Category()) +
-        "\" path=\"" + Escape(node.Path()) + "\" transform=\"";
+        "\" path=\"" + Escape(node.Path()) +
+        "\" asset=\"" + Escape(node.AssetId()) + "\" transform=\"";
     const EditorTransform& t=node.Transform();
     output += std::to_string(t.x)+" "+std::to_string(t.y)+" "+std::to_string(t.z)+" "+std::to_string(t.yaw)+" "+std::to_string(t.pitch)+" "+std::to_string(t.roll)+" "+std::to_string(t.sx)+" "+std::to_string(t.sy)+" "+std::to_string(t.sz)+"\"\n";
     for (const auto& child : node.ChildrenView())
@@ -114,8 +116,10 @@ bool ParseQuoted(const std::string& line, std::size_t& position, std::string& va
 }
 
 bool ParseNodeLine(const std::string& line, unsigned int& depth,
-    bool hasKind, bool hasTransform, EditorItemKind& kind, std::string& label,
-    std::string& category, std::string& path, EditorTransform& transform)
+    bool hasKind, bool hasTransform, bool hasAsset,
+    EditorItemKind& kind, std::string& label,
+    std::string& category, std::string& path, std::string& assetId,
+    EditorTransform& transform)
 {
     std::size_t position = 0;
     if (!Consume(line, position, "node depth=") ||
@@ -136,6 +140,12 @@ bool ParseNodeLine(const std::string& line, unsigned int& depth,
         ParseQuoted(line, position, category) &&
         Consume(line, position, " path=") &&
         ParseQuoted(line, position, path))) return false;
+    if (hasAsset)
+    {
+        if (!Consume(line, position, " asset=") ||
+            !ParseQuoted(line, position, assetId))
+            return false;
+    }
     if (!hasTransform) return position == line.size();
     std::string values;
     if (!Consume(line,position," transform=")||!ParseQuoted(line,position,values)||position!=line.size()) return false;
@@ -150,7 +160,7 @@ bool SerializeEditorTreeSnapshot(
     if (!model.Root())
         return Fail(reason, "The tree model has no root node.");
 
-    output = std::string(SnapshotHeaderV3) + "\n";
+    output = std::string(SnapshotHeaderV4) + "\n";
     SerializeNode(*model.Root(), 0, output);
     if (reason)
         reason->clear();
@@ -169,7 +179,8 @@ bool DeserializeEditorTreeSnapshot(
         return Fail(reason, "The snapshot header is missing.");
     if (!line.empty() && line.back() == '\r')
         line.pop_back();
-    const bool hasTransform = line == SnapshotHeaderV3;
+    const bool hasAsset = line == SnapshotHeaderV4;
+    const bool hasTransform = hasAsset || line == SnapshotHeaderV3;
     const bool hasKind = hasTransform || line == SnapshotHeaderV2;
     if (!hasKind && line != SnapshotHeaderV1)
         return Fail(reason, "Unsupported or malformed snapshot header.");
@@ -189,10 +200,12 @@ bool DeserializeEditorTreeSnapshot(
         std::string label;
         std::string category;
         std::string storedPath;
+        std::string assetId;
         EditorItemKind kind = EditorItemKind::Unknown;
         EditorTransform transform;
         if (!ParseNodeLine(
-            line, depth, hasKind, hasTransform, kind, label, category, storedPath, transform))
+            line, depth, hasKind, hasTransform, hasAsset, kind, label,
+            category, storedPath, assetId, transform))
             return Fail(reason, "Malformed node record at line " + std::to_string(lineNumber) + ".");
         if (label.empty())
             return Fail(reason, "Empty node label at line " + std::to_string(lineNumber) + ".");
@@ -223,6 +236,7 @@ bool DeserializeEditorTreeSnapshot(
             return Fail(reason, "Stored path mismatch at line " + std::to_string(lineNumber) + ".");
         if (!parsed.SetNodeTransform(*node, transform, reason))
             return false;
+        parsed.SetNodeAssetId(*node, std::move(assetId));
     }
 
     if (!parsed.Root())

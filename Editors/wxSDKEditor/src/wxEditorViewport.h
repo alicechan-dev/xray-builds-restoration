@@ -6,6 +6,7 @@
 #include "editor_view/EditorPreviewScene.h"
 #include "editor_view/EditorMoveGizmo.h"
 #include "editor_app/EditorToolMode.h"
+#include "editor_assets/EditorAssetDescriptor.h"
 
 #include <memory>
 #include <functional>
@@ -34,6 +35,7 @@ public:
     void SetToolMode(EditorToolMode mode);
     EditorToolMode GetToolMode() const { return toolMode_; }
     bool CancelTransientOperation();
+    void SetPlacementDescriptor(const EditorAssetDescriptor* descriptor);
     void SetSelectionHandler(std::function<void(const std::string&)> handler)
     { selectionHandler_ = std::move(handler); }
     void SetTransformHandler(std::function<bool(
@@ -71,6 +73,10 @@ private:
     EditorMoveGizmo moveGizmo_;
     EditorToolMode toolMode_ = EditorToolMode::Select;
     EditorPreviewWorldPoint placementPreview_;
+    std::string placementAssetId_;
+    std::string placementAssetName_;
+    EditorTransform placementDefaults_;
+    EditorPreviewKind placementPreviewKind_ = EditorPreviewKind::Marker;
     bool moveSnapEnabled_ = false;
 };
 

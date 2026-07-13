@@ -59,13 +59,19 @@ int RunEditorPreviewSceneTests()
         folder, "spawn", "spawn element", EditorItemKind::Object);
     EditorTreeNode& marker = model.AddChild(
         folder, "marker", "custom", EditorItemKind::Unknown);
+    EditorTreeNode& assetMapped = model.AddChild(
+        folder, "asset-mapped", "custom", EditorItemKind::Object);
+    EditorTreeNode& unknownAsset = model.AddChild(
+        folder, "unknown-asset", "demo spawn", EditorItemKind::Object);
     EditorTransform transform; transform.x=-4; transform.z=-5; model.SetNodeTransform(object,transform);
     transform.x=-2; transform.y=2; model.SetNodeTransform(light,transform);
     transform.x=0; transform.y=0; model.SetNodeTransform(spawn,transform);
     transform.x=2; model.SetNodeTransform(marker,transform);
+    model.SetNodeAssetId(assetMapped, "demo.point_light");
+    model.SetNodeAssetId(unknownAsset, "future.unknown");
 
     EditorPreviewScene adapted = BuildEditorPreviewScene(model, light.Path());
-    check(adapted.GetObjects().size() == 4 &&
+    check(adapted.GetObjects().size() == 6 &&
         adapted.FindByLogicalPath(folder.Path()) == nullptr,
         "adapter excludes structural folders");
     check(adapted.FindByLogicalPath(object.Path())->kind == EditorPreviewKind::Box &&
@@ -73,6 +79,12 @@ int RunEditorPreviewSceneTests()
         adapted.FindByLogicalPath(spawn.Path())->kind == EditorPreviewKind::Spawn &&
         adapted.FindByLogicalPath(marker.Path())->kind == EditorPreviewKind::Marker,
         "adapter maps preview kinds");
+    check(adapted.FindByLogicalPath(assetMapped.Path())->kind ==
+            EditorPreviewKind::Light,
+        "known asset id takes precedence over category fallback");
+    check(adapted.FindByLogicalPath(unknownAsset.Path())->kind ==
+            EditorPreviewKind::Spawn,
+        "unknown asset id retains category fallback behavior");
     check(adapted.FindByLogicalPath(light.Path())->selected &&
         adapted.FindByLogicalPath(light.Path())->y == 2.0f,
         "light selection and elevated synthetic placement");

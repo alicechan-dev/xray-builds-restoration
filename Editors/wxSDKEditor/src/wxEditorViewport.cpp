@@ -147,10 +147,22 @@ void wxEditorViewport::SetToolMode(EditorToolMode mode)
     renderer_.SetPlacementPreview(placementPreview_);
     renderer_.SetGizmoVisible(mode == EditorToolMode::Move);
     SetCursor(mode == EditorToolMode::PlaceObject ||
-        mode == EditorToolMode::PlaceLight
+        mode == EditorToolMode::PlaceLight || mode == EditorToolMode::PlaceAsset
         ? wxCursor(wxCURSOR_CROSS) : wxNullCursor);
     controller_.Render();
     Refresh(false);
+}
+
+void wxEditorViewport::SetPlacementDescriptor(
+    const EditorAssetDescriptor* descriptor)
+{
+    placementAssetId_ = descriptor ? descriptor->id : std::string();
+    placementAssetName_ = descriptor ? descriptor->displayName : std::string();
+    placementDefaults_ = descriptor
+        ? descriptor->defaultTransform : EditorTransform{};
+    placementPreviewKind_ = descriptor
+        ? descriptor->previewKind : EditorPreviewKind::Marker;
+    renderer_.SetPlacementPreviewKind(placementPreviewKind_);
 }
 
 void wxEditorViewport::OnPaint(wxPaintEvent&)
@@ -235,9 +247,14 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
     dc.DrawText("Tool: " + wxString::FromUTF8(EditorToolModeName(toolMode_)),
         12, 94);
     if (placementPreview_.valid)
+    {
         dc.DrawText(wxString::Format("Place: %.2f, %.2f, %.2f",
             placementPreview_.x, placementPreview_.y, placementPreview_.z),
             12, 114);
+        if (!placementAssetName_.empty())
+            dc.DrawText("Asset: " + wxString::FromUTF8(placementAssetName_ +
+                " (" + placementAssetId_ + ")"), 12, 134);
+    }
 }
 
 void wxEditorViewport::OnSize(wxSizeEvent& event)
@@ -286,14 +303,15 @@ void wxEditorViewport::OnMouseMove(wxMouseEvent& event)
         }
     }
     else if (toolMode_ == EditorToolMode::PlaceObject ||
-        toolMode_ == EditorToolMode::PlaceLight)
+        toolMode_ == EditorToolMode::PlaceLight ||
+        toolMode_ == EditorToolMode::PlaceAsset)
     {
         const EditorPreviewProjectionContext projection =
             MakeEditorPreviewProjectionContext(controller_.State(),
                 controller_.State().width, controller_.State().height);
         placementPreview_ = UnprojectEditorPreviewToGround(
             static_cast<float>(event.GetX()), static_cast<float>(event.GetY()),
-            projection, toolMode_ == EditorToolMode::PlaceLight ? 1.0f : 0.0f,
+            projection, placementDefaults_.y,
             moveSnapEnabled_);
         renderer_.SetPlacementPreview(placementPreview_);
         controller_.Render();
@@ -310,7 +328,8 @@ void wxEditorViewport::OnMouseButton(wxMouseEvent& event)
     if (pressed && left)
     {
         if (toolMode_ == EditorToolMode::PlaceObject ||
-            toolMode_ == EditorToolMode::PlaceLight)
+            toolMode_ == EditorToolMode::PlaceLight ||
+            toolMode_ == EditorToolMode::PlaceAsset)
         {
             const EditorViewportState& state = controller_.State();
             const EditorPreviewProjectionContext projection =
@@ -319,7 +338,7 @@ void wxEditorViewport::OnMouseButton(wxMouseEvent& event)
             placementPreview_ = UnprojectEditorPreviewToGround(
                 static_cast<float>(event.GetX()),
                 static_cast<float>(event.GetY()), projection,
-                toolMode_ == EditorToolMode::PlaceLight ? 1.0f : 0.0f,
+                placementDefaults_.y,
                 moveSnapEnabled_);
             renderer_.SetPlacementPreview(placementPreview_);
             if (placementPreview_.valid && placementHandler_)

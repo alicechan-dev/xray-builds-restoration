@@ -8,6 +8,7 @@ const char* EditorToolModeName(EditorToolMode mode)
     case EditorToolMode::Move: return "Move";
     case EditorToolMode::PlaceObject: return "Place Object";
     case EditorToolMode::PlaceLight: return "Place Light";
+    case EditorToolMode::PlaceAsset: return "Place Asset";
     }
     return "Select";
 }

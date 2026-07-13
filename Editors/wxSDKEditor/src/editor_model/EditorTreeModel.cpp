@@ -183,6 +183,12 @@ bool EditorTreeModel::SetNodeTransform(EditorTreeNode& node,
     return true;
 }
 
+void EditorTreeModel::SetNodeAssetId(
+    EditorTreeNode& node, std::string assetId)
+{
+    node.assetId_ = std::move(assetId);
+}
+
 bool EditorTreeModel::DeleteNode(EditorTreeNode& node, std::string* reason)
 {
     if (!CanDeleteNode(node, reason))

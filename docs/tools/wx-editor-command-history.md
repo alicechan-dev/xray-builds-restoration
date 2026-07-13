@@ -41,3 +41,8 @@ Escape submits none. Undo/redo restores both position and logical selection.
 Each placement click similarly creates one model command. Undo removes the
 placed node; redo recreates its parent/name/category/kind/transform and selection.
 Tool switches and canceled placement never enter history.
+
+Catalog placement adds the stable asset ID and descriptor-derived metadata to
+that same command snapshot. Delete/undo, subtree restoration, rename, move,
+and property edits therefore preserve asset identity without a separate asset
+command type.

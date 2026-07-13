@@ -365,3 +365,11 @@ The shell now exposes wx-free Select/Move/Place Object/Place Light modes through
 a standard wx toolbar. Synthetic placement uses shared projection, transient
 preview feedback, deterministic parenting/naming, and one command per click.
 See [Tool Modes](wx-editor-tools.md) and [Placement](wx-editor-placement.md).
+
+The shell now includes a wx-free synthetic descriptor catalog and selection
+model plus a dockable wx Asset Browser. Catalog search/category queries are
+deterministic, and generic placement derives metadata, default transform, and
+semantic preview from the selected descriptor. Optional asset identity is
+persisted by snapshot v4 while v1/v2/v3 and unknown IDs remain supported. See
+[Synthetic Asset Catalog](wx-editor-assets.md) and
+[Asset Browser](wx-editor-asset-browser.md). No real X-Ray assets are loaded.

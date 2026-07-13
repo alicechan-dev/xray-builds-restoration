@@ -296,3 +296,10 @@ Select, Move, Place Object, and Place Light now have a wx-free controller and a
 built-in-art wx toolbar. Synthetic clicks use shared screen-to-X/Z projection,
 deterministic parent/name policy, and one undoable command. Placement previews,
 tool changes, and cancellation remain transient and wx-free tests cover them.
+
+The wx experiment now also has a wx-free synthetic asset catalog/selection
+seam and a dockable Asset Browser. Six deterministic prototypes support
+category filtering and case-insensitive search. `PlaceAsset` generalizes
+descriptor-driven placement, snapshot v4 persists optional stable IDs, older
+v1/v2/v3 files remain readable, and unknown IDs use category preview fallback.
+No gamedata, archive, mesh, texture, or historical SDK asset is loaded.

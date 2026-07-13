@@ -67,3 +67,8 @@ applies leave the saved-state comparison unchanged.
 Object-like nodes expose editable `position.x/y/z`. Values must be finite
 floats. Successful edits refresh preview and enter command history; rejected
 values leave the model unchanged.
+
+The property set also exposes `asset_id` as read-only. Empty IDs display as
+`none`; unknown IDs remain visible unchanged. Asset reassignment is not an
+editable property in this pass. Path and item kind remain read-only, while
+label, category, and finite position fields retain their existing policies.
