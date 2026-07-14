@@ -673,3 +673,13 @@ version `0x0014`: seven environment modifiers are Supported and 4,327 runtime
 entities are Partial because packet/attachment bytes remain opaque. The four
 key classes cover 96.6% of observed records. The next stage should stabilize
 this read-only migration boundary before considering minor classes.
+
+## Conversion Stabilization Complete
+
+The four-class conversion boundary now has immutable node-owned provenance,
+save/load verification, deterministic v5 output, bounded forward extensions,
+command-history stress, a 20,000-node synthetic test, and a clean 17-scene
+production round trip. Continue to keep conversion one-way: no `.level`
+writer, opaque payload copy, runtime asset/entity construction, or minor class
+decoder was introduced. A future stage may choose one separately audited minor
+class only after this checkpoint is committed and reviewed.

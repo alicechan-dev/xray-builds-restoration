@@ -44,6 +44,7 @@ enum
     IdInspectHistoricalScene,
     IdOpenHistoricalScene,
     IdConvertHistoricalScene,
+    IdHistoricalConversionSummary,
     IdFindItem,
     IdClearSelection,
     IdShowSelection,
@@ -158,6 +159,8 @@ void wxSDKEditorFrame::CreateMenus()
     toolsMenu->Append(IdClearSelection, "&Clear Selection");
     toolsMenu->AppendSeparator();
     toolsMenu->Append(IdAdapterStatus, "&Adapter Status");
+    toolsMenu->Append(IdHistoricalConversionSummary,
+        "Historical Conversion &Summary...");
     toolsMenu->AppendSeparator();
     toolsMenu->Append(wxID_PREFERENCES, "&Options")->Enable(false);
     menuBar->Append(toolsMenu, "&Tools");
@@ -245,6 +248,11 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnDeleteSelected, this, IdDeleteSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnMoveSelected, this, IdMoveSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnAdapterStatus, this, IdAdapterStatus);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnHistoricalConversionSummary,
+        this, IdHistoricalConversionSummary);
+    Bind(wxEVT_UPDATE_UI,
+        &wxSDKEditorFrame::OnUpdateHistoricalConversionSummary,
+        this, IdHistoricalConversionSummary);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnImportPathList, this, IdImportPathList);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnInspectHistoricalScene,
         this, IdInspectHistoricalScene);
@@ -620,6 +628,28 @@ void wxSDKEditorFrame::OnConvertHistoricalScene(wxCommandEvent&)
 void wxSDKEditorFrame::OnUpdateConvertHistoricalScene(wxUpdateUIEvent& event)
 {
     event.Enable(treePresenter_ && treePresenter_->CanConvertHistoricalScene());
+}
+
+void wxSDKEditorFrame::OnHistoricalConversionSummary(wxCommandEvent&)
+{
+    std::string summary;
+    std::string reason;
+    if (!treePresenter_ ||
+        !treePresenter_->GetHistoricalConversionSummary(summary, &reason))
+    {
+        dialogService_.Warning("Historical Conversion Summary", reason.c_str());
+        return;
+    }
+    output_->AppendText("\nHistorical Conversion Summary\n" +
+        wxString::FromUTF8(summary) + "\n");
+    dialogService_.Info("Historical Conversion Summary", summary.c_str());
+}
+
+void wxSDKEditorFrame::OnUpdateHistoricalConversionSummary(
+    wxUpdateUIEvent& event)
+{
+    event.Enable(treePresenter_ &&
+        treePresenter_->HasHistoricalConversionSummary());
 }
 
 void wxSDKEditorFrame::OnSaveDocument(wxCommandEvent&)

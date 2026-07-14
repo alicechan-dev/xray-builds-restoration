@@ -54,3 +54,7 @@ strings, non-finite radius/legacy position, and child bounds outside the body.
 
 The later class-6 Spawn Point branch is independent; all 511 sampled Glow
 records remain Supported with unchanged read-only preview policy.
+
+Converted Glow provenance now survives editable command history and v5 round
+trips. Its radius diagnostic remains origin-class-driven after category edits;
+shader and texture names remain inert summaries only.

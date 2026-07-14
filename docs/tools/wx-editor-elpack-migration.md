@@ -270,3 +270,7 @@ values reach the modern tree/properties/preview adapters. It does not invoke
 The class-6 Spawn Point decoder also stays below this boundary: it does not
 construct `CSpawnPoint`/`CSE_*`, call factories, or expose packets to VCL
 property controls.
+
+Conversion integrity/statistics and all new lifecycle tests remain below the
+same wx-free adapter boundary. They do not revive `TElTree`, `xrEProps`, VCL,
+or ElPack dependencies.

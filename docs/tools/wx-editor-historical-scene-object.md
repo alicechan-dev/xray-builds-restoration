@@ -52,3 +52,7 @@ This class-2 behavior is unchanged by the later class-3 Light decoder. The
 same dispatcher preserves its 15,412 Supported and four motion-bearing Partial
 records.
 The class-6 Spawn Point branch likewise leaves this class-2 result unchanged.
+
+Converted SceneObject provenance now survives editable command history and v5
+round trips. Preview remains a generic origin-class box/reference diagnostic;
+the object-library reference is never resolved.

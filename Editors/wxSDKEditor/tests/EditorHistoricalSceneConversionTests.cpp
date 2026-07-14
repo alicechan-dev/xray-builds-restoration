@@ -151,6 +151,7 @@ int RunEditorHistoricalSceneConversionTests()
     const EditorTreeNode* spawn = destination.Model().FindByLabel("spawn");
     const EditorTreeNode* placeholder = destination.Model().FindByLabel("way");
     check(scene && scene->HistoricalOrigin() &&
+        scene->HistoricalOrigin()->sourceSceneName == "fixture.level" &&
         scene->HistoricalOrigin()->referenceName == "objects\\crate" &&
         scene->HistoricalOrigin()->retainedFieldSummary.find("flags=0x3") !=
             std::string::npos,
@@ -183,8 +184,11 @@ int RunEditorHistoricalSceneConversionTests()
 
     const EditorPropertySet properties = BuildEditorNodePropertySet(*spawn);
     check(properties.Find("label") && !properties.Find("label")->readOnly &&
+        properties.Find("label")->section == "Editable" &&
         properties.Find("historical.class_id") &&
         properties.Find("historical.class_id")->readOnly &&
+        properties.Find("historical.class_id")->section ==
+            "Historical Origin - Read-Only" &&
         properties.Find("historical.opaque") &&
         properties.Find("historical.opaque")->readOnly,
         "ordinary fields stay editable while origin and opaque summaries are read-only");

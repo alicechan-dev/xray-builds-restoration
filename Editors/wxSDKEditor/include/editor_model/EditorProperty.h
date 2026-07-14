@@ -19,6 +19,7 @@ std::string_view ToString(EditorPropertyType type);
 
 struct EditorProperty
 {
+    std::string section;
     std::string key;
     std::string label;
     EditorPropertyType type = EditorPropertyType::String;

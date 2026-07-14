@@ -27,3 +27,8 @@ Class mappings are deliberately narrow:
 
 No converter path invokes historical classes, factories, scripts, runtime
 configuration, renderers, resource managers, or filesystem asset resolution.
+
+Origin metadata is immutable provenance. Editable rename, reparent, transform,
+category, and property changes do not rewrite source fields. New nodes have no
+origin. Delete and snapshot-backed undo/redo remove and restore provenance with
+the owned node. Duplication and explicit origin detachment remain deferred.

@@ -63,10 +63,23 @@ void wxPropertyPanel::ShowProperties(const EditorPropertySet& properties)
     kind_->ChangeValue(value("kind"));
     path_->ChangeValue(value("path"));
     wxString details;
-    for (const EditorProperty& property : properties.Properties())
+    const char* sections[] = {"Editable", "Historical Origin - Read-Only"};
+    for (const char* section : sections)
     {
-        details += wxString::FromUTF8(property.label) + ": " +
-            wxString::FromUTF8(property.value) + "\n";
+        bool headingShown = false;
+        for (const EditorProperty& property : properties.Properties())
+        {
+            if (property.section != section)
+                continue;
+            if (!headingShown)
+            {
+                if (!details.empty()) details += "\n";
+                details += wxString::FromUTF8(section) + "\n";
+                headingShown = true;
+            }
+            details += "  " + wxString::FromUTF8(property.label) + ": " +
+                wxString::FromUTF8(property.value) + "\n";
+        }
     }
     details_->ChangeValue(details);
     Layout();

@@ -19,6 +19,7 @@ bool ParseEditorHistoricalConversionDisposition(const std::string& text,
 
 struct EditorHistoricalOriginMetadata
 {
+    std::string sourceSceneName;
     std::uint32_t sourceSceneVersion = 0;
     std::uint32_t sourceClassId = 0;
     std::size_t sourceObjectIndex = 0;

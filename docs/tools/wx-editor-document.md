@@ -95,3 +95,7 @@ Opening a historical scene read-only uses a separate document and selection
 model rather than changing this editable snapshot document. New and Open
 Snapshot reactivate this document. See [Document
 Modes](wx-editor-document-modes.md).
+
+Converted documents remain ordinary pathless editable snapshots, but their
+nodes may own immutable historical provenance. The summary is derived on
+demand; no mutation/tombstone log is added, and Save remains snapshot-only.

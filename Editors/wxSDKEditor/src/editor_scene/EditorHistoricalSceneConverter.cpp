@@ -264,6 +264,7 @@ bool BuildCandidate(const EditorHistoricalSceneDocument& source,
             return false;
 
         EditorHistoricalOriginMetadata origin;
+        origin.sourceSceneName = source.GetDisplayName();
         origin.sourceSceneVersion = sourceObject.sceneVersion;
         origin.sourceClassId = sourceObject.classId;
         origin.sourceObjectIndex = sourceObject.objectIndex;

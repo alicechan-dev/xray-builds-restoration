@@ -52,3 +52,8 @@ scene. No sidecar, cache, report, or converted document was written.
 This is a migration aid, not lossless historical round-tripping. Raw scene
 chunks, packets, attachments, unknown bodies, and referenced assets are never
 copied into editable behavior.
+
+The stabilized conversion now verifies node-owned provenance before save and
+after load, supports an on-demand read-only summary, and requires deterministic
+v5 save/load/save output. The 17-scene in-memory audit passed with no source
+changes. See [Conversion Round Trip](wx-editor-conversion-round-trip.md).

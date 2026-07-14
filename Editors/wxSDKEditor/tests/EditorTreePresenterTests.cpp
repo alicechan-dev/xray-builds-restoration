@@ -673,6 +673,8 @@ int RunEditorTreePresenterTests()
         historicalPresenter.InitializeDemo();
         check(!historicalPresenter.CanConvertHistoricalScene(),
             "historical conversion action is unavailable in editable mode");
+        check(!historicalPresenter.HasHistoricalConversionSummary(),
+            "conversion summary is unavailable without historical origins");
 
         EditorSceneManifest invalid = HistoricalManifest();
         invalid.version = 4;
@@ -752,9 +754,18 @@ int RunEditorTreePresenterTests()
             historicalTree.Contains("duplicate_1"),
             "presenter conversion transitions to a dirty editable copy with "
             "empty command history");
+        std::string conversionSummary;
+        check(historicalPresenter.HasHistoricalConversionSummary() &&
+            historicalPresenter.GetHistoricalConversionSummary(
+                conversionSummary, &reason) &&
+            conversionSummary.find("Original scene: fixture.level") !=
+                std::string::npos &&
+            conversionSummary.find("cannot be exported") != std::string::npos,
+            "editable conversion exposes a provenance-only summary");
 
         historicalPresenter.NewDocument();
         check(!historicalPresenter.IsReadOnly() &&
+            !historicalPresenter.HasHistoricalConversionSummary() &&
             historicalProperties.editingEnabled &&
             historicalPresenter.SetToolMode(EditorToolMode::Move) &&
             editableDocument.Model().Root() && !editableDocument.IsModified(),

@@ -355,3 +355,13 @@ specialized classes remain unsupported.
   records: seven environment modifiers are Supported and 4,327 runtime
   entities are Partial because packets remain opaque. Classes 1, 2, 3, and 6
   now cover 21,990 of 22,767 records (96.6%) without entity/factory execution.
+
+## wxSDKEditor Conversion Stabilization Checkpoint
+
+Converted snapshots now have node-owned immutable origin verification,
+on-demand statistics and summary UI, separated read-only origin properties,
+origin-first preview diagnostics, and hardened deterministic snapshot v5.
+Headless tests include command-history corruption cases and a 20,000-node
+model. A read-only 17-scene conversion/reload audit passed all 22,767 records
+with zero integrity/reload/equivalence failures and zero source-file changes.
+Minor class decoders and `.level` export remain deferred.

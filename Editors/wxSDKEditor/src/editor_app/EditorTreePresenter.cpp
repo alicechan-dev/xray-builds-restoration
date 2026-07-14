@@ -11,6 +11,7 @@
 #include "editor_scene/EditorHistoricalSceneProperties.h"
 #include "editor_scene/EditorHistoricalSceneConverter.h"
 #include "editor_scene/EditorHistoricalConversionReport.h"
+#include "editor_scene/EditorConvertedDocumentStatistics.h"
 #include "editor_view/EditorTreePreviewAdapter.h"
 #include "editor_ui/IDialogService.h"
 #include "editor_ui/IEditorTree.h"
@@ -34,6 +35,29 @@ EditorTreePresenter::EditorTreePresenter(EditorDocument& document,
         [this](const std::string& key, const std::string& value) {
             return ApplySelectedProperty(key, value);
         });
+}
+
+bool EditorTreePresenter::HasHistoricalConversionSummary() const
+{
+    return !IsReadOnly() &&
+        CollectEditorConvertedDocumentStatistics(model_).HasHistoricalOrigins();
+}
+
+bool EditorTreePresenter::GetHistoricalConversionSummary(
+    std::string& summary, std::string* reason) const
+{
+    const EditorConvertedDocumentStatistics statistics =
+        CollectEditorConvertedDocumentStatistics(model_);
+    if (IsReadOnly() || !statistics.HasHistoricalOrigins())
+    {
+        if (reason)
+            *reason = "The active editable document has no historical origin metadata.";
+        return false;
+    }
+    summary = statistics.BuildSummary();
+    if (reason)
+        reason->clear();
+    return true;
 }
 
 void EditorTreePresenter::InitializeDemo()

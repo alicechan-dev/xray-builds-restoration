@@ -34,6 +34,8 @@ EditorProperty MakeProperty(const char* key, const char* label,
     const char* description)
 {
     EditorProperty property;
+    property.section = std::string(key).rfind("historical.", 0) == 0
+        ? "Historical Origin - Read-Only" : "Editable";
     property.key = key;
     property.label = label;
     property.type = type;
@@ -97,6 +99,10 @@ EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
     if (node.HistoricalOrigin())
     {
         const EditorHistoricalOriginMetadata& origin = *node.HistoricalOrigin();
+        properties.Add(MakeProperty("historical.scene_name",
+            "Source Scene", EditorPropertyType::ReadOnlyText,
+            origin.sourceSceneName, true,
+            "Original scene filename only; absolute paths are never retained."));
         properties.Add(MakeProperty("historical.class_id",
             "Historical Class ID", EditorPropertyType::ReadOnlyText,
             std::to_string(origin.sourceClassId), true,
@@ -113,6 +119,11 @@ EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
             "Historical Source Offset", EditorPropertyType::ReadOnlyText,
             std::to_string(origin.sourceOffset), true,
             "Original source byte offset retained as inert provenance."));
+        properties.Add(MakeProperty("historical.stable_id",
+            "Stable Historical ID", EditorPropertyType::ReadOnlyText,
+            origin.sourceStableRecordId.empty() ? "not retained" :
+                origin.sourceStableRecordId, true,
+            "Immutable source-record identity retained as provenance."));
         properties.Add(MakeProperty("historical.decode_status",
             "Historical Decode Status", EditorPropertyType::ReadOnlyText,
             origin.decodeStatus, true, "Specialized decoder result."));

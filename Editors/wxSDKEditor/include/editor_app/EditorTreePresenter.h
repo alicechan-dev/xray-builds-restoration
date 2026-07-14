@@ -50,6 +50,9 @@ public:
         const EditorHistoricalConversionOptions& options,
         EditorHistoricalConversionReport& report,
         std::string* reason = nullptr);
+    bool HasHistoricalConversionSummary() const;
+    bool GetHistoricalConversionSummary(std::string& summary,
+        std::string* reason = nullptr) const;
     EditorDocumentMode GetDocumentMode() const { return mode_; }
     bool IsReadOnly() const
     { return mode_ == EditorDocumentMode::HistoricalSceneReadOnly; }

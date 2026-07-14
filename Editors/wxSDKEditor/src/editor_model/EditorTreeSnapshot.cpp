@@ -1,6 +1,7 @@
 #include "editor_model/EditorTreeSnapshot.h"
 
 #include "editor_model/EditorTreeModel.h"
+#include "editor_scene/EditorHistoricalOriginVerifier.h"
 
 #include <fstream>
 #include <cmath>
@@ -16,7 +17,7 @@ constexpr const char* SnapshotHeaderV2 = "# wxSDKEditor tree snapshot v2";
 constexpr const char* SnapshotHeaderV3 = "# wxSDKEditor tree snapshot v3";
 constexpr const char* SnapshotHeaderV4 = "# wxSDKEditor tree snapshot v4";
 constexpr const char* SnapshotHeaderV5 = "# wxSDKEditor tree snapshot v5";
-constexpr std::streamoff MaximumSnapshotSize = 8 * 1024 * 1024;
+constexpr std::streamoff MaximumSnapshotSize = 32 * 1024 * 1024;
 
 bool Fail(std::string* reason, const std::string& message)
 {
@@ -59,7 +60,8 @@ void SerializeNode(const EditorTreeNode& node, unsigned int depth,
     else
     {
         const EditorHistoricalOriginMetadata& origin = *node.HistoricalOrigin();
-        output += " origin=\"historical\" scene_version=" +
+        output += " origin=\"historical\" scene_name=\"" +
+            Escape(origin.sourceSceneName) + "\" scene_version=" +
             std::to_string(origin.sourceSceneVersion) +
             " class_id=" + std::to_string(origin.sourceClassId) +
             " object_index=" + std::to_string(origin.sourceObjectIndex) +
@@ -160,6 +162,30 @@ bool ParseQuoted(const std::string& line, std::size_t& position, std::string& va
     return false;
 }
 
+bool ParseOptionalExtensions(const std::string& line, std::size_t& position)
+{
+    std::size_t count = 0;
+    while (position < line.size())
+    {
+        if (++count > 16 || !Consume(line, position, " x_"))
+            return false;
+        const std::size_t nameBegin = position;
+        while (position < line.size() &&
+            ((line[position] >= 'a' && line[position] <= 'z') ||
+             (line[position] >= 'A' && line[position] <= 'Z') ||
+             (line[position] >= '0' && line[position] <= '9') ||
+             line[position] == '_'))
+            ++position;
+        if (position == nameBegin || position >= line.size() ||
+            line[position++] != '=')
+            return false;
+        std::string ignored;
+        if (!ParseQuoted(line, position, ignored) || ignored.size() > 512)
+            return false;
+    }
+    return true;
+}
+
 bool ParseNodeLine(const std::string& line, unsigned int& depth,
     bool hasKind, bool hasTransform, bool hasAsset, bool hasOrigin,
     EditorItemKind& kind, std::string& label,
@@ -222,6 +248,14 @@ bool ParseNodeLine(const std::string& line, unsigned int& depth,
     std::string dispositionText;
     EditorHistoricalOriginMetadata origin;
     std::string previewSize;
+    if (line.compare(position, 12, " scene_name=") == 0)
+    {
+        if (!Consume(line, position, " scene_name=") ||
+            !ParseQuoted(line, position, origin.sourceSceneName))
+            return false;
+    }
+    else
+        origin.sourceSceneName = "unknown.level";
     if (!Consume(line, position, " scene_version=") ||
         !ParseUnsigned(line, position, sceneVersion) ||
         !Consume(line, position, " class_id=") ||
@@ -253,7 +287,8 @@ bool ParseNodeLine(const std::string& line, unsigned int& depth,
         !Consume(line, position, " has_preview_size=") ||
         !ParseUnsigned(line, position, hasPreviewSize) ||
         !Consume(line, position, " preview_size=") ||
-        !ParseQuoted(line, position, previewSize) || position != line.size() ||
+        !ParseQuoted(line, position, previewSize) ||
+        !ParseOptionalExtensions(line, position) ||
         sceneVersion > std::numeric_limits<std::uint32_t>::max() ||
         classId > std::numeric_limits<std::uint32_t>::max() ||
         objectIndex > std::numeric_limits<std::size_t>::max() ||
@@ -285,6 +320,9 @@ bool SerializeEditorTreeSnapshot(
 {
     if (!model.Root())
         return Fail(reason, "The tree model has no root node.");
+    EditorHistoricalOriginIntegrityResult integrity;
+    if (!VerifyEditorHistoricalOrigins(model, integrity, reason))
+        return false;
 
     output = std::string(SnapshotHeaderV5) + "\n";
     SerializeNode(*model.Root(), 0, output);
@@ -372,6 +410,10 @@ bool DeserializeEditorTreeSnapshot(
     if (!parsed.Root())
         return Fail(reason, "The snapshot contains no nodes.");
 
+    EditorHistoricalOriginIntegrityResult integrity;
+    if (!VerifyEditorHistoricalOrigins(parsed, integrity, reason))
+        return false;
+
     model = std::move(parsed);
     if (reason)
         reason->clear();
@@ -404,7 +446,7 @@ bool LoadEditorTreeSnapshot(EditorTreeModel& model,
         return Fail(reason, "Could not open the snapshot for reading.");
     const std::streamoff size = file.tellg();
     if (size < 0 || size > MaximumSnapshotSize)
-        return Fail(reason, "The snapshot size is invalid or exceeds 8 MiB.");
+        return Fail(reason, "The snapshot size is invalid or exceeds 32 MiB.");
     file.seekg(0);
 
     std::string snapshot(static_cast<std::size_t>(size), '\0');

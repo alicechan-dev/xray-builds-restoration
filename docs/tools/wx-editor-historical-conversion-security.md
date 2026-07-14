@@ -26,3 +26,9 @@ write. Only a later explicit `.wx_tree_snapshot` Save As writes a file.
 The security boundary prohibits `.level` saving/export, packet parsing,
 attachment copying, unknown-body retention, asset loading, factory calls,
 scripts, historical/runtime object construction, and source sidecars/caches.
+
+Snapshot-v5 origin records are checked at save/load boundaries. Structural
+corruption, duplicate IDs, invalid dispositions/classes, oversized fields, and
+non-allowlisted opaque markers fail atomically. Optional summaries may be
+empty; bounded `x_*` extensions are ignored. See [Converted Document
+Validation](wx-editor-converted-document-validation.md).

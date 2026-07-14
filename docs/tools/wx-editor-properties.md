@@ -107,3 +107,9 @@ remains disabled and no resource or historical light is created.
 Decoded class-6 Spawn Points expose subtype, inert section, opaque
 packet/attachment sizes, safe respawn/environment values, raw colors/flags,
 retained counts, and provenance without factory or config resolution.
+
+Converted editable properties are visually grouped under `Editable` and
+`Historical Origin - Read-Only`. Apply submits only Label and Category from
+the editable controls. Source scene filename, class, original name, index,
+offset, stable ID, status, disposition, references, and warnings are display
+only.

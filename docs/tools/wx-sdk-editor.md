@@ -424,3 +424,9 @@ asset is loaded. See [Class Inventory](wx-editor-scene-class-inventory.md),
 [Glow Decoder](wx-editor-historical-glow.md),
 [Light Decoder](wx-editor-historical-light.md), and
 [Spawn Point Decoder](wx-editor-historical-spawn-point.md).
+
+The conversion stabilization checkpoint adds wx-free origin verification and
+statistics, deterministic snapshot-v5 round trips, a 20,000-node stress test,
+origin-first preview semantics, read-only property grouping, and `Tools ->
+Historical Conversion Summary...`. No minor decoder, `.level` writer, runtime
+asset loading, or historical editor linkage was added.

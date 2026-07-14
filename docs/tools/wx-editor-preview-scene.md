@@ -84,3 +84,8 @@ Historical preview uses a separate adapter. It emits generic boxes only for
 finite confirmed transforms and identifies them by stable record ID, so
 duplicate names remain distinct. Unconfirmed transforms stay in the tree but
 are omitted from preview. See [Historical Preview](wx-editor-historical-preview.md).
+
+Converted preview precedence is historical origin class first, then asset ID,
+then editable category. Consequently a category edit cannot erase the Glow,
+Light, Spawn Point, SceneObject box, or unsupported-placeholder diagnostic.
+New synthetic nodes continue to use asset/category behavior.

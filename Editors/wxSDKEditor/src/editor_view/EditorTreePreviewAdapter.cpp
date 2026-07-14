@@ -19,6 +19,20 @@ std::string Lower(std::string value)
 
 EditorPreviewKind KindFor(const EditorTreeNode& node)
 {
+    if (node.HistoricalOrigin())
+    {
+        const EditorHistoricalOriginMetadata& origin = *node.HistoricalOrigin();
+        if (origin.placeholder)
+            return EditorPreviewKind::Unknown;
+        switch (origin.sourceClassId)
+        {
+        case 1u: return EditorPreviewKind::Glow;
+        case 2u: return EditorPreviewKind::Box;
+        case 3u: return EditorPreviewKind::Light;
+        case 6u: return EditorPreviewKind::Spawn;
+        default: return EditorPreviewKind::Unknown;
+        }
+    }
     if (!node.AssetId().empty())
     {
         if (IsImportedAssetId(node.AssetId()))

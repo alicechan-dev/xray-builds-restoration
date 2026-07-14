@@ -81,3 +81,7 @@ priority over another minor decoder.
 
 The later class-6 Spawn Point branch is independent and leaves Light parsing,
 properties, and preview behavior unchanged.
+
+Converted Light provenance now survives editable command history and v5
+round trips. Its diagnostic remains Light-class-driven even when the editable
+category changes; fuzzy payload bytes remain excluded.

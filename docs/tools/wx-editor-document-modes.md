@@ -35,3 +35,7 @@ Class-2 specialized bodies may expose audited inert metadata; unknown classes
 and unsupported child chunks remain explicit inventory.
 This does not make `HistoricalSceneReadOnly` editable and does not add a scene
 save/export path.
+
+After explicit conversion the mode is `EditableSnapshot`. Normal commands are
+available, historical provenance is read-only, and the document still cannot
+be saved or exported as `.level`.

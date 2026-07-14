@@ -50,3 +50,9 @@ command type.
 Imported prototype placement uses the same command. Catalog load/clear and
 asset selection are session UI state and never enter history. Clearing the
 catalog does not invalidate undo/redo for already placed imported markers.
+
+Converted-node history is snapshot-backed. Headless stress covers chained
+rename, move, and transform undo/redo plus historical Light deletion and
+restoration. Node-owned origin metadata remains byte-stable through those
+operations; newly added nodes have no origin. A Derived Copy policy is deferred
+because no duplicate command exists.

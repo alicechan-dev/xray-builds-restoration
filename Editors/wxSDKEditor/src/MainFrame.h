@@ -88,6 +88,8 @@ private:
     void OnAddDemoGroup(wxCommandEvent& event);
     void OnAddDemoObject(wxCommandEvent& event);
     void OnAdapterStatus(wxCommandEvent& event);
+    void OnHistoricalConversionSummary(wxCommandEvent& event);
+    void OnUpdateHistoricalConversionSummary(wxUpdateUIEvent& event);
     void OnDeleteSelected(wxCommandEvent& event);
     void OnMoveSelected(wxCommandEvent& event);
     void OnImportPathList(wxCommandEvent& event);

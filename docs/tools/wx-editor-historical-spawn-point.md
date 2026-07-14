@@ -84,3 +84,7 @@ prototype workflow. It cannot place, edit, save, or export historical spawn
 records. With classes 1, 2, 3, and 6 decoded, 21,990 of 22,767 observed records
 (96.6%) have specialized read-only coverage. The next migration stage should
 stabilize this four-class document/model boundary before adding minor classes.
+
+Converted Spawn Point markers retain class-first preview semantics after
+editable category/transform changes. Packet and attachment bytes remain absent;
+only allowlisted bounded byte-count summaries may enter snapshot provenance.

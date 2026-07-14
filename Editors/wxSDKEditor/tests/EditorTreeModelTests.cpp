@@ -10,8 +10,11 @@
 #include "editor_scene/EditorHistoricalSceneConverter.h"
 #include "editor_scene/EditorHistoricalConversionReport.h"
 #include "editor_scene/EditorHistoricalSceneDocument.h"
+#include "editor_scene/EditorHistoricalOriginVerifier.h"
+#include "editor_app/EditorDocument.h"
 
 #include <iostream>
+#include <limits>
 #include <cmath>
 #include <algorithm>
 #include <cstring>
@@ -483,6 +486,11 @@ int AuditScenes(const std::filesystem::path& root)
     std::size_t conversionWithoutTransforms = 0;
     std::size_t conversionSnapshotBytes = 0;
     std::size_t conversionMaximumSnapshotBytes = 0;
+    std::size_t conversionMinimumSnapshotBytes =
+        std::numeric_limits<std::size_t>::max();
+    std::size_t reloadFailures = 0;
+    std::size_t originIntegrityFailures = 0;
+    std::size_t semanticEquivalenceFailures = 0;
     std::map<std::uint32_t, EditorHistoricalConversionClassCount>
         conversionClasses;
     for (const std::filesystem::path& scene : scenes)
@@ -535,13 +543,59 @@ int AuditScenes(const std::filesystem::path& root)
         EditorHistoricalSceneDocument historical;
         EditorHistoricalConversionReport conversion;
         EditorHistoricalConversionOptions options;
-        if (!historical.BuildFromManifest(std::move(manifest), &reason) ||
-            !DryRunHistoricalSceneConversion(
-                historical, options, conversion, &reason))
+        if (!historical.BuildFromManifest(std::move(manifest), &reason))
         {
             ++conversionFailures;
-            std::cerr << "Conversion dry-run failed for "
+            std::cerr << "Conversion source build failed for "
                 << scene.filename().string() << ": " << reason << '\n';
+            continue;
+        }
+        EditorDocument editable;
+        if (!ConvertHistoricalSceneToEditableDocument(
+            historical, options, editable, conversion, &reason))
+        {
+            ++conversionFailures;
+            std::cerr << "Conversion failed for " << scene.filename().string()
+                << ": " << reason << '\n';
+            continue;
+        }
+        EditorHistoricalOriginIntegrityResult beforeIntegrity;
+        if (!VerifyEditorHistoricalOrigins(
+            editable.Model(), beforeIntegrity, &reason))
+        {
+            ++originIntegrityFailures;
+            std::cerr << "Origin verification failed for "
+                << scene.filename().string() << ": " << reason << '\n';
+            continue;
+        }
+        std::string snapshotA;
+        EditorTreeModel reloaded;
+        std::string snapshotB;
+        if (!SerializeEditorTreeSnapshot(
+                editable.Model(), snapshotA, &reason) ||
+            !DeserializeEditorTreeSnapshot(reloaded, snapshotA, &reason))
+        {
+            ++reloadFailures;
+            std::cerr << "Snapshot reload failed for "
+                << scene.filename().string() << ": " << reason << '\n';
+            continue;
+        }
+        EditorHistoricalOriginIntegrityResult afterIntegrity;
+        if (!VerifyEditorHistoricalOrigins(reloaded, afterIntegrity, &reason))
+        {
+            ++originIntegrityFailures;
+            std::cerr << "Reloaded origin verification failed for "
+                << scene.filename().string() << ": " << reason << '\n';
+            continue;
+        }
+        if (!SerializeEditorTreeSnapshot(reloaded, snapshotB, &reason) ||
+            snapshotA != snapshotB ||
+            beforeIntegrity.nodeCount != afterIntegrity.nodeCount ||
+            beforeIntegrity.originNodeCount != afterIntegrity.originNodeCount)
+        {
+            ++semanticEquivalenceFailures;
+            std::cerr << "Snapshot equivalence failed for "
+                << scene.filename().string() << '\n';
             continue;
         }
         ++convertibleScenes;
@@ -550,10 +604,12 @@ int AuditScenes(const std::filesystem::path& root)
         conversionPlaceholders += conversion.placeholderConverted;
         conversionSkipped += conversion.skipped;
         conversionWithoutTransforms += conversion.recordsWithoutTransforms;
-        conversionSnapshotBytes += conversion.estimatedSnapshotBytes;
+        conversionSnapshotBytes += snapshotA.size();
+        conversionMinimumSnapshotBytes = (std::min)(
+            conversionMinimumSnapshotBytes, snapshotA.size());
         conversionMaximumSnapshotBytes = (std::max)(
             conversionMaximumSnapshotBytes,
-            conversion.estimatedSnapshotBytes);
+            snapshotA.size());
         for (const EditorHistoricalConversionClassCount& sourceCount :
             conversion.perClass)
         {
@@ -571,8 +627,11 @@ int AuditScenes(const std::filesystem::path& root)
     std::cout << "scene_files=" << scenes.size() << '\n'
         << "objects=" << totalObjects << '\n'
         << "diagnostics=" << totalDiagnostics << '\n'
-        << "conversion_dry_run scenes_convertible=" << convertibleScenes
+        << "conversion_round_trip scenes_passed=" << convertibleScenes
         << " validation_failures=" << conversionFailures
+        << " reload_failures=" << reloadFailures
+        << " origin_integrity_failures=" << originIntegrityFailures
+        << " semantic_equivalence_failures=" << semanticEquivalenceFailures
         << " full=" << conversionFull
         << " partial=" << conversionPartial
         << " placeholders=" << conversionPlaceholders
@@ -581,6 +640,8 @@ int AuditScenes(const std::filesystem::path& root)
         << " estimated_nodes=" <<
             (conversionFull + conversionPartial + conversionPlaceholders)
         << " snapshot_bytes=" << conversionSnapshotBytes
+        << " min_scene_snapshot_bytes=" <<
+            (convertibleScenes ? conversionMinimumSnapshotBytes : 0)
         << " max_scene_snapshot_bytes=" << conversionMaximumSnapshotBytes
         << '\n';
     for (const auto& item : conversionClasses)
@@ -789,6 +850,7 @@ int RunEditorSceneCompressionTests();
 int RunEditorHistoricalSceneDocumentTests();
 int RunEditorHistoricalObjectBodyDecoderTests();
 int RunEditorHistoricalSceneConversionTests();
+int RunEditorHistoricalOriginIntegrityTests();
 
 int main(int argc, char** argv)
 {
@@ -1344,6 +1406,7 @@ int main(int argc, char** argv)
     failures += RunEditorHistoricalSceneDocumentTests();
     failures += RunEditorHistoricalObjectBodyDecoderTests();
     failures += RunEditorHistoricalSceneConversionTests();
+    failures += RunEditorHistoricalOriginIntegrityTests();
 
     if (failures)
     {
