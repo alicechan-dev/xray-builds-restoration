@@ -1,6 +1,7 @@
 #include "editor_scene/EditorHistoricalSceneProbe.h"
 
 #include "editor_scene/EditorBinaryReader.h"
+#include "editor_scene/EditorHistoricalObjectBodyDecoder.h"
 
 #include <fstream>
 #include <iomanip>
@@ -271,6 +272,24 @@ private:
                 if (bodySeen)
                     return Fail(chunk.headerOffset, "duplicate object body chunk");
                 bodySeen = true;
+                if (chunk.payload.Size() > limits_.maximumObjectBodySize)
+                    return Fail(chunk.headerOffset,
+                        "object body exceeds retained-size limit");
+                if (retainedBodyBytes_ >
+                        limits_.maximumTotalRetainedBodyBytes ||
+                    chunk.payload.Size() >
+                        limits_.maximumTotalRetainedBodyBytes - retainedBodyBytes_)
+                    return Fail(chunk.headerOffset,
+                        "scene retained object-body byte budget exceeded");
+                object.bodyChunkPath = childPath;
+                object.bodyHeaderOffset = chunk.headerOffset;
+                object.bodyDataOffset = chunk.dataOffset;
+                object.bodyBytes.resize(chunk.payload.Size());
+                EditorBinaryReader bodyCopy = chunk.payload;
+                if (!object.bodyBytes.empty() && !bodyCopy.ReadBytes(
+                    object.bodyBytes.data(), object.bodyBytes.size()))
+                    return ReaderFail(bodyCopy);
+                retainedBodyBytes_ += object.bodyBytes.size();
                 if (!ParseObjectBody(chunk.payload, childPath, depth + 1,
                     object, ChildContext(source, chunk)))
                     return false;
@@ -285,6 +304,8 @@ private:
             AddDiagnostic(object.sourceOffset, "object class " +
                 std::to_string(object.classId) + " differs from tool class " +
                 std::to_string(toolClass));
+        object.bodyDecode = DecodeHistoricalObjectBody(object.classId,
+            object.bodyBytes, object.bodyDataOffset, object.bodyChunkPath);
         manifest_.objects.push_back(std::move(object));
         return true;
     }
@@ -490,6 +511,7 @@ private:
     EditorSceneManifest& manifest_;
     std::string* reason_ = nullptr;
     std::size_t totalDecompressedBytes_ = 0;
+    std::size_t retainedBodyBytes_ = 0;
 };
 }
 

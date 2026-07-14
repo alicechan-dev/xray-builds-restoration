@@ -134,6 +134,51 @@ int RunEditorHistoricalSceneDocumentTests()
         preview.SelectedPath() == objects[1].stableRecordId,
         "preview includes only confirmed transforms with stable identities");
 
+    EditorSceneManifest decodedManifest;
+    decodedManifest.sourceFile = "decoded.level";
+    decodedManifest.version = 5;
+    decodedManifest.hasVersion = true;
+    EditorSceneObjectRecord decoded = Object(11, 500, "decoded_crate", true);
+    decoded.classId = 2;
+    decoded.bodyDecode.status = EditorHistoricalObjectDecodeStatus::Supported;
+    decoded.bodyDecode.typeName = "Scene Object";
+    decoded.bodyDecode.hasBodyVersion = true;
+    decoded.bodyDecode.bodyVersion = 0x0011;
+    decoded.bodyDecode.hasSceneObject = true;
+    decoded.bodyDecode.sceneObject.version = 0x0011;
+    decoded.bodyDecode.sceneObject.referenceVersion = 17;
+    decoded.bodyDecode.sceneObject.referenceName = "objects\\crate";
+    decodedManifest.objects.push_back(decoded);
+    EditorSceneObjectRecord malformed = Object(12, 600, "damaged", true);
+    malformed.classId = 2;
+    malformed.bodyDecode.status = EditorHistoricalObjectDecodeStatus::Malformed;
+    malformed.bodyDecode.typeName = "Scene Object";
+    malformed.bodyDecode.diagnostics.push_back("truncated reference");
+    decodedManifest.objects.push_back(malformed);
+
+    EditorHistoricalSceneDocument decodedDocument;
+    check(decodedDocument.BuildFromManifest(decodedManifest, &reason) &&
+        decodedDocument.Objects().size() == 2 &&
+        decodedDocument.Objects()[0].bodySupported &&
+        !decodedDocument.Objects()[1].bodySupported &&
+        decodedDocument.Objects()[1].diagnosticsSummary.find("truncated") !=
+            std::string::npos,
+        "decoded and malformed specialized bodies preserve generic records");
+    const EditorPropertySet decodedProperties =
+        BuildHistoricalSceneObjectPropertySet(decodedDocument.Objects()[0]);
+    check(decodedProperties.Find("decode_status") &&
+        decodedProperties.Find("decode_status")->value == "Supported" &&
+        decodedProperties.Find("scene_object.reference") &&
+        decodedProperties.Find("scene_object.reference")->value ==
+            "objects\\crate",
+        "scene-object fields appear as read-only historical properties");
+    const EditorPreviewScene decodedPreview = BuildHistoricalScenePreview(
+        decodedDocument, {});
+    check(decodedPreview.GetObjects().size() == 2 &&
+        decodedPreview.GetObjects()[0].label.find("objects\\crate") !=
+            std::string::npos,
+        "scene-object reference augments the conservative generic preview label");
+
     const std::string preservedId = document.Objects()[0].stableRecordId;
     EditorSceneManifest invalid = Manifest();
     invalid.version = 4;

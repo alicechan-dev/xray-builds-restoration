@@ -401,5 +401,8 @@ Preview](wx-editor-historical-preview.md), and [Document
 Modes](wx-editor-document-modes.md).
 The historical read-only path now understands source-confirmed X-Ray LZHUF
 chunk compression using a dependency-light wx-free decoder. Scene Inspector
-shows compression provenance and failures. No decompressed data is written and
-specialized object bodies remain unsupported.
+shows compression provenance and failures. No decompressed data is written.
+The first specialized decoder now reads only source-confirmed `CSceneObject`
+version/reference/flags into inert records; all other classes remain generic
+and references are never resolved. See [Class Inventory](wx-editor-scene-class-inventory.md)
+and [Scene Object Decoder](wx-editor-historical-scene-object.md).

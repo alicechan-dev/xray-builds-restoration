@@ -74,6 +74,14 @@ Bytes ValidScene(bool includeObject = true)
         1.0f, 1.5f, 2.0f})
         Float(transform, value);
     Bytes body;
+    Bytes objectVersion;
+    U16(objectVersion, 0x0011);
+    Bytes objectReference;
+    U32(objectReference, 7);
+    U32(objectReference, 0);
+    CString(objectReference, "objects\\actor_marker");
+    Append(body, Chunk(0x0900, objectVersion));
+    Append(body, Chunk(0x0902, objectReference));
     Append(body, Chunk(0xf907, name));
     Append(body, Chunk(0xf903, transform));
     Append(body, Chunk(0xabcd, {1, 2, 3}));
@@ -149,9 +157,13 @@ int RunEditorSceneProbeTests()
         manifest.objects[0].position[0] == 1.0f &&
         manifest.objects[0].rotation[2] == 0.3f &&
         manifest.objects[0].scale[1] == 1.5f &&
-        manifest.unknownChunkCount == 1,
+        manifest.unknownChunkCount == 3 &&
+        manifest.objects[0].bodyDecode.status ==
+            EditorHistoricalObjectDecodeStatus::Partial &&
+        manifest.objects[0].bodyDecode.sceneObject.referenceName ==
+            "objects\\actor_marker",
         "confirmed class, name, transform, and unknown chunk inventory");
-    check(manifest.chunks.size() == 11 &&
+    check(manifest.chunks.size() == 13 &&
         manifest.chunks[0].path == "0x00009DF3" &&
         manifest.chunks.back().path.find("0x0000ABCD") != std::string::npos,
         "deterministic nested chunk paths and ordering");

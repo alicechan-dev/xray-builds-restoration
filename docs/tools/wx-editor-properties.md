@@ -82,3 +82,8 @@ Historical mode supplies a separate all-read-only property set containing
 source name, stable record ID, record index, class ID, complete confirmed
 transform, confirmation/support flags, chunk path, source offset, scene
 version, and diagnostics. Apply is disabled and presenter mutation is rejected.
+
+Decoded class-2 records additionally expose historical type, decode status,
+body version, inert reference name/version/reserved value, flags, and retained
+unknown/unsupported chunk counts. These fields are always read-only and never
+trigger reference loading.

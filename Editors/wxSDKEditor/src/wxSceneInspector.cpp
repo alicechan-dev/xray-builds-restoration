@@ -98,7 +98,9 @@ void wxSceneInspector::SetManifest(const EditorSceneManifest& manifest)
     {
         const EditorSceneObjectRecord& object = manifest_.objects[index];
         std::string label = "#" + std::to_string(object.recordIndex) +
-            " class " + std::to_string(object.classId);
+            " class " + std::to_string(object.classId) + " " +
+            object.bodyDecode.typeName + " [" +
+            ToString(object.bodyDecode.status) + "]";
         if (object.hasName)
             label += " " + object.name;
         tree_->AppendItem(objects, wxString::FromUTF8(label), -1, -1,
@@ -177,6 +179,8 @@ void wxSceneInspector::OnSelectionChanged(wxTreeEvent& event)
         const EditorSceneObjectRecord& object = manifest_.objects[data->index];
         output << "Record index: " << object.recordIndex << '\n'
             << "Class ID: " << object.classId << '\n'
+            << "Historical type: " << object.bodyDecode.typeName << '\n'
+            << "Decode status: " << ToString(object.bodyDecode.status) << '\n'
             << "Name: " << (object.hasName ? object.name : "not present")
             << "\nSource offset: " << object.sourceOffset << '\n'
             << "Chunk path: " << object.chunkPath;
@@ -195,6 +199,27 @@ void wxSceneInspector::OnSelectionChanged(wxTreeEvent& event)
         }
         else
             output << "\nTransform: not present";
+        if (object.bodyDecode.hasBodyVersion)
+            output << "\nBody version: " << object.bodyDecode.bodyVersion;
+        if (object.bodyDecode.hasSceneObject)
+        {
+            const EditorHistoricalSceneObjectBodyRecord& sceneObject =
+                object.bodyDecode.sceneObject;
+            output << "\nReference: " << sceneObject.referenceName
+                << "\nReference version: " << sceneObject.referenceVersion
+                << "\nReference reserved: " << sceneObject.referenceReserved
+                << "\nScene-object flags: ";
+            if (sceneObject.hasFlags)
+                output << Hex(sceneObject.flags);
+            else
+                output << "not present";
+            output << "\nUnknown body chunks: "
+                << object.bodyDecode.unknownChunks.size()
+                << "\nRetained unsupported chunks: "
+                << object.bodyDecode.unsupportedChunks.size();
+        }
+        for (const std::string& diagnostic : object.bodyDecode.diagnostics)
+            output << "\nDecoder diagnostic: " << diagnostic;
     }
     else if (data->kind == InspectorItemKind::Diagnostics)
     {

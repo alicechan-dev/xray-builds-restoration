@@ -253,3 +253,7 @@ through `EditorTreeModel`, properties, selection, and preview without old
 LevelEditor compatibility implementation.
 Scene compression support is independent of ElPack/VCL migration. It decodes
 only inert chunk bytes and does not construct old editor objects or controls.
+
+The class-2 scene-object decoder is likewise a wx-free data transplant, not an
+ElPack bridge. It does not call `ItemListHelper`, `FolderLib`, old factories,
+or object-library UI. Historical Borland/VCL sources remain untouched.

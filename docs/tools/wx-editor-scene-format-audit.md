@@ -38,9 +38,10 @@ reader:
 - `0x0000F907`: zero-terminated object name;
 - `0x0000F903`: position, rotation, and scale as nine 32-bit floats.
 
-All other chunks remain inventory records. The reader does not recursively
-interpret an unknown payload, resolve a class factory, or load referenced
-assets.
+All other common chunks remain inventory records. A separate audited
+dispatcher now decodes only class ID 2 (`CSceneObject`) specialized fields;
+unknown classes remain generic. It never resolves a class factory or loads a
+referenced asset.
 
 ## Evidence Ladder
 
@@ -50,13 +51,14 @@ assets.
 3. Common object names.
 4. Common transforms.
 
-Advancing beyond this ladder requires a separate source audit. In particular,
-the current probe does not support compressed scene containers, specialized
-tool classes, object-specific bodies, or historical save/write behavior.
+5. Source-audited class-2 body version, inert reference, and flags.
 
-The read-only historical document consumes only levels 2 through 4 of this
-evidence ladder. It does not broaden parsing or treat specialized bodies as
-supported. See [Historical Scene Document](wx-editor-historical-document.md).
+Every further class still requires a separate source audit. The current probe
+does not support historical save/write behavior or speculative body layouts.
+
+The read-only historical document consumes levels 2 through 5. Only class 2
+currently reaches level 5; every other specialized body remains generic. See
+[Historical Scene Document](wx-editor-historical-document.md).
 ## Confirmed compression
 
 Bit 31 is `CFS_CompressMark`. Historical `IWriter::w_chunk` and
@@ -64,3 +66,6 @@ Bit 31 is `CFS_CompressMark`. Historical `IWriter::w_chunk` and
 `_decompressLZ` in `xrCore/LzHuf.cpp`. The payload is a little-endian `u32`
 output size followed by X-Ray LZHUF (LZSS plus adaptive Huffman), not LZO.
 See [wx-editor-scene-compression.md](wx-editor-scene-compression.md).
+
+The real-scene class frequencies, source mapping, and candidate ranking are in
+[Historical Scene Class Inventory](wx-editor-scene-class-inventory.md).

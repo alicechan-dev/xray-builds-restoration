@@ -630,11 +630,23 @@ Confirmed manifest records now have a separate, wx-free historical document
 with stable provenance identity, read-only selection/properties, and a generic
 confirmed-transform preview. This is the first direct historical scene-record
 transplant into the new UI, but not scene editing: save, mutation, history,
-factories, specialized bodies, compression decoding, and referenced assets
-remain out of scope. Editable snapshot behavior remains a separate mode.
+factories, unaudited specialized bodies, and referenced assets remain out of
+scope. Editable snapshot behavior remains a separate mode.
 - Completed: bounded wx-free X-Ray LZHUF decoding for compressed historical
   scene chunks, including inspector provenance, bomb limits, nested policy,
   synthetic tests, and inert historical-document conversion.
-- Remaining: specialized historical object-body decoding and referenced asset
+- Remaining: each additional historical object body and any referenced-asset
   interpretation require separate source-evidenced passes; scene editing and
   `.level` writing remain intentionally absent.
+
+## wxSDKEditor First Specialized Object Checkpoint
+
+A read-only aggregate audit mapped 22,767 wrappers in 17 lawful scenes to the
+canonical build-1935 class enum and serializers. Class 2 `CSceneObject` was
+selected by frequency and format clarity. A wx-free bounded dispatcher now
+decodes its version, inert object-library reference metadata, and flags without
+resolving the reference. Of 15,416 sampled class-2 bodies, 15,412 are Supported
+and four are Partial because motion chunks remain bounded inventory. Unknown
+classes stay generic and malformed specialized decoding preserves the wrapper.
+Glow (class 1) is the recommended next isolated decoder; scene editing,
+factories, asset loading, and writes remain out of scope.

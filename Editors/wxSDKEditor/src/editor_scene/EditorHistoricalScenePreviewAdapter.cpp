@@ -11,8 +11,12 @@ EditorPreviewScene BuildHistoricalScenePreview(
     {
         if (!object.transformConfirmed)
             continue;
-        scene.AddObject({object.stableRecordId,
-            object.sourceName.empty() ? object.stableRecordId : object.sourceName,
+        std::string label = object.sourceName.empty()
+            ? object.stableRecordId : object.sourceName;
+        if (object.bodyDecode.hasSceneObject &&
+            !object.bodyDecode.sceneObject.referenceName.empty())
+            label += " [" + object.bodyDecode.sceneObject.referenceName + "]";
+        scene.AddObject({object.stableRecordId, label,
             object.transform.x, object.transform.y, object.transform.z,
             1.0f, 1.0f, 1.0f, EditorPreviewKind::Box});
     }

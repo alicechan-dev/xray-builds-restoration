@@ -5,6 +5,7 @@
 #include "editor_model/EditorTransform.h"
 #include "editor_model/EditorTreeModel.h"
 #include "editor_scene/EditorSceneManifest.h"
+#include "editor_scene/objects/EditorHistoricalSceneObjectRecord.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -22,6 +23,7 @@ struct EditorHistoricalSceneObjectData
     EditorTransform transform;
     bool transformConfirmed = false;
     bool bodySupported = false;
+    EditorHistoricalObjectBodyDecodeResult bodyDecode;
     std::string chunkPath;
     std::size_t sourceOffset = 0;
     bool fromDecompressedPayload = false;

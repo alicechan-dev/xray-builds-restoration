@@ -8,8 +8,8 @@ The probe:
 
 - opens only the file selected by the user and never scans a runtime tree;
 - validates every chunk header and payload against its parent bounds;
-- caps file size, chunk count, nesting, object count, string length, and
-  retained diagnostics;
+- caps file size, chunk count, nesting, object count, retained body bytes,
+  specialized body chunks, string length, and retained diagnostics;
 - rejects unterminated strings and malformed confirmed records;
 - refuses compressed known scene/object containers instead of guessing a
   decompressor path;
@@ -17,7 +17,7 @@ The probe:
 - replaces the caller manifest only after complete success;
 - performs no writes and stores no source path in snapshots.
 
-It never constructs historical objects, follows referenced paths, invokes
+It never constructs historical objects, follows decoded reference paths, invokes
 scripts, loads plugins or libraries, opens archives, or decodes object-specific
 payloads. Unknown chunks are metadata, not executable or recursively trusted
 content. There is intentionally no raw-hex editor and no scene save path.
@@ -32,3 +32,8 @@ scene-budget, nesting, truncation, and trailing-data checks. See
 [wx-editor-scene-decompression-security.md](wx-editor-scene-decompression-security.md).
 The historical `_decompressLZ` implementation is not called directly because
 it allocates from the stream header and substitutes zero bits at EOF.
+
+The class-2 decoder rejects missing/duplicate required chunks, unsupported
+versions, truncated values, child-bound violations, oversized strings, and
+compressed specialized children. Unknown and motion chunks are bounded
+inventory only. A malformed specialized body preserves its generic wrapper.

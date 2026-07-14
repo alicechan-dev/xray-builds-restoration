@@ -62,6 +62,32 @@ EditorPropertySet BuildHistoricalSceneObjectPropertySet(
         object.transformConfirmed ? "true" : "false"));
     properties.Add(Property("body_supported", "Body Supported",
         object.bodySupported ? "true" : "false"));
+    properties.Add(Property("historical_type", "Historical Type",
+        object.bodyDecode.typeName));
+    properties.Add(Property("decode_status", "Decode Status",
+        ToString(object.bodyDecode.status)));
+    if (object.bodyDecode.hasBodyVersion)
+        properties.Add(Property("body_version", "Body Version",
+            Hex(object.bodyDecode.bodyVersion)));
+    if (object.bodyDecode.hasSceneObject)
+    {
+        const EditorHistoricalSceneObjectBodyRecord& sceneObject =
+            object.bodyDecode.sceneObject;
+        properties.Add(Property("scene_object.reference", "Reference Name",
+            sceneObject.referenceName));
+        properties.Add(Property("scene_object.reference_version",
+            "Reference Version", std::to_string(sceneObject.referenceVersion)));
+        properties.Add(Property("scene_object.reference_reserved",
+            "Reference Reserved", std::to_string(sceneObject.referenceReserved)));
+        properties.Add(Property("scene_object.flags", "Scene Object Flags",
+            sceneObject.hasFlags ? Hex(sceneObject.flags) : "not present"));
+        properties.Add(Property("scene_object.unknown_chunks",
+            "Unknown Body Chunks",
+            std::to_string(object.bodyDecode.unknownChunks.size())));
+        properties.Add(Property("scene_object.unsupported_chunks",
+            "Retained Unsupported Chunks",
+            std::to_string(object.bodyDecode.unsupportedChunks.size())));
+    }
     properties.Add(Property("source_chunk_path", "Source Chunk Path",
         object.chunkPath));
     properties.Add(Property("source_offset", "Source Offset",

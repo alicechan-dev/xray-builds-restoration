@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "editor_scene/objects/EditorHistoricalSceneObjectRecord.h"
+
 enum class EditorSceneDiagnosticSeverity { Information, Warning };
 
 struct EditorSceneDiagnostic
@@ -52,6 +54,11 @@ struct EditorSceneObjectRecord
     std::array<float, 3> scale{};
     bool hasTransform = false;
     std::string chunkPath;
+    std::string bodyChunkPath;
+    std::size_t bodyHeaderOffset = 0;
+    std::size_t bodyDataOffset = 0;
+    std::vector<std::uint8_t> bodyBytes;
+    EditorHistoricalObjectBodyDecodeResult bodyDecode;
     bool fromDecompressedPayload = false;
     std::size_t compressedSourceOffset = 0;
     std::size_t decompressedOffset = 0;

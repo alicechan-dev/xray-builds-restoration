@@ -18,6 +18,8 @@ struct EditorSceneProbeLimits
     std::size_t maximumObjects = 100000;
     std::size_t maximumStringLength = 4096;
     std::size_t maximumDiagnostics = 256;
+    std::size_t maximumObjectBodySize = 4u * 1024u * 1024u;
+    std::size_t maximumTotalRetainedBodyBytes = 128u * 1024u * 1024u;
     std::size_t maximumTotalDecompressedBytes = 512u * 1024u * 1024u;
     std::size_t maximumCompressedNestingDepth = 8;
     EditorSceneDecompressionLimits decompression;

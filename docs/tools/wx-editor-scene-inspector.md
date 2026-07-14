@@ -7,7 +7,8 @@ Inspector** pane shows:
 - format, version, file size, declared count, and confirmed object count;
 - the source-proved chunk hierarchy with IDs, labels, offsets, sizes, and the
   compression marker;
-- confirmed object class, name, source offset, chunk path, and transform;
+- confirmed object class, historical type/decode status, name, source offset,
+  chunk path, transform, and supported specialized fields;
 - retained warnings and format diagnostics.
 
 The pane starts hidden and can be toggled from **View > Scene Inspector**. Its
@@ -31,3 +32,7 @@ The read-only inspector summary reports compressed chunks, successful decodes,
 failures, compressed/decompressed byte totals, and algorithm. Chunk details
 show sizes, success, diagnostics, and decoded-source provenance. It never
 exports or writes decompressed payloads.
+
+For decoded class-2 records, object details show body version, inert reference
+metadata, flags, unknown/unsupported child counts, and decoder diagnostics.
+All values remain read-only; the inspector never resolves the reference.

@@ -322,7 +322,13 @@ Confirmed records may now open in an explicit historical read-only document
 mode. The wx tree, provenance properties, selection/query, and generic preview
 use stable record IDs; all mutation/history/save paths are disabled and
 defensively rejected. No `.level` write path or referenced-asset loading was
-added, and compressed/specialized contents remain unsupported.
+added. Compression and class-2 metadata are read-only; other specialized
+classes remain unsupported.
 - wxSDKEditor historical read-only scenes now decode bounded build-1935 X-Ray
   LZHUF chunks, retain compression provenance, and expose confirmed nested
   records without writing scenes or loading historical/runtime objects.
+- A deterministic audit of 17 lawful scenes confirmed 22,767 object wrappers.
+  The first specialized decoder supports class 2 `CSceneObject`: 15,412 bodies
+  are fully supported and four motion-bearing bodies are partial inventory.
+  Properties and Inspector expose inert reference/version/flags; preview stays
+  a generic box and no reference or asset is loaded.

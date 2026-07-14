@@ -47,6 +47,18 @@ std::string ClassCategory(std::uint32_t classId)
     return output.str();
 }
 
+std::string JoinDiagnostics(const std::vector<std::string>& diagnostics)
+{
+    std::string result;
+    for (const std::string& diagnostic : diagnostics)
+    {
+        if (!result.empty())
+            result += " ";
+        result += diagnostic;
+    }
+    return result;
+}
+
 bool IsFinite(const EditorSceneObjectRecord& object)
 {
     const auto finite = [](float value) { return std::isfinite(value); };
@@ -94,7 +106,11 @@ bool EditorHistoricalSceneDocument::BuildFromManifest(
             data.stableRecordId += ".decoded." +
                 std::to_string(source.decompressedOffset);
         data.transformConfirmed = source.hasTransform && IsFinite(source);
-        data.bodySupported = false;
+        data.bodyDecode = source.bodyDecode;
+        data.bodySupported = data.bodyDecode.status ==
+                EditorHistoricalObjectDecodeStatus::Supported ||
+            data.bodyDecode.status ==
+                EditorHistoricalObjectDecodeStatus::Partial;
         if (source.hasTransform)
         {
             data.transform.x = source.position[0];
@@ -112,6 +128,14 @@ bool EditorHistoricalSceneDocument::BuildFromManifest(
         }
         else
             data.diagnosticsSummary = "Common transform chunk not present.";
+        const std::string bodyDiagnostics = JoinDiagnostics(
+            data.bodyDecode.diagnostics);
+        if (!bodyDiagnostics.empty())
+        {
+            if (!data.diagnosticsSummary.empty())
+                data.diagnosticsSummary += " ";
+            data.diagnosticsSummary += bodyDiagnostics;
+        }
 
         const std::string baseLabel = data.sourceName.empty()
             ? "unnamed_object_" + std::to_string(data.objectIndex)
@@ -120,7 +144,9 @@ bool EditorHistoricalSceneDocument::BuildFromManifest(
         const std::string displayLabel = duplicate == 1 ? baseLabel
             : baseLabel + " [#" + std::to_string(duplicate) + "]";
         EditorTreeNode& node = candidate.model_.AddChild(objects, displayLabel,
-            ClassCategory(data.classId), EditorItemKind::Object);
+            data.bodyDecode.status == EditorHistoricalObjectDecodeStatus::Unsupported
+                ? ClassCategory(data.classId) : data.bodyDecode.typeName,
+            EditorItemKind::Object);
         if (data.transformConfirmed)
         {
             std::string transformReason;

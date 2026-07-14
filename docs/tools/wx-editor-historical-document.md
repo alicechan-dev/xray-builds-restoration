@@ -24,7 +24,8 @@ display label. Duplicate labels receive a display-only `[#N]` suffix.
 Stable identity is `historical.object.<record-index>.<source-offset>`. It does
 not depend on display or source name. Each provenance record retains class ID,
 source name, chunk path, offset, scene version, confirmed transform state, and
-the current unsupported-body status. No raw manifest-buffer pointers are kept.
+specialized decode result. Class-2 records also retain inert reference,
+version, flags, and field provenance. No raw manifest-buffer pointers are kept.
 
 Opening is atomic: probe and conversion failure leave the active editable or
 historical document unchanged. The document never saves, rewrites, normalizes,
@@ -35,3 +36,6 @@ converted through the same inert read-only path. Their identity and properties
 retain the physical compressed-container offset, decoded-stream offset, and
 chunk path. Failed compressed containers create no objects.
 
+The first specialized transplant supports `CSceneObject`: 15,412 sampled
+records decode fully and four motion-bearing records decode partially. Generic
+objects and malformed specialized bodies remain selectable and readable.

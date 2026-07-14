@@ -52,10 +52,10 @@ prints counts and byte totals only; it does not export payloads or assets.
 
 ## Current scope
 
-Successful decoding can reveal confirmed wrappers, names, classes, and
-transforms that were inside compressed containers. It does not decode
-specialized object bodies, instantiate historical objects, or load referenced
-assets. Since the format has no checksum, a corrupt stream that remains
+Successful decoding can reveal confirmed wrappers, names, classes, transforms,
+and source-audited class-2 bodies inside compressed containers. It does not
+instantiate historical objects or load referenced assets. Since the format has
+no checksum, a corrupt stream that remains
 structurally valid cannot be cryptographically authenticated.
 
 The current lawful local `stalker-dream/maps/koan/lvl01-16` set contains 17

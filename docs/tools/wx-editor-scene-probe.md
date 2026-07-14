@@ -14,7 +14,8 @@ produce or replace an `EditorDocument`.
   publishes a result after the whole probe succeeds.
 
 Default limits are 256 MiB per file, 250,000 chunks, 32 nesting levels,
-100,000 objects, 4,096 bytes per string, and 256 retained diagnostics. Parent
+100,000 objects, 4 MiB per retained object body, 128 MiB retained body bytes
+per scene, 4,096 bytes per string, and 256 retained diagnostics. Parent
 chunk bounds are enforced before every slice. Unsupported versions,
 truncation, malformed sizes, duplicate critical fields, and compressed known
 containers fail with an offset-bearing reason.
@@ -44,3 +45,8 @@ bounded decoder. It parses the decoded child buffer with the same chunk logic,
 retains compression provenance, and applies per-chunk, total-byte, ratio, and
 nested-depth limits. Failed non-critical payloads remain explicit diagnostics;
 they are not parsed through or silently converted to empty data.
+
+The headless executable also accepts `--audit-scenes <root>`. It recursively
+selects only `.level` files, sorts them, and reports aggregate class/body
+coverage without writing a report or exporting bytes. Retained bodies are
+offered to the explicit class dispatcher; currently only class 2 has a decoder.

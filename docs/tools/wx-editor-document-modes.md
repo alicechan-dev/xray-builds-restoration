@@ -25,10 +25,8 @@ editing and tools. Closing a historical scene needs no save prompt. Imported
 metadata remains session state, and no historical source path or content is
 written into an editable snapshot.
 
-Compressed known containers remain rejected by the probe. Unknown compressed
-chunks and specialized object bodies are reported as unsupported; the reader
-does not parse through them, so confirmed counts may be partial.
 Historical compressed chunks are decoded only into bounded session memory.
+Class-2 specialized bodies may expose audited inert metadata; unknown classes
+and unsupported child chunks remain explicit inventory.
 This does not make `HistoricalSceneReadOnly` editable and does not add a scene
 save/export path.
-

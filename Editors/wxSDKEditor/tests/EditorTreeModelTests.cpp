@@ -10,7 +10,12 @@
 
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+#include <filesystem>
+#include <map>
+#include <set>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -31,6 +36,168 @@ bool RejectsSnapshot(EditorTreeModel& model, const std::string& snapshot)
 }
 
 const char* Header = "# wxSDKEditor tree snapshot v1\n";
+
+struct SceneClassAudit
+{
+    struct BodyChunkAudit
+    {
+        std::size_t occurrences = 0;
+        std::size_t minimumSize = static_cast<std::size_t>(-1);
+        std::size_t maximumSize = 0;
+    };
+
+    std::size_t records = 0;
+    std::size_t named = 0;
+    std::size_t transformed = 0;
+    std::size_t unsupportedBodies = 0;
+    std::size_t supportedBodies = 0;
+    std::size_t partialBodies = 0;
+    std::size_t malformedBodies = 0;
+    std::size_t minimumBodySize = static_cast<std::size_t>(-1);
+    std::size_t maximumBodySize = 0;
+    std::set<std::string> scenes;
+    std::map<std::uint32_t, BodyChunkAudit> bodyChunks;
+};
+
+std::uint32_t ReadAuditU32(const std::uint8_t* bytes)
+{
+    return static_cast<std::uint32_t>(bytes[0]) |
+        (static_cast<std::uint32_t>(bytes[1]) << 8) |
+        (static_cast<std::uint32_t>(bytes[2]) << 16) |
+        (static_cast<std::uint32_t>(bytes[3]) << 24);
+}
+
+bool AuditBodyChunks(const EditorSceneObjectRecord& object,
+    SceneClassAudit& entry)
+{
+    std::size_t offset = 0;
+    while (offset < object.bodyBytes.size())
+    {
+        if (object.bodyBytes.size() - offset < 8)
+            return false;
+        const std::uint32_t rawId = ReadAuditU32(
+            object.bodyBytes.data() + offset);
+        const std::size_t size = ReadAuditU32(
+            object.bodyBytes.data() + offset + 4);
+        offset += 8;
+        if (size > object.bodyBytes.size() - offset)
+            return false;
+        SceneClassAudit::BodyChunkAudit& chunk =
+            entry.bodyChunks[rawId & 0x7fffffffu];
+        ++chunk.occurrences;
+        chunk.minimumSize = (std::min)(chunk.minimumSize, size);
+        chunk.maximumSize = (std::max)(chunk.maximumSize, size);
+        offset += size;
+    }
+    return true;
+}
+
+int AuditScenes(const std::filesystem::path& root)
+{
+    std::error_code error;
+    std::vector<std::filesystem::path> scenes;
+    for (std::filesystem::recursive_directory_iterator it(root, error), end;
+        !error && it != end; it.increment(error))
+    {
+        if (it->is_regular_file(error) &&
+            it->path().extension() == ".level")
+            scenes.push_back(it->path());
+    }
+    if (error)
+    {
+        std::cerr << "Scene audit failed while enumerating input.\n";
+        return 2;
+    }
+    std::sort(scenes.begin(), scenes.end());
+
+    std::map<std::uint32_t, SceneClassAudit> classes;
+    std::size_t totalObjects = 0;
+    std::size_t totalDiagnostics = 0;
+    for (const std::filesystem::path& scene : scenes)
+    {
+        EditorSceneManifest manifest;
+        std::string reason;
+        if (!EditorHistoricalSceneProbe().ProbeSceneFile(
+            scene, manifest, &reason))
+        {
+            std::cerr << "Scene audit failed for " << scene.filename().string()
+                << ": " << reason << '\n';
+            return 2;
+        }
+        totalObjects += manifest.objects.size();
+        totalDiagnostics += manifest.diagnostics.size();
+        for (const EditorSceneObjectRecord& object : manifest.objects)
+        {
+            SceneClassAudit& entry = classes[object.classId];
+            ++entry.records;
+            entry.named += object.hasName ? 1u : 0u;
+            entry.transformed += object.hasTransform ? 1u : 0u;
+            switch (object.bodyDecode.status)
+            {
+            case EditorHistoricalObjectDecodeStatus::Supported:
+                ++entry.supportedBodies;
+                break;
+            case EditorHistoricalObjectDecodeStatus::Partial:
+                ++entry.partialBodies;
+                break;
+            case EditorHistoricalObjectDecodeStatus::Malformed:
+                ++entry.malformedBodies;
+                break;
+            case EditorHistoricalObjectDecodeStatus::Unsupported:
+                ++entry.unsupportedBodies;
+                break;
+            }
+            entry.minimumBodySize = (std::min)(
+                entry.minimumBodySize, object.bodyBytes.size());
+            entry.maximumBodySize = (std::max)(
+                entry.maximumBodySize, object.bodyBytes.size());
+            entry.scenes.insert(scene.filename().string());
+            if (!AuditBodyChunks(object, entry))
+            {
+                std::cerr << "Scene audit found malformed retained body for class "
+                    << object.classId << " in " << scene.filename().string()
+                    << '\n';
+                return 2;
+            }
+        }
+    }
+
+    std::cout << "scene_files=" << scenes.size() << '\n'
+        << "objects=" << totalObjects << '\n'
+        << "diagnostics=" << totalDiagnostics << '\n';
+    for (const auto& item : classes)
+    {
+        const SceneClassAudit& entry = item.second;
+        std::cout << "class=" << item.first
+            << " records=" << entry.records
+            << " named=" << entry.named
+            << " transformed=" << entry.transformed
+            << " supported_bodies=" << entry.supportedBodies
+            << " partial_bodies=" << entry.partialBodies
+            << " unsupported_bodies=" << entry.unsupportedBodies
+            << " malformed_bodies=" << entry.malformedBodies
+            << " body_min=" << (entry.records ? entry.minimumBodySize : 0)
+            << " body_max=" << entry.maximumBodySize
+            << " scenes=" << entry.scenes.size() << '\n';
+        std::cout << "  scene_names=";
+        bool firstScene = true;
+        for (const std::string& scene : entry.scenes)
+        {
+            std::cout << (firstScene ? "" : ",") << scene;
+            firstScene = false;
+        }
+        std::cout << '\n';
+        for (const auto& chunkItem : entry.bodyChunks)
+        {
+            const SceneClassAudit::BodyChunkAudit& chunk = chunkItem.second;
+            std::cout << "  chunk=" << chunkItem.first
+                << " occurrences=" << chunk.occurrences
+                << " size_min=" << chunk.minimumSize
+                << " size_max=" << chunk.maximumSize << '\n';
+        }
+    }
+    return 0;
+}
 }
 
 int RunEditorTreePresenterTests();
@@ -42,9 +209,13 @@ int RunEditorMetadataTests();
 int RunEditorSceneProbeTests();
 int RunEditorSceneCompressionTests();
 int RunEditorHistoricalSceneDocumentTests();
+int RunEditorHistoricalObjectBodyDecoderTests();
 
 int main(int argc, char** argv)
 {
+    if (argc == 3 && std::string(argv[1]) == "--audit-scenes")
+        return AuditScenes(argv[2]);
+
     if (argc == 3 && std::string(argv[1]) == "--probe-scene")
     {
         EditorSceneManifest manifest;
@@ -592,6 +763,7 @@ int main(int argc, char** argv)
     failures += RunEditorSceneProbeTests();
     failures += RunEditorSceneCompressionTests();
     failures += RunEditorHistoricalSceneDocumentTests();
+    failures += RunEditorHistoricalObjectBodyDecoderTests();
 
     if (failures)
     {
