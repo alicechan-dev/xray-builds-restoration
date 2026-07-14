@@ -851,9 +851,14 @@ int RunEditorHistoricalSceneDocumentTests();
 int RunEditorHistoricalObjectBodyDecoderTests();
 int RunEditorHistoricalSceneConversionTests();
 int RunEditorHistoricalOriginIntegrityTests();
+int RunEditorObjectLibraryTests();
+int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
+    const std::filesystem::path& sceneRoot);
 
 int main(int argc, char** argv)
 {
+    if (argc == 4 && std::string(argv[1]) == "--audit-object-library")
+        return AuditEditorObjectLibrary(argv[2], argv[3]);
     if (argc == 3 && std::string(argv[1]) == "--audit-scenes")
         return AuditScenes(argv[2]);
 
@@ -1407,6 +1412,7 @@ int main(int argc, char** argv)
     failures += RunEditorHistoricalObjectBodyDecoderTests();
     failures += RunEditorHistoricalSceneConversionTests();
     failures += RunEditorHistoricalOriginIntegrityTests();
+    failures += RunEditorObjectLibraryTests();
 
     if (failures)
     {

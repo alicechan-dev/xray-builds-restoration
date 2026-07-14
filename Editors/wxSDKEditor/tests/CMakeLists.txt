@@ -6,6 +6,7 @@ add_executable(wxSDKEditorModelTests
   EditorTreePresenterTests.cpp
   EditorToolControllerTests.cpp
   EditorMetadataTests.cpp
+  EditorObjectLibraryTests.cpp
   EditorSceneProbeTests.cpp
   EditorSceneCompressionTests.cpp
   EditorHistoricalSceneDocumentTests.cpp

@@ -2,6 +2,7 @@
 
 #include "editor_assets/EditorAssetDescriptor.h"
 #include "editor_assets/EditorImportedPrototype.h"
+#include "editor_assets/EditorObjectLibraryResolver.h"
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorTreeModel.h"
 
@@ -34,8 +35,11 @@ EditorProperty MakeProperty(const char* key, const char* label,
     const char* description)
 {
     EditorProperty property;
-    property.section = std::string(key).rfind("historical.", 0) == 0
-        ? "Historical Origin - Read-Only" : "Editable";
+    const std::string_view propertyKey(key);
+    property.section = propertyKey.rfind("object_library.", 0) == 0
+        ? "Historical Object Library Resolution - Read-Only"
+        : propertyKey.rfind("historical.", 0) == 0
+            ? "Historical Origin - Read-Only" : "Editable";
     property.key = key;
     property.label = label;
     property.type = type;
@@ -61,7 +65,8 @@ const EditorProperty* EditorPropertySet::Find(std::string_view key) const
 }
 
 EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
-    const EditorAssetDescriptor* resolvedAsset)
+    const EditorAssetDescriptor* resolvedAsset,
+    const EditorObjectResolutionResult* objectResolution)
 {
     EditorPropertySet properties;
     properties.Add(MakeProperty("label", "Label", EditorPropertyType::String,
@@ -132,10 +137,58 @@ EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
             ToString(origin.disposition), true,
             "How this node was migrated into the editable snapshot."));
         if (!origin.referenceName.empty())
+        {
             properties.Add(MakeProperty("historical.reference",
                 "Historical Reference", EditorPropertyType::ReadOnlyText,
                 origin.referenceName, true,
-                "Inert historical reference; no resource is resolved."));
+                "Inert historical reference; resolution is session-only."));
+            const EditorObjectResolutionState state = objectResolution ?
+                objectResolution->state : EditorObjectResolutionState::LibraryNotLoaded;
+            properties.Add(MakeProperty("object_library.resolution",
+                "Resolution", EditorPropertyType::ReadOnlyText,
+                ToString(state), true, "Session-only Object Library lookup state."));
+            if (objectResolution)
+            {
+                properties.Add(MakeProperty("object_library.normalized",
+                    "Normalized Reference", EditorPropertyType::ReadOnlyText,
+                    objectResolution->normalizedQuery.empty() ? "unavailable" :
+                        objectResolution->normalizedQuery, true,
+                    "Historical lowercase, extensionless, root-relative identity."));
+                if (objectResolution->entry)
+                {
+                    const auto& entry = *objectResolution->entry;
+                    properties.Add(MakeProperty("object_library.matched_id",
+                        "Matched ID", EditorPropertyType::ReadOnlyText,
+                        entry.referenceId, true, "Resolved library identity."));
+                    properties.Add(MakeProperty("object_library.kind",
+                        "Object Kind", EditorPropertyType::ReadOnlyText,
+                        ToString(entry.kind), true, "Source-confirmed flags/bone classification."));
+                    properties.Add(MakeProperty("object_library.source",
+                        "Source Relative File", EditorPropertyType::ReadOnlyText,
+                        entry.sourceRelativeFile, true, "No absolute library path is retained."));
+                    properties.Add(MakeProperty("object_library.counts",
+                        "Mesh / Surface Counts", EditorPropertyType::ReadOnlyText,
+                        std::to_string(entry.meshCount) + " / " +
+                            std::to_string(entry.surfaceCount), true,
+                        "Metadata counts only; mesh payloads remain unloaded."));
+                    properties.Add(MakeProperty("object_library.motion",
+                        "Motion Present", EditorPropertyType::ReadOnlyText,
+                        entry.motionPresent ? "yes" : "no", true,
+                        "Presence of historical motion chunks; motions remain unloaded."));
+                    properties.Add(MakeProperty("object_library.bounds",
+                        "Bounds", EditorPropertyType::ReadOnlyText,
+                        "unavailable without mesh payload decoding", true,
+                        "Build-1935 computes object bounds from loaded meshes."));
+                    properties.Add(MakeProperty("object_library.parse_status",
+                        "Parse Status", EditorPropertyType::ReadOnlyText,
+                        ToString(entry.parseStatus), true, "Bounded metadata parser status."));
+                }
+                else if (!objectResolution->reason.empty())
+                    properties.Add(MakeProperty("object_library.reason",
+                        "Reason", EditorPropertyType::ReadOnlyText,
+                        objectResolution->reason, true, "Resolution diagnostic."));
+            }
+        }
         if (!origin.retainedFieldSummary.empty())
             properties.Add(MakeProperty("historical.fields",
                 "Preserved Historical Fields",

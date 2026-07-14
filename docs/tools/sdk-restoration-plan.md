@@ -1,5 +1,14 @@
 # SDK Restoration Plan
 
+## Object Library Bridge Checkpoint
+
+The first read-only library stage is complete: canonical root/file ownership,
+bounded metadata parsing, normalization, in-memory resolution, SceneObject
+properties, statistics, and a wx browser pane. The next safe stage is an
+audited inert mesh-metadata model (names/counts only) or a separate render-asset
+design. Actual vertex/index, texture, shader, thumbnail, placement, and
+historical writer work remain out of scope.
+
 ## Historical Migration Boundary Checkpoint
 
 The four key decoders now feed a deliberate one-way conversion into a separate

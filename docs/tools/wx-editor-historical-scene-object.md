@@ -1,5 +1,10 @@
 # Historical Scene Object Decoder
 
+Converted SceneObject `referenceName` values can now be resolved against an
+explicitly loaded read-only Object Library. The original inert spelling stays
+in origin metadata; the normalized match and entry metadata are session-only.
+The 17-scene production audit resolved all 15,416 observed references.
+
 ## Editable Conversion Boundary
 
 Confirmed transform, reference name, and flags are retained. Motion or other

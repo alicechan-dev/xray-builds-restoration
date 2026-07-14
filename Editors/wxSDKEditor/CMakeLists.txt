@@ -5,6 +5,9 @@ set(XR_WX_SDK_EDITOR_MODEL_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorImportedPrototype.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorMetadataLoader.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorMetadataCatalogAdapter.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorObjectLibrary.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorObjectLibraryLoader.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_assets/EditorObjectLibraryResolver.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_scene/EditorBinaryReader.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_scene/EditorSceneCompression.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_scene/EditorSceneManifest.cpp"
@@ -58,6 +61,9 @@ set(XR_WX_SDK_EDITOR_MODEL_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorImportedPrototype.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorMetadataLoader.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorMetadataCatalogAdapter.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorObjectLibrary.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorObjectLibraryLoader.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_assets/EditorObjectLibraryResolver.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_scene/EditorBinaryReader.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_scene/EditorSceneCompression.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_scene/EditorSceneManifest.h"
@@ -122,6 +128,7 @@ set(XR_WX_SDK_EDITOR_SOURCES
   src/editor_app/EditorTreePresenter.cpp
   src/MainFrame.cpp
   src/wxAssetBrowser.cpp
+  src/wxObjectLibraryBrowser.cpp
   src/wxDialogService.cpp
   src/wxEditorTree.cpp
   src/wxEditorViewport.cpp
@@ -137,6 +144,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   ${XR_WX_SDK_EDITOR_MODEL_HEADERS}
   src/MainFrame.h
   src/wxAssetBrowser.h
+  src/wxObjectLibraryBrowser.h
   src/wxDialogService.h
   src/wxEditorTree.h
   src/wxEditorViewport.h

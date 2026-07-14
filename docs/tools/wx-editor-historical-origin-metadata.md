@@ -1,5 +1,9 @@
 # Historical Origin Metadata
 
+The preserved SceneObject reference remains the sole library identity stored
+in origin metadata. No absolute root, resolved entry copy, resource data, or
+library diagnostics enter snapshot v5.
+
 Converted editable nodes may own one small `EditorHistoricalOriginMetadata`
 record. It contains source scene version, class ID, object index, source name,
 source offset, stable historical ID, decode status, conversion disposition,

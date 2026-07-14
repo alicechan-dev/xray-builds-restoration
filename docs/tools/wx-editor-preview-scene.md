@@ -1,5 +1,9 @@
 # wxSDKEditor Preview Scene
 
+Object Library resolution does not change preview geometry. Generic diagnostic
+preview markers remain in use; real bounds and meshes require a later audited
+mesh/resource bridge.
+
 Converted historical nodes use the existing editable preview path. Origin
 metadata may supply a confirmed diagnostic radius/range; unsupported
 placeholders use `Unknown`, and nodes without a confirmed source transform are

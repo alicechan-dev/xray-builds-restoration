@@ -1,5 +1,13 @@
 # Experimental wxWidgets SDK Editor
 
+## Read-Only Object Library Bridge
+
+The editor now has a dedicated dockable Object Library pane backed by a
+wx-free bounded loader and resolver. Explicitly loaded build-1935 `.object`
+roots can resolve converted CSceneObject references and expose inert metadata.
+Meshes, textures, shaders, thumbnails, placement, and renderer integration
+remain deferred. Library state is session-only and snapshot v5 is unchanged.
+
 ## Historical Editable Copy
 
 An opened historical scene remains strictly read-only. **File > Convert

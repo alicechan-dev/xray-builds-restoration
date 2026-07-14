@@ -1,5 +1,9 @@
 # wx Editor ElPack Migration Map
 
+The Object Library browser is a native wx pane over a new GUI-independent
+catalog. It does not instantiate `ELibrary`, `CEditableObject`, `TElTree`, or
+other Borland/ElPack classes, and leaves the historical path untouched.
+
 The historical conversion workflow remains on the wx-free adapter/model side
 of this boundary. It does not compile or call `ItemListHelper`, `FolderLib`,
 ElPack, VCL, or old LevelEditor code. Origin metadata and conversion reports

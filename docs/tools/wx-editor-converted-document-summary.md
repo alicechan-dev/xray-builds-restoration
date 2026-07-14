@@ -1,5 +1,9 @@
 # wxSDKEditor Converted Document Summary
 
+Object Library resolution statistics are intentionally separate from persisted
+conversion statistics. Use **Tools > Object Library Summary...** for the
+currently loaded session catalog.
+
 `Tools -> Historical Conversion Summary...` is enabled only for an editable
 snapshot containing historical-origin nodes. Statistics are derived on demand
 from the wx-free model and verifier.

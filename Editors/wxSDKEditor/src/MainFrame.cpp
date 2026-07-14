@@ -8,6 +8,7 @@
 #include "editor_scene/EditorHistoricalConversionReport.h"
 #include "wxEditorTree.h"
 #include "wxAssetBrowser.h"
+#include "wxObjectLibraryBrowser.h"
 #include "wxEditorViewport.h"
 #include "wxPropertyPanel.h"
 #include "wxSceneInspector.h"
@@ -52,6 +53,7 @@ enum
     IdViewProperties,
     IdViewOutput,
     IdViewAssetBrowser,
+    IdViewObjectLibrary,
     IdViewSceneInspector,
     IdResetLayout,
     IdToggleViewportGrid,
@@ -64,13 +66,15 @@ enum
     IdToolSelect,
     IdToolMove,
     IdToolPlaceObject,
-    IdToolPlaceLight
+    IdToolPlaceLight,
+    IdObjectLibrarySummary
 };
 
 const char* SceneTreePane = "scene_tree";
 const char* PropertiesPane = "properties";
 const char* OutputPane = "output";
 const char* AssetBrowserPane = "asset_browser";
+const char* ObjectLibraryPane = "object_library";
 const char* SceneInspectorPane = "scene_inspector";
 const char* ViewportPane = "viewport";
 const char* PerspectiveKey = "/layout/aui_perspective";
@@ -130,6 +134,7 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendCheckItem(IdViewProperties, "&Properties");
     viewMenu->AppendCheckItem(IdViewOutput, "&Output");
     viewMenu->AppendCheckItem(IdViewAssetBrowser, "&Asset Browser");
+    viewMenu->AppendCheckItem(IdViewObjectLibrary, "Object &Library");
     viewMenu->AppendCheckItem(IdViewSceneInspector, "Scene &Inspector");
     viewMenu->AppendSeparator();
     viewMenu->Append(IdResetLayout, "&Reset Layout");
@@ -161,6 +166,7 @@ void wxSDKEditorFrame::CreateMenus()
     toolsMenu->Append(IdAdapterStatus, "&Adapter Status");
     toolsMenu->Append(IdHistoricalConversionSummary,
         "Historical Conversion &Summary...");
+    toolsMenu->Append(IdObjectLibrarySummary, "Object Library &Summary...");
     toolsMenu->AppendSeparator();
     toolsMenu->Append(wxID_PREFERENCES, "&Options")->Enable(false);
     menuBar->Append(toolsMenu, "&Tools");
@@ -208,6 +214,8 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdViewOutput);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleAssetBrowser,
         this, IdViewAssetBrowser);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleObjectLibrary,
+        this, IdViewObjectLibrary);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleSceneInspector,
         this, IdViewSceneInspector);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnResetLayout,
@@ -220,6 +228,8 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdViewOutput);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateAssetBrowser,
         this, IdViewAssetBrowser);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateObjectLibrary,
+        this, IdViewObjectLibrary);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateSceneInspector,
         this, IdViewSceneInspector);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleViewportGrid,
@@ -253,6 +263,8 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_UPDATE_UI,
         &wxSDKEditorFrame::OnUpdateHistoricalConversionSummary,
         this, IdHistoricalConversionSummary);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnObjectLibrarySummary,
+        this, IdObjectLibrarySummary);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnImportPathList, this, IdImportPathList);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnInspectHistoricalScene,
         this, IdInspectHistoricalScene);
@@ -356,6 +368,7 @@ void wxSDKEditorFrame::CreateWorkspace()
         "wxSDKEditor experimental shell ready.", wxDefaultPosition,
         wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
     assetBrowser_ = new wxAssetBrowser(this);
+    objectLibraryBrowser_ = new wxObjectLibraryBrowser(this);
     sceneInspector_ = new wxSceneInspector(this);
 
     auiManager_.AddPane(treePanel, wxAuiPaneInfo().Name(SceneTreePane)
@@ -374,6 +387,10 @@ void wxSDKEditorFrame::CreateWorkspace()
         .Caption("Asset Browser").Left().Layer(1).Position(1)
         .BestSize(280, 420).MinSize(220, 220).CloseButton(true)
         .MaximizeButton(true).Resizable(true));
+    auiManager_.AddPane(objectLibraryBrowser_,
+        wxAuiPaneInfo().Name(ObjectLibraryPane).Caption("Object Library")
+        .Left().Layer(2).Position(2).BestSize(310, 500).MinSize(240, 240)
+        .CloseButton(true).MaximizeButton(true).Resizable(true));
     auiManager_.AddPane(sceneInspector_,
         wxAuiPaneInfo().Name(SceneInspectorPane).Caption("Scene Inspector")
         .Right().Layer(2).Position(1).BestSize(380, 500)
@@ -396,6 +413,8 @@ void wxSDKEditorFrame::CreateWorkspace()
             viewport_->SetPreviewScene(scene);
         });
     treePresenter_->AttachHistoricalDocument(historicalDocument_);
+    objectLibraryBrowser_->SetLoadHandler([this]() { OnLoadObjectLibrary(); });
+    objectLibraryBrowser_->SetClearHandler([this]() { OnClearObjectLibrary(); });
     viewport_->SetTransformHandler(
         [this](const std::string& path, const EditorTransform& transform) {
             return treePresenter_->SetLogicalTransform(path, transform);
@@ -652,6 +671,48 @@ void wxSDKEditorFrame::OnUpdateHistoricalConversionSummary(
         treePresenter_->HasHistoricalConversionSummary());
 }
 
+void wxSDKEditorFrame::OnLoadObjectLibrary()
+{
+    wxDirDialog dialog(this, "Choose historical Object Library root",
+        wxEmptyString, wxDD_DIR_MUST_EXIST);
+    if (dialog.ShowModal() != wxID_OK) return;
+    EditorObjectLibraryLoadStatistics statistics;
+    std::string reason;
+    if (!treePresenter_->LoadObjectLibrary(
+        std::filesystem::path(dialog.GetPath().ToStdWstring()), statistics, &reason)) {
+        dialogService_.Error("Object Library load failed", reason.c_str()); return;
+    }
+    objectLibraryBrowser_->SetLibrary(&treePresenter_->ObjectLibrary());
+    output_->AppendText(wxString::Format(
+        "\nObject Library: files=%zu entries=%zu supported=%zu partial=%zu malformed=%zu duplicates=%zu bytes_read=%llu\n",
+        statistics.filesScanned, statistics.entriesLoaded, statistics.supported,
+        statistics.partial, statistics.malformed, statistics.duplicateReferences,
+        static_cast<unsigned long long>(statistics.bytesRead)));
+}
+
+void wxSDKEditorFrame::OnClearObjectLibrary()
+{
+    treePresenter_->ClearObjectLibrary();
+    objectLibraryBrowser_->SetLibrary(nullptr);
+}
+
+void wxSDKEditorFrame::OnObjectLibrarySummary(wxCommandEvent&)
+{
+    if (!treePresenter_->ObjectLibrary().IsLoaded()) {
+        dialogService_.Info("Object Library Summary", "No Object Library is loaded."); return;
+    }
+    const auto s = treePresenter_->ObjectLibraryStatistics();
+    const std::string summary = "Entries: " + std::to_string(s.entries) +
+        "\nSupported: " + std::to_string(s.supported) +
+        "\nPartial: " + std::to_string(s.partial) +
+        "\nMalformed: " + std::to_string(s.malformed) +
+        "\nStatic: " + std::to_string(s.staticObjects) +
+        "\nSkeletal: " + std::to_string(s.skeletalObjects) +
+        "\nUnknown: " + std::to_string(s.unknownObjects) +
+        "\nDuplicate references: " + std::to_string(s.duplicateReferences);
+    dialogService_.Info("Object Library Summary", summary.c_str());
+}
+
 void wxSDKEditorFrame::OnSaveDocument(wxCommandEvent&)
 {
     SaveDocument();
@@ -773,6 +834,11 @@ void wxSDKEditorFrame::OnToggleAssetBrowser(wxCommandEvent&)
     TogglePane(AssetBrowserPane);
 }
 
+void wxSDKEditorFrame::OnToggleObjectLibrary(wxCommandEvent&)
+{
+    TogglePane(ObjectLibraryPane);
+}
+
 void wxSDKEditorFrame::OnToggleSceneInspector(wxCommandEvent&)
 {
     TogglePane(SceneInspectorPane);
@@ -801,6 +867,11 @@ void wxSDKEditorFrame::OnUpdateOutput(wxUpdateUIEvent& event)
 void wxSDKEditorFrame::OnUpdateAssetBrowser(wxUpdateUIEvent& event)
 {
     UpdatePaneMenu(event, AssetBrowserPane);
+}
+
+void wxSDKEditorFrame::OnUpdateObjectLibrary(wxUpdateUIEvent& event)
+{
+    UpdatePaneMenu(event, ObjectLibraryPane);
 }
 
 void wxSDKEditorFrame::OnUpdateSceneInspector(wxUpdateUIEvent& event)

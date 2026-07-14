@@ -6,6 +6,8 @@
 #include "editor_app/EditorToolController.h"
 #include "editor_assets/EditorAssetCatalog.h"
 #include "editor_assets/EditorAssetSelectionModel.h"
+#include "editor_assets/EditorObjectLibraryLoader.h"
+#include "editor_assets/EditorObjectLibraryResolver.h"
 #include "editor_scene/EditorHistoricalConversionPolicy.h"
 
 #include <cstddef>
@@ -83,6 +85,13 @@ public:
     bool SelectAsset(const std::string& assetId);
     void SetImportedAssetCatalog(EditorAssetCatalog catalog);
     void ClearImportedAssetCatalog();
+    bool LoadObjectLibrary(const std::filesystem::path& root,
+        EditorObjectLibraryLoadStatistics& statistics,
+        std::string* reason = nullptr);
+    void ClearObjectLibrary();
+    const EditorObjectLibrary& ObjectLibrary() const { return objectLibrary_; }
+    EditorObjectLibraryStatistics ObjectLibraryStatistics() const
+    { return BuildEditorObjectLibraryStatistics(objectLibrary_); }
     const EditorAssetCatalog& AssetCatalog() const { return assetCatalog_; }
     const EditorAssetDescriptor* SelectedAsset() const;
     std::string ResolvePlacementParentPath() const;
@@ -124,6 +133,7 @@ private:
     EditorAssetCatalog assetCatalog_ = EditorAssetCatalog::CreateBuiltIn();
     EditorAssetCatalog importedAssetCatalog_;
     EditorAssetSelectionModel assetSelection_;
+    EditorObjectLibrary objectLibrary_;
 };
 
 #endif

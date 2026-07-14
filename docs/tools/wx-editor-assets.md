@@ -1,5 +1,9 @@
 # wxSDKEditor Synthetic Asset Catalog
 
+Historical Object Library entries are a distinct read-only asset source. They
+contain only bounded inert metadata in this stage and are not placeable or
+renderable assets.
+
 The experimental editor now has a wx-free asset seam under
 `Editors/wxSDKEditor/include/editor_assets`. `EditorAssetDescriptor` carries a
 stable ID, display text, category path, node metadata, default transform,

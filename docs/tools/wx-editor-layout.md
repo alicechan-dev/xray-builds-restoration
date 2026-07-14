@@ -1,5 +1,8 @@
 # wxSDKEditor Dockable Layout
 
+The closable, dockable **Object Library** pane is included in wxAUI perspective
+save/restore and is available from **View > Object Library**.
+
 `wxSDKEditor` uses wxWidgets AUI for its opt-in editor shell. This replaces the
 initial fixed hierarchy of three splitter windows; it does not change the
 wx-free model, presenter, command history, or adapter contracts.

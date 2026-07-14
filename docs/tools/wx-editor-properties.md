@@ -1,5 +1,10 @@
 # wx Editor Properties
 
+Converted SceneObjects gain a **Historical Object Library Resolution -
+Read-Only** section. It shows state, normalized/matched ID, kind, source-relative
+file, mesh/surface counts, motion presence, bounds availability, and reason.
+There is no Apply behavior.
+
 ## Converted Historical Origin
 
 Converted nodes expose ordinary editable label, category, and position fields.

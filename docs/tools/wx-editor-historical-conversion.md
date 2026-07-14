@@ -1,5 +1,9 @@
 # Historical Scene to Editable Snapshot Conversion
 
+Object Library loading is not part of conversion and does not alter the
+converted document. Resolution is recomputed from session state, so conversion
+and saving behave identically when no library is loaded.
+
 wxSDKEditor now has an explicit one-way migration boundary:
 
 ```text

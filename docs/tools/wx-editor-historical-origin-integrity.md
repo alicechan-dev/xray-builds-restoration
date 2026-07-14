@@ -1,5 +1,9 @@
 # wxSDKEditor Historical Origin Integrity
 
+Loading and clearing Object Library session state never rewrites origin
+metadata. Resolver output is computed at property-refresh time and therefore
+cannot affect the origin verifier or snapshot serialization.
+
 Converted snapshot nodes own their historical provenance directly. There is no
 separate path-indexed origin map: rename and reparent operations may change the
 editable canonical path without moving provenance elsewhere. Historical fields

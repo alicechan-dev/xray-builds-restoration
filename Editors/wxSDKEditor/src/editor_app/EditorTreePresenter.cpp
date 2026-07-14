@@ -241,6 +241,25 @@ void EditorTreePresenter::ClearImportedAssetCatalog()
     RefreshSelection();
 }
 
+bool EditorTreePresenter::LoadObjectLibrary(const std::filesystem::path& root,
+    EditorObjectLibraryLoadStatistics& statistics, std::string* reason)
+{
+    EditorObjectLibraryLoader loader;
+    if (!loader.Load(root, objectLibrary_, statistics, reason))
+        return false;
+    RefreshSelection();
+    SetStatus("Loaded read-only Object Library metadata: " +
+        std::to_string(statistics.entriesLoaded) + " entries.");
+    return true;
+}
+
+void EditorTreePresenter::ClearObjectLibrary()
+{
+    objectLibrary_.Clear();
+    RefreshSelection();
+    SetStatus("Cleared session-only Object Library metadata.");
+}
+
 const EditorAssetDescriptor* EditorTreePresenter::FindAsset(
     const std::string& assetId) const
 {
@@ -415,8 +434,16 @@ void EditorTreePresenter::RefreshSelection()
             properties_.ShowProperties(BuildEditorNodePropertySet(*node));
         return;
     }
-    properties_.ShowProperties(
-        BuildEditorNodePropertySet(*node, FindAsset(node->AssetId())));
+    EditorObjectResolutionResult resolution;
+    const EditorObjectResolutionResult* resolutionView = nullptr;
+    if (node->HistoricalOrigin() &&
+        !node->HistoricalOrigin()->referenceName.empty()) {
+        resolution = ResolveObjectReference(objectLibrary_,
+            node->HistoricalOrigin()->referenceName);
+        resolutionView = &resolution;
+    }
+    properties_.ShowProperties(BuildEditorNodePropertySet(
+        *node, FindAsset(node->AssetId()), resolutionView));
 }
 
 void EditorTreePresenter::RefreshPreview() const

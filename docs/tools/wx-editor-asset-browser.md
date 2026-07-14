@@ -1,5 +1,9 @@
 # wxSDKEditor Asset Browser
 
+The existing Asset Browser continues to own synthetic descriptors and imported
+LTX spawn metadata. Historical `.object` entries live in the separate Object
+Library pane so the two provenance and placement models are not conflated.
+
 The Asset Browser is a modest concrete wxWidgets view over the wx-free
 synthetic catalog. It contains a search field, category selector, asset list,
 description area, and **Place Selected** command. Double-clicking an entry has

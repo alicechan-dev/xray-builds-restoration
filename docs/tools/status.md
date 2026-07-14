@@ -1,5 +1,14 @@
 # Tools and SDK Status
 
+## Read-Only Historical Object Library Bridge
+
+wxSDKEditor now inventories explicit build-1935 `.object` roots, resolves
+converted SceneObject references, and presents confirmed inert metadata in a
+dedicated pane. A lawful production audit loaded 627 entries (581 supported,
+46 partial, zero malformed/collisions) and resolved 15,416/15,416 references
+across 17 scenes. No mesh/resource loading, placement, file writes, or snapshot
+format change was introduced.
+
 ## Historical Scene Conversion Checkpoint
 
 wxSDKEditor can convert an open read-only historical scene into a separate
