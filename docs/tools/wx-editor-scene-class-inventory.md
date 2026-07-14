@@ -53,8 +53,7 @@ All listed classes invoke `CCustomObject::Load/Save` from
 1. **Scene object (2):** dominant frequency, exact small chunk layout, useful
    inert reference metadata, and no need to resolve the reference.
 2. **Glow (1):** compact and clear in every sampled scene, but much less common.
-3. **Light (3):** common and visually useful, but optional fuzzy and animation
-   data need a larger audit.
+3. **Light (3):** completed as the third specialized decoder.
 4. **Particle (11):** simple inert reference, but low coverage.
 5. **Sound source (5):** clear fixed record, but audio-state semantics need care.
 6. **Spawn point (6):** common, but versioned spawn packets and attachments are
@@ -62,6 +61,8 @@ All listed classes invoke `CCustomObject::Load/Save` from
 
 Scene object therefore won the first decoder pass. Glow was the second pass:
 all 511 records use version `0x0012`, have finite radii from 0.5 to 5.0, and
-decode as `Supported`. Light is now the recommended next class, after a
-complete audit of its optional animation/fuzzy chunks. Historical sources and
-scene files remain untouched.
+decode as `Supported`. The Light audit found 1,729 version-`0x0011` point
+lights: 1,221 decode `Supported`, while 508 fuzzy-placement records are
+`Partial` because those positions remain inert. Class 5 Sound Source is the
+next recommended candidate. Historical sources and scene files remain
+untouched.

@@ -77,9 +77,11 @@ std::vector<EditorPreviewPickShape> BuildEditorPreviewPickShapes(
             shape.halfHeight = 10.0f;
         }
         else if (object.kind == EditorPreviewKind::Light ||
+            object.kind == EditorPreviewKind::HistoricalLight ||
             object.kind == EditorPreviewKind::Glow)
         {
-            shape.radius = object.kind == EditorPreviewKind::Glow
+            shape.radius = object.kind == EditorPreviewKind::Glow ||
+                    object.kind == EditorPreviewKind::HistoricalLight
                 ? (std::clamp)(object.sizeX * context.scale, 4.0f, 200.0f)
                 : 9.0f;
             shape.circular = true;

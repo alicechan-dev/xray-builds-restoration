@@ -67,6 +67,42 @@ struct SceneClassAudit
         std::map<std::string, std::size_t> layouts;
     };
 
+    struct FloatAudit
+    {
+        std::size_t values = 0;
+        std::size_t nonFinite = 0;
+        float minimum = 0.0f;
+        float maximum = 0.0f;
+    };
+
+    struct LightAudit
+    {
+        std::size_t parsed = 0;
+        std::size_t malformed = 0;
+        std::size_t params = 0;
+        std::size_t animationReferences = 0;
+        std::size_t falloffTextures = 0;
+        std::size_t fuzzyPayloads = 0;
+        std::int16_t minimumFuzzyPoints = 0;
+        std::int16_t maximumFuzzyPoints = 0;
+        std::map<std::uint16_t, std::size_t> versions;
+        std::map<std::uint16_t, std::set<std::string>> versionScenes;
+        std::map<std::uint32_t, std::size_t> types;
+        std::map<std::uint32_t, std::size_t> flags;
+        std::map<std::uint32_t, std::size_t> useInD3D;
+        std::map<std::uint32_t, std::size_t> lightControls;
+        std::map<std::uint8_t, std::size_t> fuzzyShapes;
+        std::map<std::string, std::size_t> layouts;
+        FloatAudit color[4];
+        FloatAudit brightness;
+        FloatAudit range;
+        FloatAudit attenuation[3];
+        FloatAudit cone;
+        FloatAudit virtualSize;
+        FloatAudit fuzzyRadius;
+        FloatAudit fuzzyBox[3];
+    };
+
     std::size_t records = 0;
     std::size_t named = 0;
     std::size_t transformed = 0;
@@ -79,6 +115,7 @@ struct SceneClassAudit
     std::set<std::string> scenes;
     std::map<std::uint32_t, BodyChunkAudit> bodyChunks;
     GlowAudit glow;
+    LightAudit light;
 };
 
 std::uint16_t ReadAuditU16(const std::uint8_t* bytes)
@@ -93,6 +130,36 @@ std::uint32_t ReadAuditU32(const std::uint8_t* bytes)
         (static_cast<std::uint32_t>(bytes[1]) << 8) |
         (static_cast<std::uint32_t>(bytes[2]) << 16) |
         (static_cast<std::uint32_t>(bytes[3]) << 24);
+}
+
+std::int16_t ReadAuditS16(const std::uint8_t* bytes)
+{
+    return static_cast<std::int16_t>(ReadAuditU16(bytes));
+}
+
+float ReadAuditFloat(const std::uint8_t* bytes)
+{
+    const std::uint32_t bits = ReadAuditU32(bytes);
+    float value = 0.0f;
+    std::memcpy(&value, &bits, sizeof(value));
+    return value;
+}
+
+void AuditFloat(SceneClassAudit::FloatAudit& audit, float value)
+{
+    ++audit.values;
+    if (!std::isfinite(value))
+    {
+        ++audit.nonFinite;
+        return;
+    }
+    if (audit.values - audit.nonFinite == 1)
+        audit.minimum = audit.maximum = value;
+    else
+    {
+        audit.minimum = (std::min)(audit.minimum, value);
+        audit.maximum = (std::max)(audit.maximum, value);
+    }
 }
 
 bool AuditBodyChunks(const EditorSceneObjectRecord& object,
@@ -179,12 +246,87 @@ bool AuditBodyChunks(const EditorSceneObjectRecord& object,
                 }
             }
         }
+        else if (object.classId == 3u)
+        {
+            const std::uint8_t* payload = object.bodyBytes.data() + offset;
+            if (id == 0xb411u && size == 2)
+            {
+                const std::uint16_t version = ReadAuditU16(payload);
+                ++entry.light.versions[version];
+                entry.light.versionScenes[version].insert(sceneName);
+            }
+            else if (id == 0xb442u && size == 48)
+            {
+                ++entry.light.params;
+                ++entry.light.types[ReadAuditU32(payload)];
+                for (int index = 0; index != 4; ++index)
+                    AuditFloat(entry.light.color[index],
+                        ReadAuditFloat(payload + 4 + index * 4));
+                AuditFloat(entry.light.brightness, ReadAuditFloat(payload + 20));
+                AuditFloat(entry.light.range, ReadAuditFloat(payload + 24));
+                for (int index = 0; index != 3; ++index)
+                    AuditFloat(entry.light.attenuation[index],
+                        ReadAuditFloat(payload + 28 + index * 4));
+                AuditFloat(entry.light.cone, ReadAuditFloat(payload + 40));
+                AuditFloat(entry.light.virtualSize, ReadAuditFloat(payload + 44));
+            }
+            else if (id == 0xb413u && size == 4)
+                ++entry.light.flags[ReadAuditU32(payload)];
+            else if (id == 0xb436u && size == 4)
+                ++entry.light.useInD3D[ReadAuditU32(payload)];
+            else if (id == 0xb441u && size == 4)
+                ++entry.light.lightControls[ReadAuditU32(payload)];
+            else if ((id == 0xb438u || id == 0xb439u) && size != 0)
+            {
+                if (payload[size - 1] != 0)
+                    ++entry.light.malformed;
+                else if (id == 0xb438u)
+                    ++entry.light.animationReferences;
+                else
+                    ++entry.light.falloffTextures;
+            }
+            else if (id == 0xb440u)
+            {
+                ++entry.light.fuzzyPayloads;
+                if (size < 19)
+                    ++entry.light.malformed;
+                else
+                {
+                    ++entry.light.fuzzyShapes[payload[0]];
+                    AuditFloat(entry.light.fuzzyRadius,
+                        ReadAuditFloat(payload + 1));
+                    for (int index = 0; index != 3; ++index)
+                        AuditFloat(entry.light.fuzzyBox[index],
+                            ReadAuditFloat(payload + 5 + index * 4));
+                    const std::int16_t points = ReadAuditS16(payload + 17);
+                    if (points < 0 || static_cast<std::size_t>(points) >
+                        (size - 19) / 12 ||
+                        size != 19 + static_cast<std::size_t>(points) * 12)
+                        ++entry.light.malformed;
+                    else if (entry.light.fuzzyPayloads == 1)
+                        entry.light.minimumFuzzyPoints =
+                            entry.light.maximumFuzzyPoints = points;
+                    else
+                    {
+                        entry.light.minimumFuzzyPoints = (std::min)(
+                            entry.light.minimumFuzzyPoints, points);
+                        entry.light.maximumFuzzyPoints = (std::max)(
+                            entry.light.maximumFuzzyPoints, points);
+                    }
+                }
+            }
+        }
         offset += size;
     }
     if (object.classId == 1u)
     {
         ++entry.glow.parsed;
         ++entry.glow.layouts[layout];
+    }
+    else if (object.classId == 3u)
+    {
+        ++entry.light.parsed;
+        ++entry.light.layouts[layout];
     }
     return true;
 }
@@ -315,6 +457,72 @@ int AuditScenes(const std::filesystem::path& root)
                     << '\n';
             for (const auto& layoutItem : glow.layouts)
                 std::cout << "  glow_layout=" << layoutItem.first
+                    << " occurrences=" << layoutItem.second << '\n';
+        }
+        else if (item.first == 3u)
+        {
+            const SceneClassAudit::LightAudit& light = entry.light;
+            const auto printFloat = [](const char* name,
+                const SceneClassAudit::FloatAudit& value) {
+                std::cout << "  light_" << name
+                    << " values=" << value.values
+                    << " nonfinite=" << value.nonFinite
+                    << " min=" << value.minimum
+                    << " max=" << value.maximum << '\n';
+            };
+            std::cout << "  light parsed=" << light.parsed
+                << " malformed_fields=" << light.malformed
+                << " params=" << light.params
+                << " animation_refs=" << light.animationReferences
+                << " falloff_textures=" << light.falloffTextures
+                << " fuzzy_payloads=" << light.fuzzyPayloads
+                << " fuzzy_points_min=" << light.minimumFuzzyPoints
+                << " fuzzy_points_max=" << light.maximumFuzzyPoints << '\n';
+            for (const auto& version : light.versions)
+                std::cout << "  light_version=" << version.first
+                    << " occurrences=" << version.second
+                    << " scenes=" << light.versionScenes.at(version.first).size()
+                    << '\n';
+            for (const auto& type : light.types)
+                std::cout << "  light_type=" << type.first
+                    << " occurrences=" << type.second << '\n';
+            for (const auto& flags : light.flags)
+                std::cout << "  light_flags=" << flags.first
+                    << " occurrences=" << flags.second << '\n';
+            for (const auto& use : light.useInD3D)
+                std::cout << "  light_use_in_d3d=" << use.first
+                    << " occurrences=" << use.second << '\n';
+            for (const auto& control : light.lightControls)
+                std::cout << "  light_control=" << control.first
+                    << " occurrences=" << control.second << '\n';
+            for (const auto& shape : light.fuzzyShapes)
+                std::cout << "  light_fuzzy_shape="
+                    << static_cast<unsigned int>(shape.first)
+                    << " occurrences=" << shape.second << '\n';
+            for (int index = 0; index != 4; ++index)
+            {
+                const std::string name = "color" + std::to_string(index);
+                printFloat(name.c_str(), light.color[index]);
+            }
+            printFloat("brightness", light.brightness);
+            printFloat("range", light.range);
+            for (int index = 0; index != 3; ++index)
+            {
+                const std::string name = "attenuation" +
+                    std::to_string(index);
+                printFloat(name.c_str(), light.attenuation[index]);
+            }
+            printFloat("cone", light.cone);
+            printFloat("virtual_size", light.virtualSize);
+            printFloat("fuzzy_radius", light.fuzzyRadius);
+            for (int index = 0; index != 3; ++index)
+            {
+                const std::string name = "fuzzy_box" +
+                    std::to_string(index);
+                printFloat(name.c_str(), light.fuzzyBox[index]);
+            }
+            for (const auto& layoutItem : light.layouts)
+                std::cout << "  light_layout=" << layoutItem.first
                     << " occurrences=" << layoutItem.second << '\n';
         }
     }

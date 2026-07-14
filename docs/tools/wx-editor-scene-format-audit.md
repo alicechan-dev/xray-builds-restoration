@@ -70,3 +70,6 @@ See [wx-editor-scene-compression.md](wx-editor-scene-compression.md).
 
 The real-scene class frequencies, source mapping, and candidate ranking are in
 [Historical Scene Class Inventory](wx-editor-scene-class-inventory.md).
+The third specialized audit confirms class 3 `CLight` versions `0x0010` and
+`0x0011`, current and legacy parameter layouts, and bounded fuzzy placement.
+See [Historical Light](wx-editor-historical-light.md).

@@ -44,3 +44,6 @@ objects and malformed specialized bodies remain selectable and readable.
 The second transplant supports all 511 sampled `CGlow` bodies. Referenced
 shader and texture names are never opened; the source-confirmed radius drives
 only a diagnostic preview ring.
+The third transplant supports 1,729 sampled `CLight` bodies: 1,221 Supported
+and 508 Partial because fuzzy placement remains inert. Confirmed scalar fields
+and provenance remain read-only and no historical light is constructed.

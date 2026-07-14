@@ -41,3 +41,7 @@ inventory only. A malformed specialized body preserves its generic wrapper.
 The class-1 glow decoder applies the same body/chunk/string retention limits.
 It additionally validates version-specific params sizes and finite radius or
 legacy-position floats. Shader and texture strings are inert and never opened.
+
+The class-3 Light decoder additionally caps fuzzy point count at 100 and
+validates the exact shape/count/payload relation plus all retained floats.
+Unknown flag bits are preserved, and animation/falloff names are never opened.

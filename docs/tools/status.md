@@ -336,3 +336,8 @@ specialized classes remain unsupported.
   bodies across all 17 scenes. It exposes inert version, shader/texture names,
   radius, flags, and provenance. Radius drives only a bounded diagnostic ring;
   referenced assets and historical classes are never loaded.
+- The third specialized decoder supports all 1,729 sampled class-3 `CLight`
+  bodies across all 17 scenes: 1,221 are Supported and 508 fuzzy-placement
+  bodies are Partial/inert. Read-only properties and Inspector expose confirmed
+  fields; preview draws only a bounded range diagnostic. No light, animation,
+  texture, factory, or historical class is loaded.

@@ -24,3 +24,8 @@ class-specific historical rendering. A decoded glow is the conservative
 diagnostic exception: its source-confirmed radius produces a bounded circle
 through the normal draw-list and picking paths. No referenced texture, shader,
 sprite, or historical renderer is loaded.
+A decoded light is the other diagnostic exception: its source-confirmed range
+produces a bounded semantic ring and its label identifies Point or Spot. The
+preview does not create illumination, draw a cone, apply fuzzy points, or
+resolve animation/falloff resources. Editable preview lights retain their
+existing fixed marker behavior.

@@ -103,6 +103,60 @@ Bytes GlowBody(std::uint16_t version = 0x0012, bool optional = false)
     }
     return body;
 }
+
+Bytes LightBody(std::uint32_t type = 1, bool optional = false)
+{
+    Bytes body;
+    Append(body, Chunk(0xb411, {0x11, 0x00}));
+    Bytes params;
+    U32(params, type);
+    Float(params, 0.25f);
+    Float(params, 0.5f);
+    Float(params, 0.75f);
+    Float(params, 0.0f);
+    Float(params, 2.0f);
+    Float(params, 15.0f);
+    Float(params, 1.0f);
+    Float(params, 0.1f);
+    Float(params, 0.01f);
+    Float(params, 0.392699f);
+    Float(params, 0.0f);
+    Append(body, Chunk(0xb442, params));
+    Bytes use;
+    U32(use, 1);
+    Append(body, Chunk(0xb436, use));
+    if (optional)
+    {
+        Bytes flags;
+        U32(flags, 0x12345679);
+        Append(body, Chunk(0xb413, flags));
+        Bytes control;
+        U32(control, 2);
+        Append(body, Chunk(0xb441, control));
+        Bytes falloff;
+        CString(falloff, "lights\\falloff");
+        Append(body, Chunk(0xb439, falloff));
+    }
+    return body;
+}
+
+Bytes FuzzyPayload(std::uint8_t shape = 0, std::int16_t pointCount = 1)
+{
+    Bytes fuzzy;
+    fuzzy.push_back(shape);
+    Float(fuzzy, 1.5f);
+    Float(fuzzy, 0.1f);
+    Float(fuzzy, 0.2f);
+    Float(fuzzy, 0.3f);
+    U16(fuzzy, static_cast<std::uint16_t>(pointCount));
+    for (std::int16_t point = 0; point < pointCount; ++point)
+    {
+        Float(fuzzy, static_cast<float>(point));
+        Float(fuzzy, 2.0f);
+        Float(fuzzy, 3.0f);
+    }
+    return fuzzy;
+}
 }
 
 int RunEditorHistoricalObjectBodyDecoderTests()
@@ -155,10 +209,125 @@ int RunEditorHistoricalObjectBodyDecoderTests()
         "unknown child chunk is retained without interpretation");
 
     const EditorHistoricalObjectBodyDecodeResult generic =
-        DecodeHistoricalObjectBody(3, SceneObjectBody(), 0, "body");
+        DecodeHistoricalObjectBody(4, SceneObjectBody(), 0, "body");
     check(generic.status == EditorHistoricalObjectDecodeStatus::Unsupported &&
         !generic.hasSceneObject,
         "unknown dispatcher class remains generic");
+
+    const EditorHistoricalObjectBodyDecodeResult minimumLight =
+        DecodeHistoricalObjectBody(3, LightBody(), 3000, "light-body");
+    check(minimumLight.status == EditorHistoricalObjectDecodeStatus::Supported &&
+        minimumLight.hasLight && minimumLight.hasBodyVersion &&
+        minimumLight.bodyVersion == 0x0011 && minimumLight.light.type == 1 &&
+        minimumLight.light.color[0] == 0.25f &&
+        minimumLight.light.brightness == 2.0f &&
+        minimumLight.light.range == 15.0f &&
+        minimumLight.light.attenuation[2] == 0.01f &&
+        minimumLight.light.useInD3D == 1 &&
+        !minimumLight.light.hasFlags && !minimumLight.light.hasFuzzyData,
+        "minimum light body decodes exact inert current parameters");
+    check(minimumLight.light.versionProvenance.sourceOffset == 3008 &&
+        minimumLight.light.paramsProvenance.chunkPath ==
+            "light-body/0x0000B442" &&
+        minimumLight.light.useInD3DProvenance.chunkId == 0xb436,
+        "light field provenance retains offsets and chunk paths");
+
+    const EditorHistoricalObjectBodyDecodeResult fullLight =
+        DecodeHistoricalObjectBody(3, LightBody(2, true), 0, "body");
+    check(fullLight.status == EditorHistoricalObjectDecodeStatus::Supported &&
+        fullLight.light.type == 2 && fullLight.light.hasFlags &&
+        fullLight.light.flags == 0x12345679 &&
+        fullLight.light.hasLightControl &&
+        fullLight.light.lightControl == 2 &&
+        fullLight.light.hasFalloffTexture &&
+        fullLight.light.falloffTexture == "lights\\falloff",
+        "optional spot-light metadata decodes without resource resolution");
+
+    Bytes fuzzyLight = LightBody();
+    Append(fuzzyLight, Chunk(0xb440, FuzzyPayload()));
+    const EditorHistoricalObjectBodyDecodeResult partialLight =
+        DecodeHistoricalObjectBody(3, fuzzyLight, 0, "body");
+    check(partialLight.status == EditorHistoricalObjectDecodeStatus::Partial &&
+        partialLight.light.hasFuzzyData &&
+        partialLight.light.fuzzyShape == 0 &&
+        partialLight.light.fuzzyPointCount == 1 &&
+        partialLight.unsupportedChunks.size() == 1 &&
+        partialLight.unsupportedChunks[0].id == 0xb440,
+        "fuzzy light placement is validated, retained, and kept inert");
+
+    Bytes animatedLight = LightBody();
+    Bytes animation;
+    CString(animation, "pulse");
+    Append(animatedLight, Chunk(0xb438, animation));
+    const EditorHistoricalObjectBodyDecodeResult animationResult =
+        DecodeHistoricalObjectBody(3, animatedLight, 0, "body");
+    check(animationResult.status == EditorHistoricalObjectDecodeStatus::Partial &&
+        animationResult.light.hasAnimationReference &&
+        animationResult.light.animationReference == "pulse",
+        "animation reference is decoded as inert metadata");
+
+    Bytes unknownLight = LightBody();
+    Append(unknownLight, Chunk(0xbeef, {7, 8}));
+    check(DecodeHistoricalObjectBody(3, unknownLight, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Partial,
+        "unknown light child is retained and marks decode partial");
+
+    check(DecodeHistoricalObjectBody(3, LightBody(3), 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Unsupported,
+        "directional light follows historical loader rejection");
+    check(DecodeHistoricalObjectBody(3, LightBody(4), 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "unknown historical light type is malformed");
+
+    Bytes missingLight;
+    Append(missingLight, Chunk(0xb411, {0x11, 0x00}));
+    check(DecodeHistoricalObjectBody(3, missingLight, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "missing required light parameter layout is malformed");
+    Bytes duplicateLight = LightBody();
+    Append(duplicateLight, Chunk(0xb411, {0x11, 0x00}));
+    check(DecodeHistoricalObjectBody(3, duplicateLight, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "duplicate specialized light chunk is malformed");
+    Bytes unsupportedLight = LightBody();
+    unsupportedLight[8] = 0x12;
+    check(DecodeHistoricalObjectBody(3, unsupportedLight, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "unsupported light version is malformed");
+    Bytes shortParams = LightBody();
+    shortParams[14] = 47;
+    check(DecodeHistoricalObjectBody(3, shortParams, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "wrong-sized light params are malformed");
+    Bytes nonFiniteLight = LightBody();
+    const std::uint32_t quietNan = 0x7fc00000u;
+    for (int index = 0; index != 4; ++index)
+        nonFiniteLight[38 + index] =
+            static_cast<std::uint8_t>(quietNan >> (index * 8));
+    check(DecodeHistoricalObjectBody(3, nonFiniteLight, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "non-finite light scalar is malformed");
+    Bytes badFuzzy = LightBody();
+    Append(badFuzzy, Chunk(0xb440, FuzzyPayload(2)));
+    check(DecodeHistoricalObjectBody(3, badFuzzy, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "invalid fuzzy shape is malformed");
+    EditorHistoricalObjectBodyDecodeLimits fuzzyLimits;
+    fuzzyLimits.maximumLightFuzzyPoints = 0;
+    check(DecodeHistoricalObjectBody(3, fuzzyLight, 0, "body", fuzzyLimits).status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "fuzzy point limit is enforced");
+    Bytes compressedLight = LightBody();
+    compressedLight[3] |= 0x80;
+    check(DecodeHistoricalObjectBody(3, compressedLight, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "compressed specialized light child is rejected");
+    Bytes badLightBounds = LightBody();
+    badLightBounds[4] = 0xff;
+    badLightBounds[5] = 0xff;
+    check(DecodeHistoricalObjectBody(3, badLightBounds, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "light child outside body bounds is malformed");
 
     const EditorHistoricalObjectBodyDecodeResult minimumGlow =
         DecodeHistoricalObjectBody(1, GlowBody(), 2000, "glow-body");

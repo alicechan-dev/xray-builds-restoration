@@ -651,6 +651,8 @@ classes stay generic and malformed specialized decoding preserves the wrapper.
 Glow (class 1) was the second isolated decoder. All 511 sampled bodies use
 version `0x0012` and decode as Supported; inert names/radius/flags and
 provenance are visible read-only, with radius represented only by a diagnostic
-ring. Light (class 3) is the next recommended audit because its optional
-animation/fuzzy chunks require more evidence. Scene editing, factories, asset
-loading, and writes remain out of scope.
+ring. Light (class 3) is the third isolated decoder: all 1,729 sampled bodies
+use version `0x0011`; 1,221 are Supported and 508 are Partial because fuzzy
+placement remains validated metadata only. Class 5 Sound Source is the next
+recommended audit. Scene editing, factories, asset loading, and writes remain
+out of scope.

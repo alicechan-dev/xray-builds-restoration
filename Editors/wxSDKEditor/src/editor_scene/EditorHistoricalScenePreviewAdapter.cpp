@@ -20,12 +20,19 @@ EditorPreviewScene BuildHistoricalScenePreview(
             label += " [" + object.bodyDecode.sceneObject.referenceName + "]";
         const bool glow = object.bodyDecode.hasGlow &&
             std::isfinite(object.bodyDecode.glow.radius);
+        const bool light = object.bodyDecode.hasLight &&
+            std::isfinite(object.bodyDecode.light.range) &&
+            object.bodyDecode.light.range >= 0.0f;
+        if (light)
+            label += " [" + std::string(EditorHistoricalLightTypeName(
+                object.bodyDecode.light.type)) + "]";
+        const float diagnosticSize = light ? object.bodyDecode.light.range :
+            glow ? object.bodyDecode.glow.radius : 1.0f;
         scene.AddObject({object.stableRecordId, label,
             object.transform.x, object.transform.y, object.transform.z,
-            glow ? object.bodyDecode.glow.radius : 1.0f,
-            glow ? object.bodyDecode.glow.radius : 1.0f,
-            glow ? object.bodyDecode.glow.radius : 1.0f,
-            glow ? EditorPreviewKind::Glow : EditorPreviewKind::Box});
+            diagnosticSize, diagnosticSize, diagnosticSize,
+            light ? EditorPreviewKind::HistoricalLight :
+                glow ? EditorPreviewKind::Glow : EditorPreviewKind::Box});
     }
     scene.SetSelectedPath(selectedStableId);
     return scene;

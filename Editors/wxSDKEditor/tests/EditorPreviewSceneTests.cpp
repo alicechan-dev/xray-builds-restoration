@@ -190,6 +190,26 @@ int RunEditorPreviewSceneTests()
         glowShapes[0].radius == 100.0f &&
         PickEditorPreview(glowShapes, 400.0f, 240.0f).hit,
         "glow diagnostic circle uses matching pick radius");
+    EditorPreviewScene historicalLightScene;
+    historicalLightScene.AddObject({"historical-light", "historical light",
+        0.0f, 0.0f, -5.0f, 15.0f, 15.0f, 15.0f,
+        EditorPreviewKind::HistoricalLight});
+    renderer.SetScene(&historicalLightScene);
+    renderer.Render(viewport);
+    const auto& historicalLightPrimitives = renderer.DrawList().Primitives();
+    check(!historicalLightPrimitives.empty() &&
+        historicalLightPrimitives[0].type ==
+            EditorViewportPrimitiveType::Circle &&
+        historicalLightPrimitives[0].style == EditorViewportStyle::Light &&
+        historicalLightPrimitives[0].radius == 200.0f,
+        "historical light range produces a bounded semantic diagnostic ring");
+    const std::vector<EditorPreviewPickShape> historicalLightShapes =
+        BuildEditorPreviewPickShapes(historicalLightScene, context);
+    check(historicalLightShapes.size() == 1 &&
+        historicalLightShapes[0].circular &&
+        historicalLightShapes[0].radius == 200.0f &&
+        PickEditorPreview(historicalLightShapes, 500.0f, 240.0f).hit,
+        "historical light range ring uses matching bounded pick radius");
     EditorPreviewPickShape markerShape;
     markerShape.logicalPath = "marker";
     markerShape.kind = EditorPreviewKind::Marker;

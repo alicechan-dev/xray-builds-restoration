@@ -219,6 +219,51 @@ int RunEditorHistoricalSceneDocumentTests()
             glowDocument.Objects()[0].stableRecordId,
         "glow radius drives conservative diagnostic preview ring");
 
+    EditorSceneManifest lightManifest;
+    lightManifest.sourceFile = "light.level";
+    lightManifest.version = 5;
+    lightManifest.hasVersion = true;
+    EditorSceneObjectRecord light = Object(14, 800, "lamp_light", true);
+    light.classId = 3;
+    light.bodyDecode.status = EditorHistoricalObjectDecodeStatus::Partial;
+    light.bodyDecode.typeName = "Light";
+    light.bodyDecode.hasBodyVersion = true;
+    light.bodyDecode.bodyVersion = 0x0011;
+    light.bodyDecode.hasLight = true;
+    light.bodyDecode.light.version = 0x0011;
+    light.bodyDecode.light.type = 1;
+    light.bodyDecode.light.color = {1.0f, 0.5f, 0.25f, 0.0f};
+    light.bodyDecode.light.brightness = 2.0f;
+    light.bodyDecode.light.range = 15.0f;
+    light.bodyDecode.light.attenuation = {1.0f, 0.1f, 0.01f};
+    light.bodyDecode.light.useInD3D = 1;
+    light.bodyDecode.light.hasFuzzyData = true;
+    light.bodyDecode.light.fuzzyPointCount = 4;
+    light.bodyDecode.light.paramsProvenance.sourceOffset = 840;
+    lightManifest.objects.push_back(light);
+    EditorHistoricalSceneDocument lightDocument;
+    check(lightDocument.BuildFromManifest(lightManifest, &reason) &&
+        lightDocument.Objects()[0].bodySupported,
+        "partial decoded light attaches to historical document inertly");
+    const EditorPropertySet lightProperties =
+        BuildHistoricalSceneObjectPropertySet(lightDocument.Objects()[0]);
+    check(lightProperties.Find("light.type") &&
+        lightProperties.Find("light.type")->value == "Point" &&
+        lightProperties.Find("light.range") &&
+        lightProperties.Find("light.range")->readOnly &&
+        lightProperties.Find("light.params_source_offset")->value == "840" &&
+        lightProperties.Find("light.fuzzy")->value == "sphere, 4 points",
+        "light fields and provenance appear as read-only properties");
+    const EditorPreviewScene lightPreview = BuildHistoricalScenePreview(
+        lightDocument, lightDocument.Objects()[0].stableRecordId);
+    check(lightPreview.GetObjects().size() == 1 &&
+        lightPreview.GetObjects()[0].kind ==
+            EditorPreviewKind::HistoricalLight &&
+        lightPreview.GetObjects()[0].sizeX == 15.0f &&
+        lightPreview.GetObjects()[0].label.find("[Point]") !=
+            std::string::npos,
+        "light range drives conservative historical diagnostic ring");
+
     const std::string preservedId = document.Objects()[0].stableRecordId;
     EditorSceneManifest invalid = Manifest();
     invalid.version = 4;

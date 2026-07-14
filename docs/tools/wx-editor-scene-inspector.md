@@ -40,3 +40,8 @@ All values remain read-only; the inspector never resolves the reference.
 For decoded class-1 glows, details show version, shader and texture names,
 radius, optional flags, field source offsets, retained chunk counts, and
 diagnostics. The names are not resolved and no rendering resource is created.
+
+For decoded class-3 lights, details show type, color, brightness, range,
+attenuation, cone, virtual size, use flag, raw flags/control, fuzzy summary,
+parameter source offset, retained chunks, and diagnostics. Animation and
+falloff names are inert; no light or resource is created.

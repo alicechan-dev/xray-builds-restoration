@@ -259,3 +259,6 @@ ElPack bridge. It does not call `ItemListHelper`, `FolderLib`, old factories,
 or object-library UI. The class-1 glow decoder follows the same inert wx-free
 boundary and does not use old rendering/property controls. Historical
 Borland/VCL sources remain untouched.
+The class-3 Light decoder follows the same boundary: only inert serialized
+values reach the modern tree/properties/preview adapters. It does not invoke
+`CLight`, `GameMtlLib`, ElPack controls, or old property helpers.

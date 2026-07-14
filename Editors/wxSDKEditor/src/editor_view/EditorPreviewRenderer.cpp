@@ -13,6 +13,7 @@ EditorViewportStyle StyleFor(EditorPreviewKind kind)
     {
     case EditorPreviewKind::Box: return EditorViewportStyle::Object;
     case EditorPreviewKind::Light: return EditorViewportStyle::Light;
+    case EditorPreviewKind::HistoricalLight: return EditorViewportStyle::Light;
     case EditorPreviewKind::Glow: return EditorViewportStyle::Marker;
     case EditorPreviewKind::Spawn: return EditorViewportStyle::Spawn;
     default: return EditorViewportStyle::Marker;
@@ -51,9 +52,11 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
             drawList_.Add({EditorViewportPrimitiveType::Rectangle, style,
                 x - 14.0f, y - 10.0f, x + 14.0f, y + 10.0f});
         else if (object.kind == EditorPreviewKind::Light ||
+            object.kind == EditorPreviewKind::HistoricalLight ||
             object.kind == EditorPreviewKind::Glow)
         {
-            const float radius = object.kind == EditorPreviewKind::Glow
+            const float radius = object.kind == EditorPreviewKind::Glow ||
+                    object.kind == EditorPreviewKind::HistoricalLight
                 ? (std::clamp)(object.sizeX * projection_.scale, 4.0f, 200.0f)
                 : 9.0f;
             drawList_.Add({EditorViewportPrimitiveType::Circle, style,

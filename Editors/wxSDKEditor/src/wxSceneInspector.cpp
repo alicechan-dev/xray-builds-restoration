@@ -239,6 +239,44 @@ void wxSceneInspector::OnSelectionChanged(wxTreeEvent& event)
                 << "\nRetained unsupported chunks: "
                 << object.bodyDecode.unsupportedChunks.size();
         }
+        if (object.bodyDecode.hasLight)
+        {
+            const EditorHistoricalLightRecord& light = object.bodyDecode.light;
+            output << "\nLight type: "
+                << EditorHistoricalLightTypeName(light.type)
+                << "\nLight color RGBA: " << light.color[0] << ", "
+                << light.color[1] << ", " << light.color[2] << ", "
+                << light.color[3]
+                << "\nBrightness: " << light.brightness
+                << "\nRange: " << light.range
+                << "\nAttenuation: " << light.attenuation[0] << ", "
+                << light.attenuation[1] << ", " << light.attenuation[2]
+                << "\nCone: " << light.cone
+                << "\nVirtual size: " << light.virtualSize
+                << "\nUse in D3D: " << (light.useInD3D ? "true" : "false")
+                << "\nLight flags: ";
+            if (light.hasFlags)
+                output << Hex(light.flags);
+            else
+                output << "not present";
+            output << "\nLight control: ";
+            if (light.hasLightControl)
+                output << light.lightControl;
+            else
+                output << "not present";
+            output << "\nFuzzy placement: ";
+            if (light.hasFuzzyData)
+                output << (light.fuzzyShape == 0 ? "sphere" : "box")
+                    << ", " << light.fuzzyPointCount << " points";
+            else
+                output << "not present";
+            output << "\nParams source offset: "
+                << light.paramsProvenance.sourceOffset
+                << "\nUnknown body chunks: "
+                << object.bodyDecode.unknownChunks.size()
+                << "\nRetained unsupported chunks: "
+                << object.bodyDecode.unsupportedChunks.size();
+        }
         for (const std::string& diagnostic : object.bodyDecode.diagnostics)
             output << "\nDecoder diagnostic: " << diagnostic;
     }

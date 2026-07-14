@@ -40,3 +40,7 @@ Missing/duplicate required chunks, invalid sizes, unterminated/oversized
 strings, unsupported versions, compressed specialized children, and child
 bounds outside the body produce `Malformed`. Unknown chunks are retained up to
 the decoder limit and produce `Partial`.
+
+This class-2 behavior is unchanged by the later class-3 Light decoder. The
+same dispatcher preserves its 15,412 Supported and four motion-bearing Partial
+records.

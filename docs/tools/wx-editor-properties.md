@@ -91,3 +91,8 @@ trigger reference loading.
 Decoded class-1 glows expose shader/texture names, radius, optional flags,
 unknown/unsupported chunk counts, and radius/texture source offsets. These are
 also read-only and never cause asset lookup or historical object creation.
+
+Decoded class-3 lights expose type, RGBA floats, brightness, range,
+attenuation, cone, virtual size, use-in-D3D, raw flags/control, inert optional
+names, fuzzy summary, retained chunk counts, and parameter provenance. Apply
+remains disabled and no resource or historical light is created.

@@ -403,9 +403,11 @@ The historical read-only path now understands source-confirmed X-Ray LZHUF
 chunk compression using a dependency-light wx-free decoder. Scene Inspector
 shows compression provenance and failures. No decompressed data is written.
 The specialized dispatcher reads source-confirmed `CSceneObject`
-version/reference/flags and `CGlow` version/shader/texture/radius/flags into
-inert records; all other classes remain generic and references are never
+version/reference/flags, `CGlow` version/shader/texture/radius/flags, and
+`CLight` parameters/flags/control/inert optional metadata into inert records;
+all other classes remain generic and references are never
 resolved. Glow radius may produce a diagnostic preview ring, but no referenced
 asset is loaded. See [Class Inventory](wx-editor-scene-class-inventory.md),
 [Scene Object Decoder](wx-editor-historical-scene-object.md), and
-[Glow Decoder](wx-editor-historical-glow.md).
+[Glow Decoder](wx-editor-historical-glow.md), and
+[Light Decoder](wx-editor-historical-light.md).
