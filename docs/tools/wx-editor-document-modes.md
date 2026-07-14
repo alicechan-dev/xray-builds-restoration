@@ -28,4 +28,7 @@ written into an editable snapshot.
 Compressed known containers remain rejected by the probe. Unknown compressed
 chunks and specialized object bodies are reported as unsupported; the reader
 does not parse through them, so confirmed counts may be partial.
+Historical compressed chunks are decoded only into bounded session memory.
+This does not make `HistoricalSceneReadOnly` editable and does not add a scene
+save/export path.
 

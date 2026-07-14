@@ -57,3 +57,10 @@ tool classes, object-specific bodies, or historical save/write behavior.
 The read-only historical document consumes only levels 2 through 4 of this
 evidence ladder. It does not broaden parsing or treat specialized bodies as
 supported. See [Historical Scene Document](wx-editor-historical-document.md).
+## Confirmed compression
+
+Bit 31 is `CFS_CompressMark`. Historical `IWriter::w_chunk` and
+`IReader::open_chunk` route marked payloads through `_compressLZ` and
+`_decompressLZ` in `xrCore/LzHuf.cpp`. The payload is a little-endian `u32`
+output size followed by X-Ray LZHUF (LZSS plus adaptive Huffman), not LZO.
+See [wx-editor-scene-compression.md](wx-editor-scene-compression.md).

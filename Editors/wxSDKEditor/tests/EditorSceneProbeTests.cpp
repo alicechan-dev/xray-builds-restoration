@@ -211,12 +211,22 @@ int RunEditorSceneProbeTests()
         ValidScene(false), "large.level", manifest, &reason),
         "file size policy enforced before parsing");
 
+    const Bytes compressedVersionPayload{
+        4, 0, 0, 0, 200, 227, 49, 48, 128};
     Bytes compressedVersion;
-    Append(compressedVersion, Chunk(0x80009df3u, version));
-    check(!probe.ProbeSceneBytes(compressedVersion, "compressed.level",
-        manifest, &reason) && reason.find("uncompressed u32") !=
-            std::string::npos,
-        "compressed critical chunk refused without guessed decompression");
+    Append(compressedVersion,
+        Chunk(0x80009df3u, compressedVersionPayload));
+    check(probe.ProbeSceneBytes(compressedVersion, "compressed.level",
+        manifest, &reason) && manifest.version == 5 &&
+        manifest.compressedChunkCount == 1 &&
+        manifest.decompressedChunkCount == 1,
+        "compressed critical u32 decoded with historical LZHUF");
+    const EditorSceneManifest compressedPreserved = manifest;
+    Append(compressedVersion, Chunk(0x80007712u, {4, 0, 0, 0}));
+    check(!probe.ProbeSceneBytes(compressedVersion, "bad-compressed.level",
+        manifest, &reason) && reason.find("readable u32") != std::string::npos &&
+        manifest.sourceFile == compressedPreserved.sourceFile,
+        "failed compressed critical field preserves prior manifest");
 
     const std::filesystem::path temporary =
         std::filesystem::temp_directory_path() / "wx_scene_probe_test.level";

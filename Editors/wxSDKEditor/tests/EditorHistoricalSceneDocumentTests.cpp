@@ -43,8 +43,16 @@ EditorSceneManifest Manifest()
     manifest.objects.push_back(Object(8, 200, "crate", true));
     manifest.objects.push_back(Object(9, 300, nullptr, false));
     manifest.objects.push_back(Object(10, 400, "marker", false));
-    manifest.chunks.push_back({0x1234, 0x80001234, 12, 0, 8, 0, true,
-        "0x00001234", "Unknown"});
+    EditorSceneChunkRecord compressed;
+    compressed.id = 0x1234;
+    compressed.rawId = 0x80001234;
+    compressed.size = 12;
+    compressed.dataOffset = 8;
+    compressed.compressed = true;
+    compressed.compressedSize = 12;
+    compressed.path = "0x00001234";
+    compressed.label = "Unknown";
+    manifest.chunks.push_back(compressed);
     return manifest;
 }
 }

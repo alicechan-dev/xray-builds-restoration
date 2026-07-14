@@ -540,9 +540,10 @@ void wxSDKEditorFrame::OnOpenHistoricalScene(wxCommandEvent&)
         std::to_string(historicalDocument_.GetNamedObjectCount()) +
         ", transformed=" +
         std::to_string(historicalDocument_.GetTransformedObjectCount()) +
-        ", compressed_unsupported=" +
-        std::to_string(
-            historicalDocument_.GetUnsupportedCompressedChunkCount()) +
+        ", compressed=" + std::to_string(source.compressedChunkCount) +
+        ", decompressed=" + std::to_string(source.decompressedChunkCount) +
+        ", decompression_failed=" +
+        std::to_string(source.decompressionFailureCount) +
         ", bodies_unsupported=" +
         std::to_string(historicalDocument_.GetUnsupportedBodyCount()) +
         ", diagnostics=" + std::to_string(source.diagnostics.size()) + ".";

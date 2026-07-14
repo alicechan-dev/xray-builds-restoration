@@ -26,6 +26,15 @@ struct EditorSceneChunkRecord
     std::size_t dataOffset = 0;
     std::size_t depth = 0;
     bool compressed = false;
+    std::size_t compressedSize = 0;
+    std::size_t decompressedSize = 0;
+    bool decompressionSupported = false;
+    bool decompressionSucceeded = false;
+    std::string compressionAlgorithm;
+    std::string compressionDiagnostic;
+    bool fromDecompressedPayload = false;
+    std::size_t compressedSourceOffset = 0;
+    std::size_t decompressedOffset = 0;
     std::string path;
     std::string label;
 };
@@ -43,6 +52,9 @@ struct EditorSceneObjectRecord
     std::array<float, 3> scale{};
     bool hasTransform = false;
     std::string chunkPath;
+    bool fromDecompressedPayload = false;
+    std::size_t compressedSourceOffset = 0;
+    std::size_t decompressedOffset = 0;
 };
 
 struct EditorSceneManifest
@@ -58,6 +70,12 @@ struct EditorSceneManifest
     std::vector<EditorSceneObjectRecord> objects;
     std::vector<EditorSceneDiagnostic> diagnostics;
     std::size_t unknownChunkCount = 0;
+    std::size_t compressedChunkCount = 0;
+    std::size_t decompressedChunkCount = 0;
+    std::size_t decompressionFailureCount = 0;
+    std::size_t totalCompressedBytes = 0;
+    std::size_t totalDecompressedBytes = 0;
+    std::string compressionAlgorithm;
 };
 
 #endif

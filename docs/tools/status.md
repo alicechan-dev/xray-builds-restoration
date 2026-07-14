@@ -323,3 +323,6 @@ mode. The wx tree, provenance properties, selection/query, and generic preview
 use stable record IDs; all mutation/history/save paths are disabled and
 defensively rejected. No `.level` write path or referenced-asset loading was
 added, and compressed/specialized contents remain unsupported.
+- wxSDKEditor historical read-only scenes now decode bounded build-1935 X-Ray
+  LZHUF chunks, retain compression provenance, and expose confirmed nested
+  records without writing scenes or loading historical/runtime objects.

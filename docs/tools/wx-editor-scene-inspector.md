@@ -25,3 +25,9 @@ The inspector command remains distinct from **Open Historical Scene
 Read-Only...**. The latter builds a separate inert tree/preview document from
 confirmed records, while this pane continues to display its own session
 manifest and never edits either document.
+## Compression details
+
+The read-only inspector summary reports compressed chunks, successful decodes,
+failures, compressed/decompressed byte totals, and algorithm. Chunk details
+show sizes, success, diagnostics, and decoded-source provenance. It never
+exports or writes decompressed payloads.

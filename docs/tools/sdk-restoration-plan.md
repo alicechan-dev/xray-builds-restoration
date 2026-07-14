@@ -632,3 +632,9 @@ confirmed-transform preview. This is the first direct historical scene-record
 transplant into the new UI, but not scene editing: save, mutation, history,
 factories, specialized bodies, compression decoding, and referenced assets
 remain out of scope. Editable snapshot behavior remains a separate mode.
+- Completed: bounded wx-free X-Ray LZHUF decoding for compressed historical
+  scene chunks, including inspector provenance, bomb limits, nested policy,
+  synthetic tests, and inert historical-document conversion.
+- Remaining: specialized historical object-body decoding and referenced asset
+  interpretation require separate source-evidenced passes; scene editing and
+  `.level` writing remain intentionally absent.

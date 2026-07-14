@@ -64,9 +64,10 @@ void wxSceneInspector::SetManifest(const EditorSceneManifest& manifest)
     manifest_ = manifest;
     hasManifest_ = true;
     summary_->SetLabel(wxString::Format(
-        "%s | %zu bytes | %zu chunks | %zu confirmed objects",
+        "%s | %zu bytes | %zu chunks | %zu objects | compressed %zu/%zu",
         wxString::FromUTF8(manifest_.format), manifest_.totalSize,
-        manifest_.chunks.size(), manifest_.objects.size()));
+        manifest_.chunks.size(), manifest_.objects.size(),
+        manifest_.decompressedChunkCount, manifest_.compressedChunkCount));
     tree_->DeleteAllItems();
     const wxTreeItemId root = tree_->AddRoot(
         wxString::FromUTF8(manifest_.sourceFile), -1, -1,
@@ -80,6 +81,8 @@ void wxSceneInspector::SetManifest(const EditorSceneManifest& manifest)
         const wxTreeItemId parent = parents.empty() ? root : parents.back();
         std::string label = Hex(chunk.id) + " " + chunk.label + " (" +
             std::to_string(chunk.size) + " bytes)";
+        if (chunk.compressed)
+            label += chunk.decompressionSucceeded ? " [decoded]" : " [compressed]";
         const wxTreeItemId item = tree_->AppendItem(parent,
             wxString::FromUTF8(label), -1, -1,
             new InspectorItemData(InspectorItemKind::Chunk, index));
@@ -127,7 +130,17 @@ void wxSceneInspector::OnSelectionChanged(wxTreeEvent& event)
         else
             output << "not present";
         output << "\nConfirmed objects: " << manifest_.objects.size()
-            << "\nUnknown chunks: " << manifest_.unknownChunkCount;
+            << "\nUnknown chunks: " << manifest_.unknownChunkCount
+            << "\nCompressed chunks: " << manifest_.compressedChunkCount
+            << "\nDecompressed successfully: "
+            << manifest_.decompressedChunkCount
+            << "\nDecompression failures: "
+            << manifest_.decompressionFailureCount
+            << "\nCompressed bytes: " << manifest_.totalCompressedBytes
+            << "\nDecompressed bytes: " << manifest_.totalDecompressedBytes
+            << "\nCompression algorithm: "
+            << (manifest_.compressionAlgorithm.empty()
+                ? "not encountered" : manifest_.compressionAlgorithm);
     }
     else if (data->kind == InspectorItemKind::Chunk &&
         data->index < manifest_.chunks.size())
@@ -139,6 +152,24 @@ void wxSceneInspector::OnSelectionChanged(wxTreeEvent& event)
             << "Data offset: " << chunk.dataOffset << '\n'
             << "Payload size: " << chunk.size << '\n'
             << "Compressed flag: " << (chunk.compressed ? "yes" : "no");
+        if (chunk.compressed)
+        {
+            output << "\nCompression algorithm: "
+                << chunk.compressionAlgorithm
+                << "\nCompressed bytes: " << chunk.compressedSize
+                << "\nDecompressed bytes: " << chunk.decompressedSize
+                << "\nDecompression supported: "
+                << (chunk.decompressionSupported ? "yes" : "no")
+                << "\nDecompression succeeded: "
+                << (chunk.decompressionSucceeded ? "yes" : "no")
+                << "\nDiagnostic: "
+                << (chunk.compressionDiagnostic.empty()
+                    ? "none" : chunk.compressionDiagnostic);
+        }
+        if (chunk.fromDecompressedPayload)
+            output << "\nCompressed source offset: "
+                << chunk.compressedSourceOffset
+                << "\nDecoded stream offset: " << chunk.decompressedOffset;
     }
     else if (data->kind == InspectorItemKind::Object &&
         data->index < manifest_.objects.size())
@@ -149,6 +180,10 @@ void wxSceneInspector::OnSelectionChanged(wxTreeEvent& event)
             << "Name: " << (object.hasName ? object.name : "not present")
             << "\nSource offset: " << object.sourceOffset << '\n'
             << "Chunk path: " << object.chunkPath;
+        if (object.fromDecompressedPayload)
+            output << "\nCompressed source offset: "
+                << object.compressedSourceOffset
+                << "\nDecoded stream offset: " << object.decompressedOffset;
         if (object.hasTransform)
         {
             output << "\nPosition: " << object.position[0] << ", "

@@ -6,6 +6,7 @@
 #include "editor_model/EditorTreePathListImport.h"
 #include "editor_model/EditorTreeQuery.h"
 #include "editor_model/EditorTreeSnapshot.h"
+#include "editor_scene/EditorHistoricalSceneProbe.h"
 
 #include <iostream>
 #include <cmath>
@@ -39,10 +40,36 @@ int RunEditorPreviewSceneTests();
 int RunEditorToolControllerTests();
 int RunEditorMetadataTests();
 int RunEditorSceneProbeTests();
+int RunEditorSceneCompressionTests();
 int RunEditorHistoricalSceneDocumentTests();
 
-int main()
+int main(int argc, char** argv)
 {
+    if (argc == 3 && std::string(argv[1]) == "--probe-scene")
+    {
+        EditorSceneManifest manifest;
+        std::string probeReason;
+        if (!EditorHistoricalSceneProbe().ProbeSceneFile(argv[2], manifest,
+            &probeReason))
+        {
+            std::cerr << "Scene probe failed: " << probeReason << '\n';
+            return 2;
+        }
+        std::cout << "source=" << manifest.sourceFile << '\n'
+            << "version=" << manifest.version << '\n'
+            << "chunks=" << manifest.chunks.size() << '\n'
+            << "objects=" << manifest.objects.size() << '\n'
+            << "compressed_chunks=" << manifest.compressedChunkCount << '\n'
+            << "decompressed_chunks=" << manifest.decompressedChunkCount << '\n'
+            << "decompression_failures="
+            << manifest.decompressionFailureCount << '\n'
+            << "compressed_bytes=" << manifest.totalCompressedBytes << '\n'
+            << "decompressed_bytes=" << manifest.totalDecompressedBytes << '\n'
+            << "algorithm=" << (manifest.compressionAlgorithm.empty()
+                ? "none" : manifest.compressionAlgorithm) << '\n';
+        return 0;
+    }
+
     EditorItemKind parsedKind = EditorItemKind::Unknown;
     Check(ToString(EditorItemKind::Folder) == "folder",
         "folder kind string conversion");
@@ -563,6 +590,7 @@ int main()
     failures += RunEditorToolControllerTests();
     failures += RunEditorMetadataTests();
     failures += RunEditorSceneProbeTests();
+    failures += RunEditorSceneCompressionTests();
     failures += RunEditorHistoricalSceneDocumentTests();
 
     if (failures)

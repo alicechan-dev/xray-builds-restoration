@@ -31,7 +31,22 @@ struct Chunk
     std::size_t headerOffset = 0;
     std::size_t dataOffset = 0;
     bool compressed = false;
+    bool decompressionSupported = false;
+    bool decompressionSucceeded = false;
+    bool fromDecompressedPayload = false;
+    std::size_t compressedSourceOffset = 0;
+    std::size_t decompressedOffset = 0;
+    std::string compressionDiagnostic;
+    std::vector<std::uint8_t> decompressed;
     EditorBinaryReader payload;
+};
+
+struct SourceContext
+{
+    bool decompressed = false;
+    std::size_t compressedSourceOffset = 0;
+    std::size_t decompressedBaseOffset = 0;
+    std::size_t compressionDepth = 0;
 };
 
 std::string HexId(std::uint32_t id)
@@ -90,11 +105,12 @@ public:
 
     bool Parse(EditorBinaryReader reader)
     {
+        const SourceContext source;
         bool versionSeen = false;
         while (!reader.Empty())
         {
             Chunk chunk;
-            if (!ReadChunk(reader, chunk))
+            if (!ReadChunk(reader, chunk, source))
                 return false;
             const std::string path = ChildPath({}, chunk.id);
             if (!RecordChunk(chunk, path, 0))
@@ -105,9 +121,9 @@ public:
                 if (versionSeen)
                     return Fail(chunk.headerOffset,
                         "duplicate scene version chunk");
-                if (chunk.compressed || chunk.size != 4)
+                if (!CanParse(chunk) || chunk.payload.Size() != 4)
                     return Fail(chunk.headerOffset,
-                        "scene version chunk must be an uncompressed u32");
+                        "scene version chunk must contain a readable u32");
                 if (!chunk.payload.ReadU32(manifest_.version))
                     return ReaderFail(chunk.payload);
                 manifest_.hasVersion = true;
@@ -115,29 +131,28 @@ public:
             }
             else if (chunk.id == SceneObjectCountChunk)
             {
-                if (chunk.compressed || chunk.size != 4)
+                if (!CanParse(chunk) || chunk.payload.Size() != 4)
                     return Fail(chunk.headerOffset,
-                        "object count chunk must be an uncompressed u32");
+                        "object count chunk must contain a readable u32");
                 if (!chunk.payload.ReadU32(manifest_.declaredObjectCount))
                     return ReaderFail(chunk.payload);
                 manifest_.hasDeclaredObjectCount = true;
             }
             else if (chunk.id == SceneObjectListChunk)
             {
-                if (chunk.compressed)
-                    return Fail(chunk.headerOffset,
-                        "compressed legacy object list is unsupported");
-                if (!ParseObjectContainer(chunk.payload, path, 1, false, 0))
+                if (!CanParseOrDiagnose(chunk))
+                    continue;
+                if (!ParseObjectContainer(chunk.payload, path, 1, false, 0,
+                    ChildContext(source, chunk)))
                     return false;
             }
             else if (chunk.id >= SceneToolOffset &&
                 chunk.id <= SceneToolOffset + LastObjectToolClass)
             {
-                if (chunk.compressed)
-                    return Fail(chunk.headerOffset,
-                        "compressed object-tool chunk is unsupported");
+                if (!CanParseOrDiagnose(chunk))
+                    continue;
                 if (!ParseObjectTool(chunk.payload, path, 1,
-                    chunk.id - SceneToolOffset))
+                    chunk.id - SceneToolOffset, ChildContext(source, chunk)))
                     return false;
             }
             else
@@ -165,25 +180,25 @@ public:
 
 private:
     bool ParseObjectTool(EditorBinaryReader reader, const std::string& path,
-        std::size_t depth, std::uint32_t toolClass)
+        std::size_t depth, std::uint32_t toolClass,
+        const SourceContext& source)
     {
         if (depth > limits_.maximumNestingDepth)
             return Fail(reader.AbsoluteOffset(), "scene nesting limit exceeded");
         while (!reader.Empty())
         {
             Chunk chunk;
-            if (!ReadChunk(reader, chunk))
+            if (!ReadChunk(reader, chunk, source))
                 return false;
             const std::string childPath = ChildPath(path, chunk.id);
             if (!RecordChunk(chunk, childPath, depth))
                 return false;
             if (chunk.id == ToolObjectsChunk)
             {
-                if (chunk.compressed)
-                    return Fail(chunk.headerOffset,
-                        "compressed tool object records are unsupported");
+                if (!CanParseOrDiagnose(chunk))
+                    continue;
                 if (!ParseObjectContainer(chunk.payload, childPath, depth + 1,
-                    true, toolClass))
+                    true, toolClass, ChildContext(source, chunk)))
                     return false;
             }
             else if (chunk.id != ToolObjectCountChunk)
@@ -194,23 +209,23 @@ private:
 
     bool ParseObjectContainer(EditorBinaryReader reader,
         const std::string& path, std::size_t depth, bool hasToolClass,
-        std::uint32_t toolClass)
+        std::uint32_t toolClass, const SourceContext& source)
     {
         if (depth > limits_.maximumNestingDepth)
             return Fail(reader.AbsoluteOffset(), "scene nesting limit exceeded");
         while (!reader.Empty())
         {
             Chunk chunk;
-            if (!ReadChunk(reader, chunk))
+            if (!ReadChunk(reader, chunk, source))
                 return false;
             const std::string childPath = ChildPath(path, chunk.id);
             if (!RecordChunk(chunk, childPath, depth))
                 return false;
-            if (chunk.compressed)
-                return Fail(chunk.headerOffset,
-                    "compressed object record is unsupported");
+            if (!CanParseOrDiagnose(chunk))
+                continue;
             if (!ParseObjectRecord(chunk.payload, childPath, depth + 1,
-                chunk.id, hasToolClass, toolClass))
+                chunk.id, hasToolClass, toolClass,
+                ChildContext(source, chunk)))
                 return false;
         }
         return true;
@@ -218,26 +233,30 @@ private:
 
     bool ParseObjectRecord(EditorBinaryReader reader, const std::string& path,
         std::size_t depth, std::size_t recordIndex, bool hasToolClass,
-        std::uint32_t toolClass)
+        std::uint32_t toolClass, const SourceContext& source)
     {
         if (manifest_.objects.size() >= limits_.maximumObjects)
             return Fail(reader.AbsoluteOffset(), "scene object limit exceeded");
         EditorSceneObjectRecord object;
         object.recordIndex = recordIndex;
-        object.sourceOffset = reader.AbsoluteOffset();
+        object.sourceOffset = source.decompressed
+            ? source.compressedSourceOffset : reader.AbsoluteOffset();
+        object.fromDecompressedPayload = source.decompressed;
+        object.compressedSourceOffset = source.compressedSourceOffset;
+        object.decompressedOffset = source.decompressed
+            ? reader.Position() + source.decompressedBaseOffset : 0;
         object.chunkPath = path;
         bool bodySeen = false;
         while (!reader.Empty())
         {
             Chunk chunk;
-            if (!ReadChunk(reader, chunk))
+            if (!ReadChunk(reader, chunk, source))
                 return false;
             const std::string childPath = ChildPath(path, chunk.id);
             if (!RecordChunk(chunk, childPath, depth))
                 return false;
-            if (chunk.compressed)
-                return Fail(chunk.headerOffset,
-                    "compressed object wrapper chunk is unsupported");
+            if (!CanParseOrDiagnose(chunk))
+                continue;
             if (chunk.id == ObjectClassChunk)
             {
                 if (object.hasClassId || chunk.size != 4)
@@ -253,7 +272,7 @@ private:
                     return Fail(chunk.headerOffset, "duplicate object body chunk");
                 bodySeen = true;
                 if (!ParseObjectBody(chunk.payload, childPath, depth + 1,
-                    object))
+                    object, ChildContext(source, chunk)))
                     return false;
             }
             else
@@ -271,21 +290,21 @@ private:
     }
 
     bool ParseObjectBody(EditorBinaryReader reader, const std::string& path,
-        std::size_t depth, EditorSceneObjectRecord& object)
+        std::size_t depth, EditorSceneObjectRecord& object,
+        const SourceContext& source)
     {
         if (depth > limits_.maximumNestingDepth)
             return Fail(reader.AbsoluteOffset(), "scene nesting limit exceeded");
         while (!reader.Empty())
         {
             Chunk chunk;
-            if (!ReadChunk(reader, chunk))
+            if (!ReadChunk(reader, chunk, source))
                 return false;
             const std::string childPath = ChildPath(path, chunk.id);
             if (!RecordChunk(chunk, childPath, depth))
                 return false;
-            if (chunk.compressed)
-                return Fail(chunk.headerOffset,
-                    "compressed common object chunk is unsupported");
+            if (!CanParseOrDiagnose(chunk))
+                continue;
             if (chunk.id == ObjectNameChunk)
             {
                 if (object.hasName || !chunk.payload.ReadCString(
@@ -300,7 +319,8 @@ private:
             }
             else if (chunk.id == ObjectTransformChunk)
             {
-                if (object.hasTransform || chunk.size != 9u * sizeof(float))
+                if (object.hasTransform ||
+                    chunk.payload.Size() != 9u * sizeof(float))
                     return Fail(chunk.headerOffset,
                         "object transform chunk is duplicate or not nine floats");
                 for (float& value : object.position)
@@ -317,11 +337,16 @@ private:
         return true;
     }
 
-    bool ReadChunk(EditorBinaryReader& reader, Chunk& chunk)
+    bool ReadChunk(EditorBinaryReader& reader, Chunk& chunk,
+        const SourceContext& source)
     {
         if (reader.Remaining() < 8)
             return Fail(reader.AbsoluteOffset(), "truncated XR chunk header");
         chunk.headerOffset = reader.AbsoluteOffset();
+        chunk.fromDecompressedPayload = source.decompressed;
+        chunk.compressedSourceOffset = source.compressedSourceOffset;
+        chunk.decompressedOffset = source.decompressed
+            ? source.decompressedBaseOffset + reader.Position() : 0;
         if (!reader.ReadU32(chunk.rawId) || !reader.ReadU32(chunk.size))
             return ReaderFail(reader);
         chunk.id = chunk.rawId & ~CompressMark;
@@ -329,8 +354,51 @@ private:
         chunk.dataOffset = reader.AbsoluteOffset();
         if (static_cast<std::size_t>(chunk.size) > reader.Remaining())
             return Fail(chunk.headerOffset, "XR chunk payload exceeds parent bounds");
-        if (!reader.Slice(chunk.size, chunk.payload))
+        EditorBinaryReader rawPayload;
+        if (!reader.Slice(chunk.size, rawPayload))
             return ReaderFail(reader);
+        if (!chunk.compressed)
+        {
+            chunk.payload = rawPayload;
+            return true;
+        }
+
+        chunk.decompressionSupported = true;
+        ++manifest_.compressedChunkCount;
+        manifest_.totalCompressedBytes += chunk.size;
+        if (source.compressionDepth >= limits_.maximumCompressedNestingDepth)
+        {
+            chunk.compressionDiagnostic =
+                "compressed chunk nesting limit exceeded";
+            ++manifest_.decompressionFailureCount;
+            return true;
+        }
+        std::vector<std::uint8_t> compressed(chunk.size);
+        if (!compressed.empty() && !rawPayload.ReadBytes(
+            compressed.data(), compressed.size()))
+            return ReaderFail(rawPayload);
+        if (!DecompressHistoricalSceneChunk(compressed, chunk.decompressed,
+            limits_.decompression, &chunk.compressionDiagnostic))
+        {
+            ++manifest_.decompressionFailureCount;
+            return true;
+        }
+        if (chunk.decompressed.size() >
+            limits_.maximumTotalDecompressedBytes - totalDecompressedBytes_)
+        {
+            chunk.decompressed.clear();
+            chunk.compressionDiagnostic =
+                "scene total decompressed byte budget exceeded";
+            ++manifest_.decompressionFailureCount;
+            return true;
+        }
+        totalDecompressedBytes_ += chunk.decompressed.size();
+        manifest_.totalDecompressedBytes = totalDecompressedBytes_;
+        ++manifest_.decompressedChunkCount;
+        manifest_.compressionAlgorithm = HistoricalSceneCompressionAlgorithm();
+        chunk.decompressionSucceeded = true;
+        chunk.payload = EditorBinaryReader(chunk.decompressed.data(),
+            chunk.decompressed.size(), chunk.dataOffset);
         return true;
     }
 
@@ -341,10 +409,62 @@ private:
             return Fail(chunk.headerOffset, "scene nesting limit exceeded");
         if (manifest_.chunks.size() >= limits_.maximumChunks)
             return Fail(chunk.headerOffset, "scene chunk limit exceeded");
-        manifest_.chunks.push_back({chunk.id, chunk.rawId, chunk.size,
-            chunk.headerOffset, chunk.dataOffset, depth, chunk.compressed,
-            path, ChunkLabel(chunk.id, depth)});
+        EditorSceneChunkRecord record;
+        record.id = chunk.id;
+        record.rawId = chunk.rawId;
+        record.size = chunk.size;
+        record.headerOffset = chunk.headerOffset;
+        record.dataOffset = chunk.dataOffset;
+        record.depth = depth;
+        record.compressed = chunk.compressed;
+        record.compressedSize = chunk.compressed ? chunk.size : 0;
+        record.decompressedSize = chunk.decompressed.size();
+        record.decompressionSupported = chunk.decompressionSupported;
+        record.decompressionSucceeded = chunk.decompressionSucceeded;
+        record.compressionAlgorithm = chunk.compressed
+            ? HistoricalSceneCompressionAlgorithm() : std::string();
+        record.compressionDiagnostic = chunk.compressionDiagnostic;
+        record.fromDecompressedPayload = chunk.fromDecompressedPayload;
+        record.compressedSourceOffset = chunk.compressedSourceOffset;
+        record.decompressedOffset = chunk.decompressedOffset;
+        record.path = path;
+        record.label = ChunkLabel(chunk.id, depth);
+        manifest_.chunks.push_back(std::move(record));
         return true;
+    }
+
+    bool CanParse(const Chunk& chunk) const
+    {
+        return !chunk.compressed || chunk.decompressionSucceeded;
+    }
+
+    bool CanParseOrDiagnose(const Chunk& chunk)
+    {
+        if (CanParse(chunk))
+            return true;
+        AddDiagnostic(chunk.headerOffset, "compressed chunk " +
+            HexId(chunk.id) + " was not parsed: " +
+            chunk.compressionDiagnostic);
+        return false;
+    }
+
+    SourceContext ChildContext(const SourceContext& parent,
+        const Chunk& chunk) const
+    {
+        SourceContext child = parent;
+        if (parent.decompressed)
+            child.decompressedBaseOffset = chunk.decompressedOffset + 8u;
+        if (chunk.compressed && chunk.decompressionSucceeded)
+        {
+            if (!child.decompressed)
+            {
+                child.decompressed = true;
+                child.compressedSourceOffset = chunk.headerOffset;
+                child.decompressedBaseOffset = 0;
+            }
+            ++child.compressionDepth;
+        }
+        return child;
     }
 
     void AddDiagnostic(std::size_t offset, std::string message)
@@ -369,6 +489,7 @@ private:
     const EditorSceneProbeLimits& limits_;
     EditorSceneManifest& manifest_;
     std::string* reason_ = nullptr;
+    std::size_t totalDecompressedBytes_ = 0;
 };
 }
 

@@ -24,6 +24,9 @@ struct EditorHistoricalSceneObjectData
     bool bodySupported = false;
     std::string chunkPath;
     std::size_t sourceOffset = 0;
+    bool fromDecompressedPayload = false;
+    std::size_t compressedSourceOffset = 0;
+    std::size_t decompressedOffset = 0;
     std::uint32_t sceneVersion = 0;
     std::string diagnosticsSummary;
 };

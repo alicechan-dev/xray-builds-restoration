@@ -16,4 +16,7 @@ objects back to distinct records, selects the matching tree item, refreshes
 properties, and highlights the correct preview object. Camera movement, grid,
 labels, picking, and Frame Selected remain available. Move gizmo and placement
 operations remain disabled.
+Compression does not change preview policy: only confirmed finite transforms
+produce generic markers. Decoded records do not trigger asset loading or
+class-specific historical rendering.
 

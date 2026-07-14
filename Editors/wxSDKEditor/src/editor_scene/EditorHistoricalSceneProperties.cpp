@@ -66,6 +66,18 @@ EditorPropertySet BuildHistoricalSceneObjectPropertySet(
         object.chunkPath));
     properties.Add(Property("source_offset", "Source Offset",
         std::to_string(object.sourceOffset)));
+    properties.Add(Property("from_decompressed_payload",
+        "From Decompressed Payload",
+        object.fromDecompressedPayload ? "true" : "false"));
+    if (object.fromDecompressedPayload)
+    {
+        properties.Add(Property("compressed_source_offset",
+            "Compressed Source Offset",
+            std::to_string(object.compressedSourceOffset)));
+        properties.Add(Property("decompressed_offset",
+            "Decoded Stream Offset",
+            std::to_string(object.decompressedOffset)));
+    }
     properties.Add(Property("scene_version", "Scene Version",
         std::to_string(object.sceneVersion)));
     properties.Add(Property("read_only", "Read-Only", "true"));

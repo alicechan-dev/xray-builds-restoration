@@ -2,6 +2,7 @@
 #define XR_WX_SDK_EDITOR_EDITOR_HISTORICAL_SCENE_PROBE_H
 
 #include "editor_scene/EditorSceneManifest.h"
+#include "editor_scene/EditorSceneCompression.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -17,6 +18,9 @@ struct EditorSceneProbeLimits
     std::size_t maximumObjects = 100000;
     std::size_t maximumStringLength = 4096;
     std::size_t maximumDiagnostics = 256;
+    std::size_t maximumTotalDecompressedBytes = 512u * 1024u * 1024u;
+    std::size_t maximumCompressedNestingDepth = 8;
+    EditorSceneDecompressionLimits decompression;
 };
 
 class EditorHistoricalSceneProbe

@@ -83,10 +83,16 @@ bool EditorHistoricalSceneDocument::BuildFromManifest(
         data.sourceName = source.hasName ? source.name : std::string();
         data.chunkPath = source.chunkPath;
         data.sourceOffset = source.sourceOffset;
+        data.fromDecompressedPayload = source.fromDecompressedPayload;
+        data.compressedSourceOffset = source.compressedSourceOffset;
+        data.decompressedOffset = source.decompressedOffset;
         data.sceneVersion = candidate.manifest_.version;
         data.stableRecordId = "historical.object." +
             std::to_string(data.objectIndex) +
             "." + std::to_string(source.sourceOffset);
+        if (source.fromDecompressedPayload)
+            data.stableRecordId += ".decoded." +
+                std::to_string(source.decompressedOffset);
         data.transformConfirmed = source.hasTransform && IsFinite(source);
         data.bodySupported = false;
         if (source.hasTransform)
@@ -166,7 +172,9 @@ EditorHistoricalSceneDocument::GetUnsupportedCompressedChunkCount() const
 {
     return static_cast<std::size_t>(std::count_if(
         manifest_.chunks.begin(), manifest_.chunks.end(),
-        [](const EditorSceneChunkRecord& chunk) { return chunk.compressed; }));
+        [](const EditorSceneChunkRecord& chunk) {
+            return chunk.compressed && !chunk.decompressionSucceeded;
+        }));
 }
 
 std::size_t EditorHistoricalSceneDocument::GetUnsupportedBodyCount() const

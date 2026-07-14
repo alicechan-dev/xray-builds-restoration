@@ -30,4 +30,8 @@ Opening is atomic: probe and conversion failure leave the active editable or
 historical document unchanged. The document never saves, rewrites, normalizes,
 or exports `.level` data and never constructs historical classes or follows
 asset references.
+Confirmed records discovered inside successfully decoded LZHUF containers are
+converted through the same inert read-only path. Their identity and properties
+retain the physical compressed-container offset, decoded-stream offset, and
+chunk path. Failed compressed containers create no objects.
 

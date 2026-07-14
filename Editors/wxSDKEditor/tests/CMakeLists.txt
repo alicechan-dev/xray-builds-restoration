@@ -7,6 +7,7 @@ add_executable(wxSDKEditorModelTests
   EditorToolControllerTests.cpp
   EditorMetadataTests.cpp
   EditorSceneProbeTests.cpp
+  EditorSceneCompressionTests.cpp
   EditorHistoricalSceneDocumentTests.cpp
   "${CMAKE_CURRENT_SOURCE_DIR}/../src/editor_app/EditorTreePresenter.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/../include/editor_app/EditorTreePresenter.h"

@@ -37,3 +37,10 @@ Inspector](wx-editor-scene-inspector.md).
 The same atomic manifest can now feed the separate read-only historical
 document mode. Probe failure still leaves both editable and historical
 workspace state unchanged; conversion adds no parsing or object construction.
+## Compressed chunks
+
+The probe now decodes source-confirmed X-Ray LZHUF chunks through the wx-free
+bounded decoder. It parses the decoded child buffer with the same chunk logic,
+retains compression provenance, and applies per-chunk, total-byte, ratio, and
+nested-depth limits. Failed non-critical payloads remain explicit diagnostics;
+they are not parsed through or silently converted to empty data.

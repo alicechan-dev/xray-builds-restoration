@@ -27,3 +27,8 @@ unchanged. The read-only historical document conversion is a separate,
 wx-free, tested model that copies only confirmed inert values. The manifest is
 not permission to instantiate runtime/editor classes, and conversion still
 performs no referenced-file loading or scene writes.
+Historical LZHUF decoding adds strict output-size, expansion-ratio,
+scene-budget, nesting, truncation, and trailing-data checks. See
+[wx-editor-scene-decompression-security.md](wx-editor-scene-decompression-security.md).
+The historical `_decompressLZ` implementation is not called directly because
+it allocates from the stream header and substitutes zero bits at EOF.

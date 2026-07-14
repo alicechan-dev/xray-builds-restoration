@@ -251,3 +251,5 @@ The read-only historical document now transplants confirmed manifest values
 through `EditorTreeModel`, properties, selection, and preview without old
 `TElTree` or object classes. It remains a new adapter path, not an ElPack or
 LevelEditor compatibility implementation.
+Scene compression support is independent of ElPack/VCL migration. It decodes
+only inert chunk bytes and does not construct old editor objects or controls.

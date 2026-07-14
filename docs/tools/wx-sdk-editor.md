@@ -399,3 +399,7 @@ boxes. Existing `.wx_tree_snapshot` editing is unchanged. See [Historical
 Document](wx-editor-historical-document.md), [Historical
 Preview](wx-editor-historical-preview.md), and [Document
 Modes](wx-editor-document-modes.md).
+The historical read-only path now understands source-confirmed X-Ray LZHUF
+chunk compression using a dependency-light wx-free decoder. Scene Inspector
+shows compression provenance and failures. No decompressed data is written and
+specialized object bodies remain unsupported.
