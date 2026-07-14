@@ -341,3 +341,7 @@ specialized classes remain unsupported.
   bodies are Partial/inert. Read-only properties and Inspector expose confirmed
   fields; preview draws only a bounded range diagnostic. No light, animation,
   texture, factory, or historical class is loaded.
+- The fourth key decoder covers all 4,334 sampled class-6 `CSpawnPoint`
+  records: seven environment modifiers are Supported and 4,327 runtime
+  entities are Partial because packets remain opaque. Classes 1, 2, 3, and 6
+  now cover 21,990 of 22,767 records (96.6%) without entity/factory execution.

@@ -96,3 +96,6 @@ Decoded class-3 lights expose type, RGBA floats, brightness, range,
 attenuation, cone, virtual size, use-in-D3D, raw flags/control, inert optional
 names, fuzzy summary, retained chunk counts, and parameter provenance. Apply
 remains disabled and no resource or historical light is created.
+Decoded class-6 Spawn Points expose subtype, inert section, opaque
+packet/attachment sizes, safe respawn/environment values, raw colors/flags,
+retained counts, and provenance without factory or config resolution.

@@ -47,3 +47,7 @@ only a diagnostic preview ring.
 The third transplant supports 1,729 sampled `CLight` bodies: 1,221 Supported
 and 508 Partial because fuzzy placement remains inert. Confirmed scalar fields
 and provenance remain read-only and no historical light is constructed.
+The fourth transplant covers all 4,334 sampled `CSpawnPoint` bodies: seven
+environment modifiers are Supported and 4,327 runtime entities are Partial
+because packets stay opaque. This is separate from editable synthetic `$spawn`
+prototype placement.

@@ -26,12 +26,24 @@ EditorPreviewScene BuildHistoricalScenePreview(
         if (light)
             label += " [" + std::string(EditorHistoricalLightTypeName(
                 object.bodyDecode.light.type)) + "]";
+        const bool spawnPoint = object.bodyDecode.hasSpawnPoint;
+        if (spawnPoint)
+        {
+            const EditorHistoricalSpawnPointRecord& spawn =
+                object.bodyDecode.spawnPoint;
+            label += " [" + std::string(EditorHistoricalSpawnPointTypeName(
+                spawn.type));
+            if (spawn.hasEntityReference)
+                label += ": " + spawn.entityReference;
+            label += "]";
+        }
         const float diagnosticSize = light ? object.bodyDecode.light.range :
             glow ? object.bodyDecode.glow.radius : 1.0f;
         scene.AddObject({object.stableRecordId, label,
             object.transform.x, object.transform.y, object.transform.z,
             diagnosticSize, diagnosticSize, diagnosticSize,
-            light ? EditorPreviewKind::HistoricalLight :
+            spawnPoint ? EditorPreviewKind::Spawn :
+                light ? EditorPreviewKind::HistoricalLight :
                 glow ? EditorPreviewKind::Glow : EditorPreviewKind::Box});
     }
     scene.SetSelectedPath(selectedStableId);

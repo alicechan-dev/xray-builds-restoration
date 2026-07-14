@@ -45,3 +45,7 @@ For decoded class-3 lights, details show type, color, brightness, range,
 attenuation, cone, virtual size, use flag, raw flags/control, fuzzy summary,
 parameter source offset, retained chunks, and diagnostics. Animation and
 falloff names are inert; no light or resource is created.
+
+For decoded class-6 Spawn Points, details show subtype, inert entity section,
+opaque packet/attachment sizes, safe respawn/environment values, provenance,
+retained chunks, and diagnostics. Packet bytes are never displayed or parsed.

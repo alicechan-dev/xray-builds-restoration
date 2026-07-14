@@ -45,3 +45,6 @@ The decoder enforces the shared limits of 4 MiB per body, 64 child chunks,
 missing or duplicate specialized chunks, invalid version-specific parameter
 sizes, unsupported versions, compressed specialized children, unterminated
 strings, non-finite radius/legacy position, and child bounds outside the body.
+
+The later class-6 Spawn Point branch is independent; all 511 sampled Glow
+records remain Supported with unchanged read-only preview policy.

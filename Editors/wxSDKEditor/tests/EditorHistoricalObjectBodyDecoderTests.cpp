@@ -157,6 +157,52 @@ Bytes FuzzyPayload(std::uint8_t shape = 0, std::int16_t pointCount = 1)
     }
     return fuzzy;
 }
+
+Bytes SpawnEntityBody(bool attachment = false)
+{
+    Bytes body;
+    Append(body, Chunk(0xe411, {0x14, 0x00}));
+    Bytes reference;
+    CString(reference, "stalker");
+    Append(body, Chunk(0xe419, reference));
+    Bytes packet;
+    U32(packet, 5);
+    packet.insert(packet.end(), {1, 2, 3, 4, 5});
+    Append(body, Chunk(0xe420, packet));
+    if (attachment)
+        Append(body, Chunk(0xe421, {9, 8, 7}));
+    return body;
+}
+
+Bytes SpawnEnvironmentBody()
+{
+    Bytes body;
+    Append(body, Chunk(0xe411, {0x14, 0x00}));
+    Bytes type;
+    U32(type, 1);
+    Append(body, Chunk(0xe417, type));
+    Bytes environment;
+    Float(environment, 10.0f);
+    Float(environment, 1.0f);
+    Float(environment, 300.0f);
+    U32(environment, 0x00808080);
+    Float(environment, 0.5f);
+    U32(environment, 0x00000000);
+    U32(environment, 0x00ffffff);
+    Append(body, Chunk(0xe422, environment));
+    return body;
+}
+
+Bytes SpawnRespawnBody()
+{
+    Bytes body;
+    Append(body, Chunk(0xe411, {0x14, 0x00}));
+    Bytes type;
+    U32(type, 0);
+    Append(body, Chunk(0xe417, type));
+    Append(body, Chunk(0xe413, {3, 1, 0, 0}));
+    return body;
+}
 }
 
 int RunEditorHistoricalObjectBodyDecoderTests()
@@ -328,6 +374,128 @@ int RunEditorHistoricalObjectBodyDecoderTests()
     check(DecodeHistoricalObjectBody(3, badLightBounds, 0, "body").status ==
         EditorHistoricalObjectDecodeStatus::Malformed,
         "light child outside body bounds is malformed");
+
+    const EditorHistoricalObjectBodyDecodeResult spawnEntity =
+        DecodeHistoricalObjectBody(6, SpawnEntityBody(), 4000, "spawn-body");
+    check(spawnEntity.status == EditorHistoricalObjectDecodeStatus::Partial &&
+        spawnEntity.hasSpawnPoint && spawnEntity.hasBodyVersion &&
+        spawnEntity.bodyVersion == 0x0014 &&
+        spawnEntity.spawnPoint.type == 2 &&
+        spawnEntity.spawnPoint.hasEntityReference &&
+        spawnEntity.spawnPoint.entityReference == "stalker" &&
+        spawnEntity.spawnPoint.hasRuntimePacket &&
+        spawnEntity.spawnPoint.runtimePacketSize == 5 &&
+        spawnEntity.unsupportedChunks.size() == 1 &&
+        spawnEntity.unsupportedChunks[0].id == 0xe420,
+        "runtime spawn entity exposes inert section and opaque packet metadata");
+    check(spawnEntity.spawnPoint.versionProvenance.sourceOffset == 4008 &&
+        spawnEntity.spawnPoint.entityReferenceProvenance.chunkPath ==
+            "spawn-body/0x0000E419" &&
+        spawnEntity.spawnPoint.runtimePacketProvenance.chunkId == 0xe420,
+        "spawn-point field provenance retains offsets and chunk paths");
+
+    Bytes fullSpawn = SpawnEntityBody(true);
+    Bytes spawnFlags;
+    U32(spawnFlags, 0x12345678);
+    Append(fullSpawn, Chunk(0xe418, spawnFlags));
+    const EditorHistoricalObjectBodyDecodeResult fullSpawnResult =
+        DecodeHistoricalObjectBody(6, fullSpawn, 0, "body");
+    check(fullSpawnResult.status == EditorHistoricalObjectDecodeStatus::Partial &&
+        fullSpawnResult.spawnPoint.hasAttachedObject &&
+        fullSpawnResult.spawnPoint.attachedObjectSize == 3 &&
+        fullSpawnResult.spawnPoint.hasFlags &&
+        fullSpawnResult.spawnPoint.flags == 0x12345678 &&
+        fullSpawnResult.unsupportedChunks.size() == 2,
+        "spawn attachment and flags remain bounded inert metadata");
+
+    const EditorHistoricalObjectBodyDecodeResult environmentSpawn =
+        DecodeHistoricalObjectBody(6, SpawnEnvironmentBody(), 0, "body");
+    check(environmentSpawn.status ==
+            EditorHistoricalObjectDecodeStatus::Supported &&
+        environmentSpawn.hasSpawnPoint &&
+        environmentSpawn.spawnPoint.type == 1 &&
+        environmentSpawn.spawnPoint.hasEnvironmentModifier &&
+        environmentSpawn.spawnPoint.environmentRadius == 10.0f &&
+        environmentSpawn.spawnPoint.environmentViewDistance == 300.0f &&
+        environmentSpawn.spawnPoint.environmentFogDensity == 0.5f,
+        "environment modifier decodes dependency-free scalar layout");
+
+    const EditorHistoricalObjectBodyDecodeResult respawn =
+        DecodeHistoricalObjectBody(6, SpawnRespawnBody(), 0, "body");
+    check(respawn.status == EditorHistoricalObjectDecodeStatus::Supported &&
+        respawn.spawnPoint.type == 0 && respawn.spawnPoint.hasRespawnPoint &&
+        respawn.spawnPoint.respawnTeam == 3 &&
+        respawn.spawnPoint.respawnType == 1,
+        "respawn-point subtype decodes fixed editor metadata");
+
+    Bytes unknownSpawn = SpawnEnvironmentBody();
+    Append(unknownSpawn, Chunk(0xdead, {1, 2}));
+    const EditorHistoricalObjectBodyDecodeResult unknownSpawnResult =
+        DecodeHistoricalObjectBody(6, unknownSpawn, 0, "body");
+    check(unknownSpawnResult.status == EditorHistoricalObjectDecodeStatus::Partial &&
+        unknownSpawnResult.unknownChunks.size() == 1,
+        "unknown spawn-point child is retained and marks decode partial");
+
+    Bytes missingSpawnVersion;
+    Bytes missingSpawnType;
+    U32(missingSpawnType, 1);
+    Append(missingSpawnVersion, Chunk(0xe417, missingSpawnType));
+    check(DecodeHistoricalObjectBody(6, missingSpawnVersion, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "missing spawn-point version is malformed");
+    Bytes duplicateSpawn = SpawnEnvironmentBody();
+    Append(duplicateSpawn, Chunk(0xe411, {0x14, 0x00}));
+    check(DecodeHistoricalObjectBody(6, duplicateSpawn, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "duplicate spawn-point specialized chunk is malformed");
+    Bytes unsupportedSpawn = SpawnEnvironmentBody();
+    unsupportedSpawn[8] = 0x15;
+    check(DecodeHistoricalObjectBody(6, unsupportedSpawn, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "unsupported spawn-point version is malformed");
+    Bytes noPacket = SpawnEntityBody();
+    noPacket.resize(26);
+    check(DecodeHistoricalObjectBody(6, noPacket, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "runtime spawn entity without packet is malformed");
+    Bytes badPacket = SpawnEntityBody();
+    badPacket[34] = 6;
+    check(DecodeHistoricalObjectBody(6, badPacket, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "runtime packet declared size mismatch is malformed");
+    EditorHistoricalObjectBodyDecodeLimits packetLimits;
+    packetLimits.maximumSpawnOpaquePayload = 4;
+    check(DecodeHistoricalObjectBody(6, SpawnEntityBody(), 0, "body",
+        packetLimits).status == EditorHistoricalObjectDecodeStatus::Malformed,
+        "runtime packet opaque payload limit is enforced");
+    EditorHistoricalObjectBodyDecodeLimits spawnStringLimits;
+    spawnStringLimits.maximumStringLength = 3;
+    check(DecodeHistoricalObjectBody(6, SpawnEntityBody(), 0, "body",
+        spawnStringLimits).status == EditorHistoricalObjectDecodeStatus::Malformed,
+        "spawn entity reference string limit is enforced");
+    Bytes invalidSpawnType = SpawnEnvironmentBody();
+    invalidSpawnType[18] = 3;
+    check(DecodeHistoricalObjectBody(6, invalidSpawnType, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "invalid spawn-point type is malformed");
+    Bytes nonFiniteEnvironment = SpawnEnvironmentBody();
+    for (int index = 0; index != 4; ++index)
+        nonFiniteEnvironment[30 + index] =
+            static_cast<std::uint8_t>(quietNan >> (index * 8));
+    check(DecodeHistoricalObjectBody(6, nonFiniteEnvironment, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "non-finite environment modifier scalar is malformed");
+    Bytes compressedSpawn = SpawnEnvironmentBody();
+    compressedSpawn[3] |= 0x80;
+    check(DecodeHistoricalObjectBody(6, compressedSpawn, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "compressed specialized spawn-point child is rejected");
+    Bytes badSpawnBounds = SpawnEnvironmentBody();
+    badSpawnBounds[4] = 0xff;
+    badSpawnBounds[5] = 0xff;
+    check(DecodeHistoricalObjectBody(6, badSpawnBounds, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "spawn-point child outside body bounds is malformed");
 
     const EditorHistoricalObjectBodyDecodeResult minimumGlow =
         DecodeHistoricalObjectBody(1, GlowBody(), 2000, "glow-body");

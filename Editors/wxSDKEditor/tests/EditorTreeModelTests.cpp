@@ -103,6 +103,37 @@ struct SceneClassAudit
         FloatAudit fuzzyBox[3];
     };
 
+    struct SpawnAudit
+    {
+        std::size_t parsed = 0;
+        std::size_t malformed = 0;
+        std::size_t entityReferences = 0;
+        std::size_t emptyEntityReferences = 0;
+        std::size_t minimumEntityReferenceLength =
+            static_cast<std::size_t>(-1);
+        std::size_t maximumEntityReferenceLength = 0;
+        std::set<std::string> uniqueEntityReferences;
+        std::size_t packets = 0;
+        std::size_t minimumPacketSize = static_cast<std::size_t>(-1);
+        std::size_t maximumPacketSize = 0;
+        std::size_t attachedObjects = 0;
+        std::size_t minimumAttachmentSize = static_cast<std::size_t>(-1);
+        std::size_t maximumAttachmentSize = 0;
+        std::size_t rpoints = 0;
+        std::map<std::uint8_t, std::size_t> rpointTeams;
+        std::map<std::uint8_t, std::size_t> rpointTypes;
+        std::size_t envModifiers = 0;
+        FloatAudit envRadius;
+        FloatAudit envPower;
+        FloatAudit envViewDistance;
+        FloatAudit envFogDensity;
+        std::map<std::uint16_t, std::size_t> versions;
+        std::map<std::uint16_t, std::set<std::string>> versionScenes;
+        std::map<std::uint32_t, std::size_t> types;
+        std::map<std::uint32_t, std::size_t> flags;
+        std::map<std::string, std::size_t> layouts;
+    };
+
     std::size_t records = 0;
     std::size_t named = 0;
     std::size_t transformed = 0;
@@ -116,6 +147,7 @@ struct SceneClassAudit
     std::map<std::uint32_t, BodyChunkAudit> bodyChunks;
     GlowAudit glow;
     LightAudit light;
+    SpawnAudit spawn;
 };
 
 std::uint16_t ReadAuditU16(const std::uint8_t* bytes)
@@ -316,6 +348,88 @@ bool AuditBodyChunks(const EditorSceneObjectRecord& object,
                 }
             }
         }
+        else if (object.classId == 6u)
+        {
+            const std::uint8_t* payload = object.bodyBytes.data() + offset;
+            SceneClassAudit::SpawnAudit& spawn = entry.spawn;
+            if (id == 0xe411u && size == 2)
+            {
+                const std::uint16_t version = ReadAuditU16(payload);
+                ++spawn.versions[version];
+                spawn.versionScenes[version].insert(sceneName);
+            }
+            else if (id == 0xe417u && size == 4)
+                ++spawn.types[ReadAuditU32(payload)];
+            else if (id == 0xe418u && size == 4)
+                ++spawn.flags[ReadAuditU32(payload)];
+            else if (id == 0xe419u)
+            {
+                ++spawn.entityReferences;
+                if (size == 0 || payload[size - 1] != 0)
+                    ++spawn.malformed;
+                else
+                {
+                    const std::size_t length = size - 1;
+                    spawn.emptyEntityReferences += length == 0 ? 1u : 0u;
+                    spawn.minimumEntityReferenceLength = (std::min)(
+                        spawn.minimumEntityReferenceLength, length);
+                    spawn.maximumEntityReferenceLength = (std::max)(
+                        spawn.maximumEntityReferenceLength, length);
+                    spawn.uniqueEntityReferences.insert(std::string(
+                        reinterpret_cast<const char*>(payload), length));
+                }
+            }
+            else if (id == 0xe420u)
+            {
+                ++spawn.packets;
+                if (size < 4)
+                    ++spawn.malformed;
+                else
+                {
+                    const std::size_t packetSize = ReadAuditU32(payload);
+                    if (packetSize != size - 4)
+                        ++spawn.malformed;
+                    spawn.minimumPacketSize = (std::min)(
+                        spawn.minimumPacketSize, packetSize);
+                    spawn.maximumPacketSize = (std::max)(
+                        spawn.maximumPacketSize, packetSize);
+                }
+            }
+            else if (id == 0xe421u)
+            {
+                ++spawn.attachedObjects;
+                spawn.minimumAttachmentSize = (std::min)(
+                    spawn.minimumAttachmentSize, size);
+                spawn.maximumAttachmentSize = (std::max)(
+                    spawn.maximumAttachmentSize, size);
+            }
+            else if (id == 0xe413u)
+            {
+                ++spawn.rpoints;
+                if (size != 4)
+                    ++spawn.malformed;
+                else
+                {
+                    ++spawn.rpointTeams[payload[0]];
+                    ++spawn.rpointTypes[payload[1]];
+                }
+            }
+            else if (id == 0xe422u)
+            {
+                ++spawn.envModifiers;
+                if (size != 28)
+                    ++spawn.malformed;
+                else
+                {
+                    AuditFloat(spawn.envRadius, ReadAuditFloat(payload));
+                    AuditFloat(spawn.envPower, ReadAuditFloat(payload + 4));
+                    AuditFloat(spawn.envViewDistance,
+                        ReadAuditFloat(payload + 8));
+                    AuditFloat(spawn.envFogDensity,
+                        ReadAuditFloat(payload + 16));
+                }
+            }
+        }
         offset += size;
     }
     if (object.classId == 1u)
@@ -327,6 +441,11 @@ bool AuditBodyChunks(const EditorSceneObjectRecord& object,
     {
         ++entry.light.parsed;
         ++entry.light.layouts[layout];
+    }
+    else if (object.classId == 6u)
+    {
+        ++entry.spawn.parsed;
+        ++entry.spawn.layouts[layout];
     }
     return true;
 }
@@ -523,6 +642,65 @@ int AuditScenes(const std::filesystem::path& root)
             }
             for (const auto& layoutItem : light.layouts)
                 std::cout << "  light_layout=" << layoutItem.first
+                    << " occurrences=" << layoutItem.second << '\n';
+        }
+        else if (item.first == 6u)
+        {
+            const SceneClassAudit::SpawnAudit& spawn = entry.spawn;
+            const auto printFloat = [](const char* name,
+                const SceneClassAudit::FloatAudit& value) {
+                std::cout << "  spawn_" << name
+                    << " values=" << value.values
+                    << " nonfinite=" << value.nonFinite
+                    << " min=" << value.minimum
+                    << " max=" << value.maximum << '\n';
+            };
+            std::cout << "  spawn parsed=" << spawn.parsed
+                << " malformed_fields=" << spawn.malformed
+                << " entity_refs=" << spawn.entityReferences
+                << " unique_entity_refs="
+                << spawn.uniqueEntityReferences.size()
+                << " empty_entity_refs=" << spawn.emptyEntityReferences
+                << " entity_ref_length_min="
+                << (spawn.entityReferences ?
+                    spawn.minimumEntityReferenceLength : 0)
+                << " entity_ref_length_max="
+                << spawn.maximumEntityReferenceLength
+                << " packets=" << spawn.packets
+                << " packet_size_min="
+                << (spawn.packets ? spawn.minimumPacketSize : 0)
+                << " packet_size_max=" << spawn.maximumPacketSize
+                << " attachments=" << spawn.attachedObjects
+                << " attachment_size_min="
+                << (spawn.attachedObjects ? spawn.minimumAttachmentSize : 0)
+                << " attachment_size_max=" << spawn.maximumAttachmentSize
+                << " rpoints=" << spawn.rpoints
+                << " env_modifiers=" << spawn.envModifiers << '\n';
+            for (const auto& version : spawn.versions)
+                std::cout << "  spawn_version=" << version.first
+                    << " occurrences=" << version.second
+                    << " scenes=" << spawn.versionScenes.at(version.first).size()
+                    << '\n';
+            for (const auto& type : spawn.types)
+                std::cout << "  spawn_type=" << type.first
+                    << " occurrences=" << type.second << '\n';
+            for (const auto& flags : spawn.flags)
+                std::cout << "  spawn_flags=" << flags.first
+                    << " occurrences=" << flags.second << '\n';
+            for (const auto& team : spawn.rpointTeams)
+                std::cout << "  spawn_rpoint_team="
+                    << static_cast<unsigned int>(team.first)
+                    << " occurrences=" << team.second << '\n';
+            for (const auto& type : spawn.rpointTypes)
+                std::cout << "  spawn_rpoint_type="
+                    << static_cast<unsigned int>(type.first)
+                    << " occurrences=" << type.second << '\n';
+            printFloat("env_radius", spawn.envRadius);
+            printFloat("env_power", spawn.envPower);
+            printFloat("env_view_distance", spawn.envViewDistance);
+            printFloat("env_fog_density", spawn.envFogDensity);
+            for (const auto& layoutItem : spawn.layouts)
+                std::cout << "  spawn_layout=" << layoutItem.first
                     << " occurrences=" << layoutItem.second << '\n';
         }
     }

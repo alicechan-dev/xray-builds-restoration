@@ -68,6 +68,9 @@ payload bounds, versions, enums, strings, and finite floats are validated.
 Malformed specialized data never destroys the generic wrapper.
 
 No historical object is constructed, no factory or renderer is called, no
-referenced resource is opened, and no scene byte is written. The next useful
-narrow decoder candidate is class 5, Sound Source, after its serializer and
-audio-reference semantics are audited.
+referenced resource is opened, and no scene byte is written. After the later
+Spawn Point pass, consolidation of the four-class read-only boundary takes
+priority over another minor decoder.
+
+The later class-6 Spawn Point branch is independent and leaves Light parsing,
+properties, and preview behavior unchanged.

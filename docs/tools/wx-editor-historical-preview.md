@@ -29,3 +29,6 @@ produces a bounded semantic ring and its label identifies Point or Spot. The
 preview does not create illumination, draw a cone, apply fuzzy points, or
 resolve animation/falloff resources. Editable preview lights retain their
 existing fixed marker behavior.
+A decoded Spawn Point uses the semantic Spawn cross marker and an inert
+subtype/section label. It never loads a model, visual, shape, config, entity,
+script, or opaque packet content.

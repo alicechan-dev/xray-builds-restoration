@@ -264,6 +264,63 @@ int RunEditorHistoricalSceneDocumentTests()
             std::string::npos,
         "light range drives conservative historical diagnostic ring");
 
+    EditorSceneManifest spawnManifest;
+    spawnManifest.sourceFile = "spawn.level";
+    spawnManifest.version = 5;
+    spawnManifest.hasVersion = true;
+    EditorSceneObjectRecord spawn = Object(15, 900, "actor_spawn", true);
+    spawn.classId = 6;
+    spawn.bodyDecode.status = EditorHistoricalObjectDecodeStatus::Partial;
+    spawn.bodyDecode.typeName = "Spawn Point";
+    spawn.bodyDecode.hasBodyVersion = true;
+    spawn.bodyDecode.bodyVersion = 0x0014;
+    spawn.bodyDecode.hasSpawnPoint = true;
+    spawn.bodyDecode.spawnPoint.version = 0x0014;
+    spawn.bodyDecode.spawnPoint.type = 2;
+    spawn.bodyDecode.spawnPoint.hasEntityReference = true;
+    spawn.bodyDecode.spawnPoint.entityReference = "actor";
+    spawn.bodyDecode.spawnPoint.hasRuntimePacket = true;
+    spawn.bodyDecode.spawnPoint.runtimePacketSize = 128;
+    spawn.bodyDecode.spawnPoint.entityReferenceProvenance.sourceOffset = 940;
+    spawnManifest.objects.push_back(spawn);
+    EditorSceneObjectRecord damagedSpawn =
+        Object(16, 1000, "damaged_spawn", true);
+    damagedSpawn.classId = 6;
+    damagedSpawn.bodyDecode.status =
+        EditorHistoricalObjectDecodeStatus::Malformed;
+    damagedSpawn.bodyDecode.typeName = "Spawn Point";
+    damagedSpawn.bodyDecode.hasSpawnPoint = true;
+    damagedSpawn.bodyDecode.diagnostics.push_back(
+        "runtime packet envelope is invalid");
+    spawnManifest.objects.push_back(damagedSpawn);
+    EditorHistoricalSceneDocument spawnDocument;
+    check(spawnDocument.BuildFromManifest(spawnManifest, &reason) &&
+        spawnDocument.Objects().size() == 2 &&
+        spawnDocument.Objects()[0].bodySupported &&
+        !spawnDocument.Objects()[1].bodySupported &&
+        spawnDocument.Objects()[1].sourceName == "damaged_spawn" &&
+        spawnDocument.Objects()[1].transformConfirmed,
+        "decoded and malformed spawn points preserve generic records");
+    const EditorPropertySet spawnProperties =
+        BuildHistoricalSceneObjectPropertySet(spawnDocument.Objects()[0]);
+    check(spawnProperties.Find("spawn.type") &&
+        spawnProperties.Find("spawn.type")->value == "Runtime Entity" &&
+        spawnProperties.Find("spawn.entity_reference") &&
+        spawnProperties.Find("spawn.entity_reference")->value == "actor" &&
+        spawnProperties.Find("spawn.runtime_packet") &&
+        spawnProperties.Find("spawn.runtime_packet")->value ==
+            "opaque, 128 bytes" &&
+        spawnProperties.Find("spawn.entity_reference")->readOnly,
+        "spawn-point fields and opaque summary appear read-only");
+    const EditorPreviewScene spawnPreview = BuildHistoricalScenePreview(
+        spawnDocument, spawnDocument.Objects()[0].stableRecordId);
+    check(spawnPreview.GetObjects().size() == 2 &&
+        spawnPreview.GetObjects()[0].kind == EditorPreviewKind::Spawn &&
+        spawnPreview.GetObjects()[0].label.find("actor") != std::string::npos &&
+        spawnPreview.SelectedPath() ==
+            spawnDocument.Objects()[0].stableRecordId,
+        "historical spawn point uses semantic marker and stable selection");
+
     const std::string preservedId = document.Objects()[0].stableRecordId;
     EditorSceneManifest invalid = Manifest();
     invalid.version = 4;

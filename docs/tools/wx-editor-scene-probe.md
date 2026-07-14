@@ -52,3 +52,6 @@ coverage without writing a report or exporting bytes. Retained bodies are
 offered to the explicit class dispatcher; classes 1 (Glow), 2 (Scene Object),
 and 3 (Light) currently have decoders. Light animation, falloff, and fuzzy
 metadata remain inert; the probe never follows resource references.
+Class 6 (Spawn Point) is decoded only at its safe outer boundary. The probe
+does not call factories, parse packet internals, load configs, or inspect
+script/custom data inside packets.

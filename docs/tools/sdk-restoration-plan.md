@@ -653,6 +653,10 @@ version `0x0012` and decode as Supported; inert names/radius/flags and
 provenance are visible read-only, with radius represented only by a diagnostic
 ring. Light (class 3) is the third isolated decoder: all 1,729 sampled bodies
 use version `0x0011`; 1,221 are Supported and 508 are Partial because fuzzy
-placement remains validated metadata only. Class 5 Sound Source is the next
-recommended audit. Scene editing, factories, asset loading, and writes remain
-out of scope.
+placement remains validated metadata only. Scene editing, factories, asset
+loading, and writes remain out of scope.
+Spawn Point (class 6) is the fourth key decoder. All 4,334 sampled records use
+version `0x0014`: seven environment modifiers are Supported and 4,327 runtime
+entities are Partial because packet/attachment bytes remain opaque. The four
+key classes cover 96.6% of observed records. The next stage should stabilize
+this read-only migration boundary before considering minor classes.

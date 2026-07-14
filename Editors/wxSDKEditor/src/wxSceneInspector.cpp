@@ -277,6 +277,51 @@ void wxSceneInspector::OnSelectionChanged(wxTreeEvent& event)
                 << "\nRetained unsupported chunks: "
                 << object.bodyDecode.unsupportedChunks.size();
         }
+        if (object.bodyDecode.hasSpawnPoint)
+        {
+            const EditorHistoricalSpawnPointRecord& spawn =
+                object.bodyDecode.spawnPoint;
+            output << "\nSpawn point type: "
+                << EditorHistoricalSpawnPointTypeName(spawn.type)
+                << "\nEntity reference: "
+                << (spawn.hasEntityReference ? spawn.entityReference :
+                    "not present")
+                << "\nRuntime packet: ";
+            if (spawn.hasRuntimePacket)
+                output << "opaque, " << spawn.runtimePacketSize << " bytes";
+            else
+                output << "not present";
+            output << "\nAttached object: ";
+            if (spawn.hasAttachedObject)
+                output << "opaque, " << spawn.attachedObjectSize << " bytes";
+            else
+                output << "not present";
+            output << "\nSpawn flags: ";
+            if (spawn.hasFlags)
+                output << Hex(spawn.flags);
+            else
+                output << "not present";
+            if (spawn.hasRespawnPoint)
+                output << "\nRespawn team/type: "
+                    << static_cast<unsigned int>(spawn.respawnTeam) << "/"
+                    << static_cast<unsigned int>(spawn.respawnType);
+            if (spawn.hasEnvironmentModifier)
+                output << "\nEnvironment radius: "
+                    << spawn.environmentRadius
+                    << "\nEnvironment power: " << spawn.environmentPower
+                    << "\nEnvironment view distance: "
+                    << spawn.environmentViewDistance
+                    << "\nEnvironment fog density: "
+                    << spawn.environmentFogDensity
+                    << "\nEnvironment fog/ambient/light-map colors: "
+                    << Hex(spawn.environmentFogColor) << ", "
+                    << Hex(spawn.environmentAmbientColor) << ", "
+                    << Hex(spawn.environmentLightMapColor);
+            output << "\nUnknown body chunks: "
+                << object.bodyDecode.unknownChunks.size()
+                << "\nRetained opaque/unsupported chunks: "
+                << object.bodyDecode.unsupportedChunks.size();
+        }
         for (const std::string& diagnostic : object.bodyDecode.diagnostics)
             output << "\nDecoder diagnostic: " << diagnostic;
     }

@@ -159,6 +159,63 @@ EditorPropertySet BuildHistoricalSceneObjectPropertySet(
             "Retained Unsupported Chunks",
             std::to_string(object.bodyDecode.unsupportedChunks.size())));
     }
+    if (object.bodyDecode.hasSpawnPoint)
+    {
+        const EditorHistoricalSpawnPointRecord& spawn =
+            object.bodyDecode.spawnPoint;
+        properties.Add(Property("spawn.type", "Spawn Point Type",
+            EditorHistoricalSpawnPointTypeName(spawn.type)));
+        properties.Add(Property("spawn.entity_reference", "Entity Reference",
+            spawn.hasEntityReference ? spawn.entityReference : "not present"));
+        properties.Add(Property("spawn.runtime_packet", "Runtime Packet",
+            spawn.hasRuntimePacket ?
+                ("opaque, " + std::to_string(spawn.runtimePacketSize) +
+                    " bytes") : "not present"));
+        properties.Add(Property("spawn.attached_object", "Attached Object",
+            spawn.hasAttachedObject ?
+                ("opaque, " + std::to_string(spawn.attachedObjectSize) +
+                    " bytes") : "not present"));
+        properties.Add(Property("spawn.flags", "Spawn Point Flags",
+            spawn.hasFlags ? Hex(spawn.flags) : "not present"));
+        if (spawn.hasRespawnPoint)
+        {
+            properties.Add(Property("spawn.respawn_team", "Respawn Team",
+                std::to_string(spawn.respawnTeam)));
+            properties.Add(Property("spawn.respawn_type", "Respawn Type",
+                std::to_string(spawn.respawnType)));
+        }
+        if (spawn.hasEnvironmentModifier)
+        {
+            properties.Add(Property("spawn.environment_radius",
+                "Environment Radius", std::to_string(spawn.environmentRadius)));
+            properties.Add(Property("spawn.environment_power",
+                "Environment Power", std::to_string(spawn.environmentPower)));
+            properties.Add(Property("spawn.environment_view_distance",
+                "Environment View Distance",
+                std::to_string(spawn.environmentViewDistance)));
+            properties.Add(Property("spawn.environment_fog_density",
+                "Environment Fog Density",
+                std::to_string(spawn.environmentFogDensity)));
+            properties.Add(Property("spawn.environment_fog_color",
+                "Environment Fog Color", Hex(spawn.environmentFogColor)));
+            properties.Add(Property("spawn.environment_ambient_color",
+                "Environment Ambient Color",
+                Hex(spawn.environmentAmbientColor)));
+            properties.Add(Property("spawn.environment_lightmap_color",
+                "Environment Light Map Color",
+                Hex(spawn.environmentLightMapColor)));
+        }
+        properties.Add(Property("spawn.type_source_offset",
+            "Spawn Metadata Source Offset",
+            std::to_string(spawn.hasEntityReference ?
+                spawn.entityReferenceProvenance.sourceOffset :
+                spawn.typeProvenance.sourceOffset)));
+        properties.Add(Property("spawn.unknown_chunks", "Unknown Body Chunks",
+            std::to_string(object.bodyDecode.unknownChunks.size())));
+        properties.Add(Property("spawn.unsupported_chunks",
+            "Retained Opaque/Unsupported Chunks",
+            std::to_string(object.bodyDecode.unsupportedChunks.size())));
+    }
     properties.Add(Property("source_chunk_path", "Source Chunk Path",
         object.chunkPath));
     properties.Add(Property("source_offset", "Source Offset",

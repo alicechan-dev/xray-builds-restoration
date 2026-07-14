@@ -15,6 +15,7 @@ struct EditorHistoricalObjectBodyDecodeLimits
     std::size_t maximumStringLength = 4096;
     std::size_t maximumRetainedUnknownChunks = 32;
     std::size_t maximumLightFuzzyPoints = 100;
+    std::size_t maximumSpawnOpaquePayload = 1024u * 1024u;
 };
 
 EditorHistoricalObjectBodyDecodeResult DecodeHistoricalObjectBody(

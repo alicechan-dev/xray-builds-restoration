@@ -56,13 +56,18 @@ All listed classes invoke `CCustomObject::Load/Save` from
 3. **Light (3):** completed as the third specialized decoder.
 4. **Particle (11):** simple inert reference, but low coverage.
 5. **Sound source (5):** clear fixed record, but audio-state semantics need care.
-6. **Spawn point (6):** common, but versioned spawn packets and attachments are
-   substantially more complex.
+6. **Spawn point (6):** completed as the fourth key decoder; packets and
+   attachments remain bounded opaque metadata.
 
 Scene object therefore won the first decoder pass. Glow was the second pass:
 all 511 records use version `0x0012`, have finite radii from 0.5 to 5.0, and
 decode as `Supported`. The Light audit found 1,729 version-`0x0011` point
 lights: 1,221 decode `Supported`, while 508 fuzzy-placement records are
-`Partial` because those positions remain inert. Class 5 Sound Source is the
-next recommended candidate. Historical sources and scene files remain
-untouched.
+`Partial` because those positions remain inert. Historical sources and scene
+files remain untouched.
+
+Spawn Point coverage adds all 4,334 class-6 records: seven environment
+modifiers are Supported and 4,327 runtime entities are Partial because their
+factory-dependent packets remain opaque. Classes 1, 2, 3, and 6 now cover
+21,990 of 22,767 records (96.6%). The recommended next stage is consolidation
+of this read-only model boundary, not speculative packet parsing.

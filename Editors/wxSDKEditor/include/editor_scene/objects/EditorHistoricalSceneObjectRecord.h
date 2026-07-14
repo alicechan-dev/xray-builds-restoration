@@ -3,6 +3,7 @@
 
 #include "editor_scene/objects/EditorHistoricalGlowRecord.h"
 #include "editor_scene/objects/EditorHistoricalLightRecord.h"
+#include "editor_scene/objects/EditorHistoricalSpawnPointRecord.h"
 #include "editor_scene/objects/EditorHistoricalObjectBodyRecord.h"
 
 #include <cstdint>
@@ -35,6 +36,8 @@ struct EditorHistoricalObjectBodyDecodeResult
     EditorHistoricalGlowRecord glow;
     bool hasLight = false;
     EditorHistoricalLightRecord light;
+    bool hasSpawnPoint = false;
+    EditorHistoricalSpawnPointRecord spawnPoint;
     std::vector<EditorHistoricalBodyChunkRecord> unknownChunks;
     std::vector<EditorHistoricalBodyChunkRecord> unsupportedChunks;
     std::vector<std::string> diagnostics;

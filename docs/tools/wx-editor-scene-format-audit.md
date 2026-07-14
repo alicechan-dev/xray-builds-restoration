@@ -73,3 +73,6 @@ The real-scene class frequencies, source mapping, and candidate ranking are in
 The third specialized audit confirms class 3 `CLight` versions `0x0010` and
 `0x0011`, current and legacy parameter layouts, and bounded fuzzy placement.
 See [Historical Light](wx-editor-historical-light.md).
+Class 6 `CSpawnPoint` adds version `0x0014`, dependency-free editor subtype
+records, inert section strings, and length-validated opaque packet/attachment
+metadata. See [Historical Spawn Point](wx-editor-historical-spawn-point.md).

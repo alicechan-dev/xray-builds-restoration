@@ -45,3 +45,7 @@ legacy-position floats. Shader and texture strings are inert and never opened.
 The class-3 Light decoder additionally caps fuzzy point count at 100 and
 validates the exact shape/count/payload relation plus all retained floats.
 Unknown flag bits are preserved, and animation/falloff names are never opened.
+
+The class-6 Spawn Point decoder validates subtype exclusivity, terminated
+section strings, exact packet envelopes, finite environment floats, and a
+1 MiB opaque payload cap. Packet and attachment bytes are never interpreted.

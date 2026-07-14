@@ -3,6 +3,7 @@
 #include "editor_scene/EditorBinaryReader.h"
 #include "editor_scene/objects/EditorHistoricalGlowDecoder.h"
 #include "editor_scene/objects/EditorHistoricalLightDecoder.h"
+#include "editor_scene/objects/EditorHistoricalSpawnPointDecoder.h"
 
 #include <set>
 #include <cstring>
@@ -14,6 +15,7 @@ constexpr std::uint32_t CompressMark = 0x80000000u;
 constexpr std::uint32_t SceneObjectClass = 2u;
 constexpr std::uint32_t GlowClass = 1u;
 constexpr std::uint32_t LightClass = 3u;
+constexpr std::uint32_t SpawnPointClass = 6u;
 constexpr std::uint32_t SceneObjectVersionChunk = 0x0900u;
 constexpr std::uint32_t SceneObjectReferenceChunk = 0x0902u;
 constexpr std::uint32_t SceneObjectPlacementChunk = 0x0904u;
@@ -308,6 +310,9 @@ EditorHistoricalObjectBodyDecodeResult DecodeHistoricalObjectBody(
             limits);
     if (classId == LightClass)
         return DecodeHistoricalLightBody(bodyBytes, bodyDataOffset,
+            bodyChunkPath, limits);
+    if (classId == SpawnPointClass)
+        return DecodeHistoricalSpawnPointBody(bodyBytes, bodyDataOffset,
             bodyChunkPath, limits);
     EditorHistoricalObjectBodyDecodeResult result;
     result.status = EditorHistoricalObjectDecodeStatus::Unsupported;

@@ -262,3 +262,6 @@ Borland/VCL sources remain untouched.
 The class-3 Light decoder follows the same boundary: only inert serialized
 values reach the modern tree/properties/preview adapters. It does not invoke
 `CLight`, `GameMtlLib`, ElPack controls, or old property helpers.
+The class-6 Spawn Point decoder also stays below this boundary: it does not
+construct `CSpawnPoint`/`CSE_*`, call factories, or expose packets to VCL
+property controls.
