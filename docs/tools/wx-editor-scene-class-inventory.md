@@ -1,5 +1,11 @@
 # Historical Scene Class Inventory
 
+The production audit now also executes the default conversion policy in
+report-only mode. All 17 scenes validated: 17,151 records were fully
+convertible, 4,839 partial, 777 placeholders, zero skipped, and zero lacked a
+confirmed transform. The estimated editable object count is 22,767. No
+snapshot was written.
+
 The bounded `wxSDKEditorModelTests --audit-scenes <root>` mode scanned the 17
 lawful build-1935 `.level` files available for restoration research. It is
 read-only, sorts input paths deterministically, and prints aggregate metadata;

@@ -1,5 +1,10 @@
 # wxSDKEditor Preview Scene
 
+Converted historical nodes use the existing editable preview path. Origin
+metadata may supply a confirmed diagnostic radius/range; unsupported
+placeholders use `Unknown`, and nodes without a confirmed source transform are
+omitted. No historical renderer or asset lookup is introduced.
+
 The experimental editor now derives a tiny wx-free preview scene from
 `EditorTreeModel`. This validates model-to-viewport flow without loading X-Ray
 levels, meshes, textures, transforms, or renderer DLLs.

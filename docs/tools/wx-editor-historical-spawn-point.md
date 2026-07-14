@@ -1,5 +1,13 @@
 # Historical Spawn Point Decoder
 
+## Editable Conversion Boundary
+
+The one-way converter preserves the confirmed transform, section, subtype,
+flags, and respawn/environment scalars. Runtime packet and attachment content
+is not copied; only validated byte counts and an explicit omission warning are
+stored in read-only origin metadata. No entity, factory, config, script, or
+visual is resolved. Runtime-entity records remain partial conversions.
+
 Class ID 6 is `OBJCLASS_SPAWNPOINT`, owned by `CSpawnPoint`. The class enum is
 in `Editors/ECore/Editor/SceneClassList.h`; the canonical body contract is in
 `Editors/LevelEditor/Edit/SpawnPoint.cpp` and `SpawnPoint.h`. Editor subtype

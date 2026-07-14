@@ -1,5 +1,15 @@
 # Tools and SDK Status
 
+## Historical Scene Conversion Checkpoint
+
+wxSDKEditor can convert an open read-only historical scene into a separate
+editable `.wx_tree_snapshot` document. The converter is wx-free, atomic, and
+persists bounded origin metadata through snapshot v5 while retaining v1-v4
+readers. A 17-scene dry run validated all 22,767 records: 17,151 full, 4,839
+partial, 777 placeholders, zero skipped, and zero validation failures. Source
+scene hashes, sizes, and timestamps were unchanged. This is one-way migration,
+not `.level` round-tripping.
+
 This page inventories modding, SDK, archive, and asset-tooling components found in the build 1935 restoration tree. The repository focus remains engine/runtime restoration first; SDK and tool restoration is a separate planning track.
 
 No proprietary assets, original archives, extracted `gamedata/`, repacks, cracks, leaked data, or gamedata dumps should be added to this repository. Tools are intended for lawful research, compatibility testing, and use with the user's own legally obtained game data outside version control.

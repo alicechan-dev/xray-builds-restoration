@@ -1,5 +1,10 @@
 # wxSDKEditor Document Modes
 
+**Convert Historical Scene to Editable Copy...** is the only transition from
+the read-only mode into a new `EditableSnapshot`. It creates a pathless dirty
+document with empty selection/history and does not alter the historical
+document. This is not Save As or a mode toggle on the `.level` file.
+
 wxSDKEditor exposes two explicit modes through `EditorDocumentMode`:
 
 | Mode | Ownership | Mutation policy |

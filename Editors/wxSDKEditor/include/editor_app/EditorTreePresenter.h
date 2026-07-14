@@ -6,6 +6,7 @@
 #include "editor_app/EditorToolController.h"
 #include "editor_assets/EditorAssetCatalog.h"
 #include "editor_assets/EditorAssetSelectionModel.h"
+#include "editor_scene/EditorHistoricalConversionPolicy.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -20,6 +21,7 @@ class IEditorTree;
 class IPropertyPanel;
 class EditorHistoricalSceneDocument;
 struct EditorSceneManifest;
+struct EditorHistoricalConversionReport;
 class EditorPreviewScene;
 
 class EditorTreePresenter
@@ -37,6 +39,16 @@ public:
     void InitializeDemo();
     void AttachHistoricalDocument(EditorHistoricalSceneDocument& document);
     bool OpenHistoricalScene(EditorSceneManifest manifest,
+        std::string* reason = nullptr);
+    bool CanConvertHistoricalScene() const
+    { return IsReadOnly() && historicalDocument_ != nullptr; }
+    bool PreviewHistoricalConversion(
+        const EditorHistoricalConversionOptions& options,
+        EditorHistoricalConversionReport& report,
+        std::string* reason = nullptr) const;
+    bool ConvertHistoricalSceneToEditableCopy(
+        const EditorHistoricalConversionOptions& options,
+        EditorHistoricalConversionReport& report,
         std::string* reason = nullptr);
     EditorDocumentMode GetDocumentMode() const { return mode_; }
     bool IsReadOnly() const

@@ -1,5 +1,12 @@
 # Historical Light Decoder
 
+## Editable Conversion Boundary
+
+Confirmed transform, type, brightness, range, cone, virtual size, and flags
+become inert editable-copy metadata. Range supplies only diagnostic preview
+size. Fuzzy placement and animation behavior remain omitted with read-only
+warnings; no renderer light, texture, animation, or resource is created.
+
 Class ID 3 is `OBJCLASS_LIGHT`, owned by `CLight`. The canonical enum is in
 `Editors/ECore/Editor/SceneClassList.h`; serialization is in
 `Editors/LevelEditor/Edit/ELight_IO.cpp`, with parameter structures in

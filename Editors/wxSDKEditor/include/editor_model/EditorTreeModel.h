@@ -3,8 +3,10 @@
 
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorTransform.h"
+#include "editor_scene/EditorHistoricalOriginMetadata.h"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -22,6 +24,8 @@ public:
     const Children& ChildrenView() const { return children_; }
     const EditorTransform& Transform() const { return transform_; }
     const std::string& AssetId() const { return assetId_; }
+    const std::optional<EditorHistoricalOriginMetadata>& HistoricalOrigin() const
+    { return historicalOrigin_; }
 
 private:
     friend class EditorTreeModel;
@@ -38,6 +42,7 @@ private:
     Children children_;
     EditorTransform transform_;
     std::string assetId_;
+    std::optional<EditorHistoricalOriginMetadata> historicalOrigin_;
 };
 
 class EditorTreeModel
@@ -65,6 +70,9 @@ public:
     bool SetNodeTransform(EditorTreeNode& node, const EditorTransform& transform,
         std::string* reason = nullptr);
     void SetNodeAssetId(EditorTreeNode& node, std::string assetId);
+    void SetNodeHistoricalOrigin(EditorTreeNode& node,
+        EditorHistoricalOriginMetadata origin);
+    void ClearNodeHistoricalOrigin(EditorTreeNode& node);
     bool CanDeleteNode(const EditorTreeNode& node,
         std::string* reason = nullptr) const;
     bool DeleteNode(EditorTreeNode& node, std::string* reason = nullptr);

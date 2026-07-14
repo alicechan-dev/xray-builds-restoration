@@ -1,5 +1,10 @@
 # wxSDKEditor Historical Scene Document
 
+The document remains read-only after adding conversion. Conversion reads its
+inert records into a separate candidate `EditorTreeModel`; only a verified
+candidate atomically replaces the independent `EditorDocument`. The historical
+tree, selection, manifest, path, and source file are never mutated.
+
 `EditorHistoricalSceneDocument` is the first direct, inert transplant of
 confirmed build-1935 LevelEditor scene records into the modern wxSDKEditor
 model boundary. It owns an accepted `EditorSceneManifest`, a separate

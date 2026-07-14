@@ -2,6 +2,7 @@
 #include "editor_assets/EditorMetadataCatalogAdapter.h"
 #include "editor_model/EditorPropertySet.h"
 #include "editor_scene/EditorHistoricalSceneDocument.h"
+#include "editor_scene/EditorHistoricalConversionReport.h"
 #include "editor_view/EditorPreviewScene.h"
 #include "editor_ui/IDialogService.h"
 #include "editor_ui/IEditorTree.h"
@@ -670,6 +671,8 @@ int RunEditorTreePresenterTests()
             {}, [&preview](const EditorPreviewScene& scene) { preview = scene; });
         historicalPresenter.AttachHistoricalDocument(historicalDocument);
         historicalPresenter.InitializeDemo();
+        check(!historicalPresenter.CanConvertHistoricalScene(),
+            "historical conversion action is unavailable in editable mode");
 
         EditorSceneManifest invalid = HistoricalManifest();
         invalid.version = 4;
@@ -691,6 +694,8 @@ int RunEditorTreePresenterTests()
             historicalTree.Contains("duplicate [#2]") &&
             preview.GetObjects().size() == 2,
             "historical open switches to read-only tree and preview");
+        check(historicalPresenter.CanConvertHistoricalScene(),
+            "historical conversion action becomes available in read-only mode");
         check(!historicalPresenter.CanUndo() &&
             !historicalPresenter.CanRedo() &&
             !historicalPresenter.SetToolMode(EditorToolMode::Move) &&
@@ -727,6 +732,26 @@ int RunEditorTreePresenterTests()
             historicalPresenter.SelectLogicalPath(first.stableRecordId) &&
             preview.SelectedPath() == first.stableRecordId,
             "find and preview-to-tree selection remain enabled");
+
+        EditorHistoricalConversionOptions conversionOptions;
+        EditorHistoricalConversionReport conversionPreview;
+        check(historicalPresenter.PreviewHistoricalConversion(
+                conversionOptions, conversionPreview, &reason) &&
+            conversionPreview.totalHistoricalRecords == 2 &&
+            conversionPreview.placeholderConverted == 2,
+            "presenter exposes deterministic conversion preview counts");
+        EditorHistoricalConversionReport conversionReport;
+        check(historicalPresenter.ConvertHistoricalSceneToEditableCopy(
+                conversionOptions, conversionReport, &reason) &&
+            !historicalPresenter.IsReadOnly() &&
+            !historicalPresenter.CanConvertHistoricalScene() &&
+            historicalProperties.editingEnabled &&
+            editableDocument.IsModified() && !editableDocument.HasFilePath() &&
+            !historicalPresenter.CanUndo() &&
+            historicalTree.Contains("duplicate") &&
+            historicalTree.Contains("duplicate_1"),
+            "presenter conversion transitions to a dirty editable copy with "
+            "empty command history");
 
         historicalPresenter.NewDocument();
         check(!historicalPresenter.IsReadOnly() &&

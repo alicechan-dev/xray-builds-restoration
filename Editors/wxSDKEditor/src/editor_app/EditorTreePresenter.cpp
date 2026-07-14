@@ -9,6 +9,8 @@
 #include "editor_scene/EditorHistoricalSceneDocument.h"
 #include "editor_scene/EditorHistoricalScenePreviewAdapter.h"
 #include "editor_scene/EditorHistoricalSceneProperties.h"
+#include "editor_scene/EditorHistoricalSceneConverter.h"
+#include "editor_scene/EditorHistoricalConversionReport.h"
 #include "editor_view/EditorTreePreviewAdapter.h"
 #include "editor_ui/IDialogService.h"
 #include "editor_ui/IEditorTree.h"
@@ -62,6 +64,45 @@ bool EditorTreePresenter::OpenHistoricalScene(
     properties_.SetEditingEnabled(false);
     Rebuild(nullptr, true);
     SetStatus("Opened historical scene read-only.");
+    NotifyDocumentChanged();
+    return true;
+}
+
+bool EditorTreePresenter::PreviewHistoricalConversion(
+    const EditorHistoricalConversionOptions& options,
+    EditorHistoricalConversionReport& report, std::string* reason) const
+{
+    if (!CanConvertHistoricalScene())
+    {
+        if (reason)
+            *reason = "Historical conversion is available only for an open "
+                "read-only historical scene.";
+        return false;
+    }
+    return DryRunHistoricalSceneConversion(
+        *historicalDocument_, options, report, reason);
+}
+
+bool EditorTreePresenter::ConvertHistoricalSceneToEditableCopy(
+    const EditorHistoricalConversionOptions& options,
+    EditorHistoricalConversionReport& report, std::string* reason)
+{
+    if (!CanConvertHistoricalScene())
+    {
+        if (reason)
+            *reason = "Historical conversion is available only for an open "
+                "read-only historical scene.";
+        return false;
+    }
+    if (!::ConvertHistoricalSceneToEditableDocument(
+        *historicalDocument_, options, document_, report, reason))
+        return false;
+    UseEditableDocument();
+    tools_.Reset();
+    Rebuild(nullptr, true);
+    SetStatus("Created an editable snapshot copy of the historical scene.");
+    if (output_)
+        output_(report.BuildSummary());
     NotifyDocumentChanged();
     return true;
 }

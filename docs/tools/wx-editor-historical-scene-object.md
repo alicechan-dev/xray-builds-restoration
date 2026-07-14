@@ -1,5 +1,12 @@
 # Historical Scene Object Decoder
 
+## Editable Conversion Boundary
+
+Confirmed transform, reference name, and flags are retained. Motion or other
+retained chunks are not interpreted and produce an explicit warning in origin
+metadata. The editable preview remains a generic box; no object library,
+visual, mesh, or motion is loaded.
+
 Class ID 2 is `OBJCLASS_SCENEOBJECT`, owned by `CSceneObject`. The canonical
 evidence is `Editors/LevelEditor/Edit/SceneObjectIO.cpp`; common base chunks are
 owned by `Editors/ECore/Editor/CustomObject.cpp`.

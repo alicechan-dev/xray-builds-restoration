@@ -7,6 +7,9 @@
 #include "editor_model/EditorTreeQuery.h"
 #include "editor_model/EditorTreeSnapshot.h"
 #include "editor_scene/EditorHistoricalSceneProbe.h"
+#include "editor_scene/EditorHistoricalSceneConverter.h"
+#include "editor_scene/EditorHistoricalConversionReport.h"
+#include "editor_scene/EditorHistoricalSceneDocument.h"
 
 #include <iostream>
 #include <cmath>
@@ -471,6 +474,17 @@ int AuditScenes(const std::filesystem::path& root)
     std::map<std::uint32_t, SceneClassAudit> classes;
     std::size_t totalObjects = 0;
     std::size_t totalDiagnostics = 0;
+    std::size_t convertibleScenes = 0;
+    std::size_t conversionFailures = 0;
+    std::size_t conversionFull = 0;
+    std::size_t conversionPartial = 0;
+    std::size_t conversionPlaceholders = 0;
+    std::size_t conversionSkipped = 0;
+    std::size_t conversionWithoutTransforms = 0;
+    std::size_t conversionSnapshotBytes = 0;
+    std::size_t conversionMaximumSnapshotBytes = 0;
+    std::map<std::uint32_t, EditorHistoricalConversionClassCount>
+        conversionClasses;
     for (const std::filesystem::path& scene : scenes)
     {
         EditorSceneManifest manifest;
@@ -518,11 +532,67 @@ int AuditScenes(const std::filesystem::path& root)
                 return 2;
             }
         }
+        EditorHistoricalSceneDocument historical;
+        EditorHistoricalConversionReport conversion;
+        EditorHistoricalConversionOptions options;
+        if (!historical.BuildFromManifest(std::move(manifest), &reason) ||
+            !DryRunHistoricalSceneConversion(
+                historical, options, conversion, &reason))
+        {
+            ++conversionFailures;
+            std::cerr << "Conversion dry-run failed for "
+                << scene.filename().string() << ": " << reason << '\n';
+            continue;
+        }
+        ++convertibleScenes;
+        conversionFull += conversion.fullyConverted;
+        conversionPartial += conversion.partiallyConverted;
+        conversionPlaceholders += conversion.placeholderConverted;
+        conversionSkipped += conversion.skipped;
+        conversionWithoutTransforms += conversion.recordsWithoutTransforms;
+        conversionSnapshotBytes += conversion.estimatedSnapshotBytes;
+        conversionMaximumSnapshotBytes = (std::max)(
+            conversionMaximumSnapshotBytes,
+            conversion.estimatedSnapshotBytes);
+        for (const EditorHistoricalConversionClassCount& sourceCount :
+            conversion.perClass)
+        {
+            auto& destination = conversionClasses[sourceCount.classId];
+            destination.classId = sourceCount.classId;
+            destination.total += sourceCount.total;
+            destination.fullyConverted += sourceCount.fullyConverted;
+            destination.partiallyConverted += sourceCount.partiallyConverted;
+            destination.placeholderConverted +=
+                sourceCount.placeholderConverted;
+            destination.skipped += sourceCount.skipped;
+        }
     }
 
     std::cout << "scene_files=" << scenes.size() << '\n'
         << "objects=" << totalObjects << '\n'
-        << "diagnostics=" << totalDiagnostics << '\n';
+        << "diagnostics=" << totalDiagnostics << '\n'
+        << "conversion_dry_run scenes_convertible=" << convertibleScenes
+        << " validation_failures=" << conversionFailures
+        << " full=" << conversionFull
+        << " partial=" << conversionPartial
+        << " placeholders=" << conversionPlaceholders
+        << " skipped=" << conversionSkipped
+        << " without_transform=" << conversionWithoutTransforms
+        << " estimated_nodes=" <<
+            (conversionFull + conversionPartial + conversionPlaceholders)
+        << " snapshot_bytes=" << conversionSnapshotBytes
+        << " max_scene_snapshot_bytes=" << conversionMaximumSnapshotBytes
+        << '\n';
+    for (const auto& item : conversionClasses)
+    {
+        const auto& count = item.second;
+        std::cout << "conversion_class=" << item.first
+            << " total=" << count.total
+            << " full=" << count.fullyConverted
+            << " partial=" << count.partiallyConverted
+            << " placeholders=" << count.placeholderConverted
+            << " skipped=" << count.skipped << '\n';
+    }
     for (const auto& item : classes)
     {
         const SceneClassAudit& entry = item.second;
@@ -718,6 +788,7 @@ int RunEditorSceneProbeTests();
 int RunEditorSceneCompressionTests();
 int RunEditorHistoricalSceneDocumentTests();
 int RunEditorHistoricalObjectBodyDecoderTests();
+int RunEditorHistoricalSceneConversionTests();
 
 int main(int argc, char** argv)
 {
@@ -929,8 +1000,8 @@ int main(int argc, char** argv)
     std::string snapshot;
     Check(SerializeEditorTreeSnapshot(model, snapshot, &reason),
         "snapshot serialization succeeds");
-    Check(snapshot.find("# wxSDKEditor tree snapshot v4\n") == 0,
-        "snapshot writer emits v4 header");
+    Check(snapshot.find("# wxSDKEditor tree snapshot v5\n") == 0,
+        "snapshot writer emits v5 header");
 
     EditorTreeModel loaded;
     Check(DeserializeEditorTreeSnapshot(loaded, snapshot, &reason),
@@ -1272,6 +1343,7 @@ int main(int argc, char** argv)
     failures += RunEditorSceneCompressionTests();
     failures += RunEditorHistoricalSceneDocumentTests();
     failures += RunEditorHistoricalObjectBodyDecoderTests();
+    failures += RunEditorHistoricalSceneConversionTests();
 
     if (failures)
     {

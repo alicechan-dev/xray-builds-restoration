@@ -1,5 +1,11 @@
 # wxSDKEditor Tool Modes
 
+The historical conversion command is enabled only in
+`HistoricalSceneReadOnly`. After conversion, normal Add/Delete,
+Rename/Reparent, properties, Move, placement, Undo/Redo, and Save As controls
+are enabled because the active document is a new `EditableSnapshot`. No tool
+offers `.level` Save or Export.
+
 `EditorToolController` is a wx-free state holder for Select, Move, Place Object,
 and Place Light. Mode changes do not mutate `EditorDocument` or command history.
 Select enables ordinary preview picking; Move additionally exposes the X/Z

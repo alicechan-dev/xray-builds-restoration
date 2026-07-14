@@ -5,6 +5,7 @@
 #include "editor_assets/EditorMetadataCatalogAdapter.h"
 #include "editor_assets/EditorMetadataLoader.h"
 #include "editor_scene/EditorHistoricalSceneProbe.h"
+#include "editor_scene/EditorHistoricalConversionReport.h"
 #include "wxEditorTree.h"
 #include "wxAssetBrowser.h"
 #include "wxEditorViewport.h"
@@ -42,6 +43,7 @@ enum
     IdImportPathList,
     IdInspectHistoricalScene,
     IdOpenHistoricalScene,
+    IdConvertHistoricalScene,
     IdFindItem,
     IdClearSelection,
     IdShowSelection,
@@ -111,6 +113,8 @@ void wxSDKEditorFrame::CreateMenus()
         "Inspect &Historical Scene...");
     fileMenu->Append(IdOpenHistoricalScene,
         "Open Historical Scene &Read-Only...");
+    fileMenu->Append(IdConvertHistoricalScene,
+        "&Convert Historical Scene to Editable Copy...");
     fileMenu->AppendSeparator();
     fileMenu->Append(wxID_EXIT, "E&xit\tAlt-X");
     menuBar->Append(fileMenu, "&File");
@@ -169,6 +173,10 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnOpenDocument, this, wxID_OPEN);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnOpenHistoricalScene,
         this, IdOpenHistoricalScene);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnConvertHistoricalScene,
+        this, IdConvertHistoricalScene);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateConvertHistoricalScene,
+        this, IdConvertHistoricalScene);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveDocument, this, wxID_SAVE);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveDocumentAs, this, wxID_SAVEAS);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnUndo, this, wxID_UNDO);
@@ -550,6 +558,68 @@ void wxSDKEditorFrame::OnOpenHistoricalScene(wxCommandEvent&)
     output_->AppendText("\n" + wxString::FromUTF8(summary) + "\n");
     SetStatusText(summary);
     UpdateDocumentTitle();
+}
+
+void wxSDKEditorFrame::OnConvertHistoricalScene(wxCommandEvent&)
+{
+    if (!treePresenter_ || !treePresenter_->CanConvertHistoricalScene())
+        return;
+
+    EditorHistoricalConversionOptions options;
+    EditorHistoricalConversionReport preview;
+    std::string reason;
+    if (!treePresenter_->PreviewHistoricalConversion(options, preview, &reason))
+    {
+        dialogService_.Error("Historical conversion unavailable", reason.c_str());
+        return;
+    }
+
+    const wxString message = wxString::Format(
+        "Source records: %zu\nFully convertible: %zu\nPartially convertible: %zu\n"
+        "Placeholder candidates: %zu\nSkipped: %zu\n\n"
+        "Choose which non-full records to include. The result is a separate "
+        "editable snapshot and cannot be saved back to .level.",
+        preview.totalHistoricalRecords, preview.fullyConverted,
+        preview.partiallyConverted, preview.placeholderConverted,
+        preview.skipped);
+    wxArrayString choices;
+    choices.Add("Include partially converted specialized records");
+    choices.Add("Include generic unsupported placeholders");
+    wxMultiChoiceDialog dialog(this, message,
+        "Convert Historical Scene to Editable Copy", choices);
+    wxArrayInt defaults;
+    defaults.Add(0);
+    defaults.Add(1);
+    dialog.SetSelections(defaults);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    options.includePartial = false;
+    options.includeGenericPlaceholders = false;
+    for (const int selected : dialog.GetSelections())
+    {
+        if (selected == 0) options.includePartial = true;
+        if (selected == 1) options.includeGenericPlaceholders = true;
+    }
+
+    EditorHistoricalConversionReport report;
+    if (!treePresenter_->ConvertHistoricalSceneToEditableCopy(
+        options, report, &reason))
+    {
+        dialogService_.Error("Historical conversion failed", reason.c_str());
+        return;
+    }
+    SetToolMode(EditorToolMode::Select);
+    auiManager_.GetPane(OutputPane).Show(true);
+    auiManager_.Update();
+    dialogService_.Info("Historical conversion complete",
+        report.BuildSummary().c_str());
+    UpdateDocumentTitle();
+}
+
+void wxSDKEditorFrame::OnUpdateConvertHistoricalScene(wxUpdateUIEvent& event)
+{
+    event.Enable(treePresenter_ && treePresenter_->CanConvertHistoricalScene());
 }
 
 void wxSDKEditorFrame::OnSaveDocument(wxCommandEvent&)

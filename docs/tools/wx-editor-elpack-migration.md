@@ -1,5 +1,10 @@
 # wx Editor ElPack Migration Map
 
+The historical conversion workflow remains on the wx-free adapter/model side
+of this boundary. It does not compile or call `ItemListHelper`, `FolderLib`,
+ElPack, VCL, or old LevelEditor code. Origin metadata and conversion reports
+are modern inert records, not compatibility stand-ins for historical GUI types.
+
 This document maps the historical ElPack tree dependency to the experimental
 wxWidgets editor boundary. It is an analysis artifact, not a port: the old
 Borland/VCL code remains unchanged and `wxSDKEditor` still uses demo-only data.

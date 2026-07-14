@@ -1,5 +1,13 @@
 # wx Editor Properties
 
+## Converted Historical Origin
+
+Converted nodes expose ordinary editable label, category, and position fields.
+Original class ID, name, object index, source offset, decode status, conversion
+disposition, reference, retained-field summary, warning summary, and opaque
+size/status summary are read-only. Applying a property cannot mutate origin
+metadata or recover excluded packet/body data.
+
 ## Historical Audit
 
 The preserved `xrEProps` property layer has real value semantics beneath its

@@ -1,5 +1,18 @@
 # SDK Restoration Plan
 
+## Historical Migration Boundary Checkpoint
+
+The four key decoders now feed a deliberate one-way conversion into a separate
+editable wxSDKEditor snapshot. Default policy retains safe fields from 17,151
+Supported records, warning-bounded safe fields from 4,839 Partial records, and
+777 clearly marked generic placeholders. All 17 lawful scenes and all 22,767
+records validate in report-only mode with no source mutation.
+
+The next stage should stabilize converted-snapshot editing, origin-metadata
+queries, and user-driven Save As/reopen workflows. Minor-class decoders remain
+future work. Do not introduce `.level` export, raw packet/body retention, or
+historical runtime/editor dependencies.
+
 This document describes the restoration roadmap for SDK, editor, converter, archive, compiler, and modding tools in the historical X-Ray / S.T.A.L.K.E.R. build 1935 tree. It is planning documentation only.
 
 The current priority remains runtime correctness and binary compatibility. SDK restoration should proceed in small, auditable steps after each format or dependency assumption is proven from repository source, synthetic fixtures, or user-owned local data.

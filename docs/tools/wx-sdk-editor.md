@@ -1,5 +1,16 @@
 # Experimental wxWidgets SDK Editor
 
+## Historical Editable Copy
+
+An opened historical scene remains strictly read-only. **File > Convert
+Historical Scene to Editable Copy...** runs a bounded wx-free conversion and
+creates an independent dirty snapshot document. Full, partial, placeholder,
+and skipped counts are reported before and after conversion. Only explicit
+Save As can write `.wx_tree_snapshot`; no `.level` writer/exporter exists.
+
+Snapshot v5 persists compact read-only origin metadata. Raw packets,
+attachments, chunks, bodies, absolute paths, and external assets are excluded.
+
 `wxSDKEditor` is an experimental, parallel SDK user-interface shell. It is not
 a port of the historical LevelEditor and does not claim compatibility with its
 Borland/VCL forms, editor state, or data-loading behavior.

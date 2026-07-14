@@ -30,8 +30,12 @@ EditorPreviewKind KindFor(const EditorTreeNode& node)
             return descriptor->previewKind;
     }
     const std::string category = Lower(node.Category());
+    if (category.find("unsupported") != std::string::npos)
+        return EditorPreviewKind::Unknown;
     if (category.find("light") != std::string::npos)
         return EditorPreviewKind::Light;
+    if (category.find("glow") != std::string::npos)
+        return EditorPreviewKind::Glow;
     if (category.find("spawn") != std::string::npos)
         return EditorPreviewKind::Spawn;
     if (node.Kind() == EditorItemKind::Object)
@@ -45,12 +49,22 @@ void AddNodes(const EditorTreeNode& node, EditorPreviewScene& scene,
     if (node.Kind() != EditorItemKind::Root &&
         node.Kind() != EditorItemKind::Folder)
     {
+        if (node.HistoricalOrigin() &&
+            !node.HistoricalOrigin()->sourceTransformConfirmed)
+        {
+            for (const auto& child : node.ChildrenView())
+                AddNodes(*child, scene, renderedIndex);
+            return;
+        }
         const float x = node.Transform().x;
         const float z = node.Transform().z;
         const EditorPreviewKind kind = KindFor(node);
         const float y = node.Transform().y;
+        const float size = node.HistoricalOrigin() &&
+                node.HistoricalOrigin()->hasPreviewSize
+            ? node.HistoricalOrigin()->previewSize : 1.0f;
         scene.AddObject({node.Path(), node.Label(), x, y, z,
-            1.0f, 1.0f, 1.0f, kind});
+            size, size, size, kind});
         ++renderedIndex;
     }
     for (const auto& child : node.ChildrenView())

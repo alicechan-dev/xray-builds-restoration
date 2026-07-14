@@ -21,6 +21,8 @@ public:
     bool SaveAs(const std::filesystem::path& path,
         std::string* reason = nullptr);
     bool ImportPathList(std::string_view text, std::string* reason = nullptr);
+    bool ReplaceWithConvertedModel(EditorTreeModel model,
+        std::string* reason = nullptr);
 
     bool IsModified() const;
     bool HasFilePath() const { return !filePath_.empty(); }

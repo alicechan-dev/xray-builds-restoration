@@ -201,6 +201,17 @@ void EditorTreeModel::SetNodeAssetId(
     node.assetId_ = std::move(assetId);
 }
 
+void EditorTreeModel::SetNodeHistoricalOrigin(EditorTreeNode& node,
+    EditorHistoricalOriginMetadata origin)
+{
+    node.historicalOrigin_ = std::move(origin);
+}
+
+void EditorTreeModel::ClearNodeHistoricalOrigin(EditorTreeNode& node)
+{
+    node.historicalOrigin_.reset();
+}
+
 bool EditorTreeModel::DeleteNode(EditorTreeNode& node, std::string* reason)
 {
     if (!CanDeleteNode(node, reason))

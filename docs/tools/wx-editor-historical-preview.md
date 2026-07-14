@@ -1,5 +1,11 @@
 # wxSDKEditor Historical Scene Preview
 
+After one-way conversion, ordinary editable preview semantics apply. Converted
+Glow, Light, and Spawn Point nodes retain diagnostic marker kinds and bounded
+radius/range where confirmed. Unsupported placeholders use the unknown marker.
+Nodes whose source transform was not confirmed remain in the tree but are not
+drawn, so conversion never invents viewport placement.
+
 `EditorHistoricalScenePreviewAdapter` builds an inert `EditorPreviewScene`
 from a loaded historical document. Only records with a confirmed, finite
 common transform are emitted. Records without a transform are retained in the

@@ -1,5 +1,11 @@
 # Historical Glow Decoder
 
+## Editable Conversion Boundary
+
+Confirmed transform, radius, shader name, texture name, and flags are retained
+as inert values. Radius drives only the existing diagnostic preview marker.
+Shader and texture strings are never resolved or loaded.
+
 Class ID 1 is `OBJCLASS_GLOW`, owned by `CGlow`. The canonical build-1935
 evidence is `CGlow::Load/Save` in `Editors/LevelEditor/Edit/Glow.cpp`; common
 base chunks remain owned by `CCustomObject`.

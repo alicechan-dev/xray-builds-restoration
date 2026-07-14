@@ -1,5 +1,13 @@
 # Historical Object Body Decoders
 
+## Conversion Consumer
+
+The one-way historical converter consumes only typed inert decoder results.
+Supported records become full conversions, Partial records keep safe fields
+plus omission warnings, Unsupported records may become marked placeholders,
+and Malformed records are skipped. Decoder bytes and retained unknown or
+opaque chunks never enter editable snapshots.
+
 `EditorHistoricalObjectBodyDecoder` is a wx-free, read-only dispatcher between
 the confirmed generic wrapper and narrowly audited specialized records. It is
 not a historical factory or plugin system.

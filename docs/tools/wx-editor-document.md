@@ -1,5 +1,13 @@
 # wxSDKEditor Document Layer
 
+`ReplaceWithConvertedModel` is an atomic wx-free entry point used only after a
+historical conversion candidate passes validation. It clears selection,
+history, and file path, then marks the new editable copy dirty. Conversion is
+not inserted into command history; future edits use normal commands.
+
+Snapshot v5 persists bounded historical-origin metadata while keeping v1-v4
+readable. No raw historical body or absolute source path is serialized.
+
 `EditorDocument` is the first wx-free document boundary in the experimental
 editor. `MainFrame` owns one document, and `EditorTreePresenter` references its
 `EditorTreeModel`, `EditorSelectionModel`, and `EditorCommandHistory`. There is

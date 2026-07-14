@@ -73,6 +73,24 @@ bool EditorDocument::ImportPathList(std::string_view text, std::string* reason)
     return true;
 }
 
+bool EditorDocument::ReplaceWithConvertedModel(
+    EditorTreeModel model, std::string* reason)
+{
+    std::string snapshot;
+    if (!SerializeEditorTreeSnapshot(model, snapshot, reason))
+        return false;
+
+    model_ = std::move(model);
+    selection_.Clear();
+    history_.Clear();
+    filePath_.clear();
+    savedSnapshot_.clear();
+    importedDirty_ = true;
+    if (reason)
+        reason->clear();
+    return true;
+}
+
 bool EditorDocument::IsModified() const
 {
     if (importedDirty_)

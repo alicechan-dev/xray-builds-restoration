@@ -49,6 +49,8 @@ private:
     void OnNewDocument(wxCommandEvent& event);
     void OnOpenDocument(wxCommandEvent& event);
     void OnOpenHistoricalScene(wxCommandEvent& event);
+    void OnConvertHistoricalScene(wxCommandEvent& event);
+    void OnUpdateConvertHistoricalScene(wxUpdateUIEvent& event);
     void OnSaveDocument(wxCommandEvent& event);
     void OnSaveDocumentAs(wxCommandEvent& event);
     void OnUndo(wxCommandEvent& event);

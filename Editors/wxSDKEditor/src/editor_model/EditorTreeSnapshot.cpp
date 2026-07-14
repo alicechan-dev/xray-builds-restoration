@@ -15,6 +15,7 @@ constexpr const char* SnapshotHeaderV1 = "# wxSDKEditor tree snapshot v1";
 constexpr const char* SnapshotHeaderV2 = "# wxSDKEditor tree snapshot v2";
 constexpr const char* SnapshotHeaderV3 = "# wxSDKEditor tree snapshot v3";
 constexpr const char* SnapshotHeaderV4 = "# wxSDKEditor tree snapshot v4";
+constexpr const char* SnapshotHeaderV5 = "# wxSDKEditor tree snapshot v5";
 constexpr std::streamoff MaximumSnapshotSize = 8 * 1024 * 1024;
 
 bool Fail(std::string* reason, const std::string& message)
@@ -52,7 +53,32 @@ void SerializeNode(const EditorTreeNode& node, unsigned int depth,
         "\" path=\"" + Escape(node.Path()) +
         "\" asset=\"" + Escape(node.AssetId()) + "\" transform=\"";
     const EditorTransform& t=node.Transform();
-    output += std::to_string(t.x)+" "+std::to_string(t.y)+" "+std::to_string(t.z)+" "+std::to_string(t.yaw)+" "+std::to_string(t.pitch)+" "+std::to_string(t.roll)+" "+std::to_string(t.sx)+" "+std::to_string(t.sy)+" "+std::to_string(t.sz)+"\"\n";
+    output += std::to_string(t.x)+" "+std::to_string(t.y)+" "+std::to_string(t.z)+" "+std::to_string(t.yaw)+" "+std::to_string(t.pitch)+" "+std::to_string(t.roll)+" "+std::to_string(t.sx)+" "+std::to_string(t.sy)+" "+std::to_string(t.sz)+"\"";
+    if (!node.HistoricalOrigin())
+        output += " origin=\"none\"\n";
+    else
+    {
+        const EditorHistoricalOriginMetadata& origin = *node.HistoricalOrigin();
+        output += " origin=\"historical\" scene_version=" +
+            std::to_string(origin.sourceSceneVersion) +
+            " class_id=" + std::to_string(origin.sourceClassId) +
+            " object_index=" + std::to_string(origin.sourceObjectIndex) +
+            " source_offset=" + std::to_string(origin.sourceOffset) +
+            " decode_status=\"" + Escape(origin.decodeStatus) +
+            "\" disposition=\"" + Escape(ToString(origin.disposition)) +
+            "\" source_name=\"" + Escape(origin.sourceName) +
+            "\" stable_id=\"" + Escape(origin.sourceStableRecordId) +
+            "\" reference=\"" + Escape(origin.referenceName) +
+            "\" fields=\"" + Escape(origin.retainedFieldSummary) +
+            "\" warnings=\"" + Escape(origin.retainedWarningSummary) +
+            "\" opaque=\"" + Escape(origin.opaqueDataSummary) +
+            "\" transform_confirmed=" +
+            std::to_string(origin.sourceTransformConfirmed ? 1 : 0) +
+            " placeholder=" + std::to_string(origin.placeholder ? 1 : 0) +
+            " has_preview_size=" +
+            std::to_string(origin.hasPreviewSize ? 1 : 0) +
+            " preview_size=\"" + std::to_string(origin.previewSize) + "\"\n";
+    }
     for (const auto& child : node.ChildrenView())
         SerializeNode(*child, depth + 1, output);
 }
@@ -78,6 +104,25 @@ bool ParseDepth(const std::string& line, std::size_t& position, unsigned int& de
         if (depth > (std::numeric_limits<unsigned int>::max() - digit) / 10)
             return false;
         depth = depth * 10 + digit;
+        ++position;
+    }
+    return true;
+}
+
+bool ParseUnsigned(const std::string& line, std::size_t& position,
+    std::uint64_t& value)
+{
+    if (position >= line.size() || line[position] < '0' || line[position] > '9')
+        return false;
+    value = 0;
+    while (position < line.size() && line[position] >= '0' &&
+        line[position] <= '9')
+    {
+        const std::uint64_t digit =
+            static_cast<std::uint64_t>(line[position] - '0');
+        if (value > (std::numeric_limits<std::uint64_t>::max() - digit) / 10)
+            return false;
+        value = value * 10 + digit;
         ++position;
     }
     return true;
@@ -116,10 +161,11 @@ bool ParseQuoted(const std::string& line, std::size_t& position, std::string& va
 }
 
 bool ParseNodeLine(const std::string& line, unsigned int& depth,
-    bool hasKind, bool hasTransform, bool hasAsset,
+    bool hasKind, bool hasTransform, bool hasAsset, bool hasOrigin,
     EditorItemKind& kind, std::string& label,
     std::string& category, std::string& path, std::string& assetId,
-    EditorTransform& transform)
+    EditorTransform& transform,
+    std::optional<EditorHistoricalOriginMetadata>& historicalOrigin)
 {
     std::size_t position = 0;
     if (!Consume(line, position, "node depth=") ||
@@ -148,9 +194,89 @@ bool ParseNodeLine(const std::string& line, unsigned int& depth,
     }
     if (!hasTransform) return position == line.size();
     std::string values;
-    if (!Consume(line,position," transform=")||!ParseQuoted(line,position,values)||position!=line.size()) return false;
+    if (!Consume(line,position," transform=")||!ParseQuoted(line,position,values)) return false;
     std::istringstream input(values); input>>transform.x>>transform.y>>transform.z>>transform.yaw>>transform.pitch>>transform.roll>>transform.sx>>transform.sy>>transform.sz;
-    return input && input.peek()==std::char_traits<char>::eof() && transform.IsFinite();
+    if (!(input && input.peek()==std::char_traits<char>::eof() &&
+        transform.IsFinite()))
+        return false;
+    if (!hasOrigin)
+        return position == line.size();
+
+    std::string originKind;
+    if (!Consume(line, position, " origin=") ||
+        !ParseQuoted(line, position, originKind))
+        return false;
+    if (originKind == "none")
+        return position == line.size();
+    if (originKind != "historical")
+        return false;
+
+    std::uint64_t sceneVersion = 0;
+    std::uint64_t classId = 0;
+    std::uint64_t objectIndex = 0;
+    std::uint64_t sourceOffset = 0;
+    std::uint64_t transformConfirmed = 0;
+    std::uint64_t placeholder = 0;
+    std::uint64_t hasPreviewSize = 0;
+    std::string decodeStatus;
+    std::string dispositionText;
+    EditorHistoricalOriginMetadata origin;
+    std::string previewSize;
+    if (!Consume(line, position, " scene_version=") ||
+        !ParseUnsigned(line, position, sceneVersion) ||
+        !Consume(line, position, " class_id=") ||
+        !ParseUnsigned(line, position, classId) ||
+        !Consume(line, position, " object_index=") ||
+        !ParseUnsigned(line, position, objectIndex) ||
+        !Consume(line, position, " source_offset=") ||
+        !ParseUnsigned(line, position, sourceOffset) ||
+        !Consume(line, position, " decode_status=") ||
+        !ParseQuoted(line, position, decodeStatus) ||
+        !Consume(line, position, " disposition=") ||
+        !ParseQuoted(line, position, dispositionText) ||
+        !Consume(line, position, " source_name=") ||
+        !ParseQuoted(line, position, origin.sourceName) ||
+        !Consume(line, position, " stable_id=") ||
+        !ParseQuoted(line, position, origin.sourceStableRecordId) ||
+        !Consume(line, position, " reference=") ||
+        !ParseQuoted(line, position, origin.referenceName) ||
+        !Consume(line, position, " fields=") ||
+        !ParseQuoted(line, position, origin.retainedFieldSummary) ||
+        !Consume(line, position, " warnings=") ||
+        !ParseQuoted(line, position, origin.retainedWarningSummary) ||
+        !Consume(line, position, " opaque=") ||
+        !ParseQuoted(line, position, origin.opaqueDataSummary) ||
+        !Consume(line, position, " transform_confirmed=") ||
+        !ParseUnsigned(line, position, transformConfirmed) ||
+        !Consume(line, position, " placeholder=") ||
+        !ParseUnsigned(line, position, placeholder) ||
+        !Consume(line, position, " has_preview_size=") ||
+        !ParseUnsigned(line, position, hasPreviewSize) ||
+        !Consume(line, position, " preview_size=") ||
+        !ParseQuoted(line, position, previewSize) || position != line.size() ||
+        sceneVersion > std::numeric_limits<std::uint32_t>::max() ||
+        classId > std::numeric_limits<std::uint32_t>::max() ||
+        objectIndex > std::numeric_limits<std::size_t>::max() ||
+        sourceOffset > std::numeric_limits<std::size_t>::max() ||
+        transformConfirmed > 1 || placeholder > 1 || hasPreviewSize > 1 ||
+        !ParseEditorHistoricalConversionDisposition(
+            dispositionText, origin.disposition))
+        return false;
+    std::istringstream previewInput(previewSize);
+    previewInput >> origin.previewSize;
+    if (!previewInput || previewInput.peek() != std::char_traits<char>::eof() ||
+        !std::isfinite(origin.previewSize) || origin.previewSize < 0.0f)
+        return false;
+    origin.sourceSceneVersion = static_cast<std::uint32_t>(sceneVersion);
+    origin.sourceClassId = static_cast<std::uint32_t>(classId);
+    origin.sourceObjectIndex = static_cast<std::size_t>(objectIndex);
+    origin.sourceOffset = static_cast<std::size_t>(sourceOffset);
+    origin.decodeStatus = std::move(decodeStatus);
+    origin.sourceTransformConfirmed = transformConfirmed != 0;
+    origin.placeholder = placeholder != 0;
+    origin.hasPreviewSize = hasPreviewSize != 0;
+    historicalOrigin = std::move(origin);
+    return true;
 }
 }
 
@@ -160,7 +286,7 @@ bool SerializeEditorTreeSnapshot(
     if (!model.Root())
         return Fail(reason, "The tree model has no root node.");
 
-    output = std::string(SnapshotHeaderV4) + "\n";
+    output = std::string(SnapshotHeaderV5) + "\n";
     SerializeNode(*model.Root(), 0, output);
     if (reason)
         reason->clear();
@@ -179,7 +305,8 @@ bool DeserializeEditorTreeSnapshot(
         return Fail(reason, "The snapshot header is missing.");
     if (!line.empty() && line.back() == '\r')
         line.pop_back();
-    const bool hasAsset = line == SnapshotHeaderV4;
+    const bool hasOrigin = line == SnapshotHeaderV5;
+    const bool hasAsset = hasOrigin || line == SnapshotHeaderV4;
     const bool hasTransform = hasAsset || line == SnapshotHeaderV3;
     const bool hasKind = hasTransform || line == SnapshotHeaderV2;
     if (!hasKind && line != SnapshotHeaderV1)
@@ -203,9 +330,10 @@ bool DeserializeEditorTreeSnapshot(
         std::string assetId;
         EditorItemKind kind = EditorItemKind::Unknown;
         EditorTransform transform;
+        std::optional<EditorHistoricalOriginMetadata> historicalOrigin;
         if (!ParseNodeLine(
-            line, depth, hasKind, hasTransform, hasAsset, kind, label,
-            category, storedPath, assetId, transform))
+            line, depth, hasKind, hasTransform, hasAsset, hasOrigin, kind, label,
+            category, storedPath, assetId, transform, historicalOrigin))
             return Fail(reason, "Malformed node record at line " + std::to_string(lineNumber) + ".");
         if (label.empty())
             return Fail(reason, "Empty node label at line " + std::to_string(lineNumber) + ".");
@@ -237,6 +365,8 @@ bool DeserializeEditorTreeSnapshot(
         if (!parsed.SetNodeTransform(*node, transform, reason))
             return false;
         parsed.SetNodeAssetId(*node, std::move(assetId));
+        if (historicalOrigin)
+            parsed.SetNodeHistoricalOrigin(*node, std::move(*historicalOrigin));
     }
 
     if (!parsed.Root())

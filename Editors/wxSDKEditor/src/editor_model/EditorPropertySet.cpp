@@ -94,6 +94,54 @@ EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
                 EditorPropertyType::ReadOnlyText, resolvedAsset->sourceFile,
                 true, "Read-only metadata provenance for this session."));
     }
+    if (node.HistoricalOrigin())
+    {
+        const EditorHistoricalOriginMetadata& origin = *node.HistoricalOrigin();
+        properties.Add(MakeProperty("historical.class_id",
+            "Historical Class ID", EditorPropertyType::ReadOnlyText,
+            std::to_string(origin.sourceClassId), true,
+            "Original historical object class ID."));
+        properties.Add(MakeProperty("historical.source_name",
+            "Historical Name", EditorPropertyType::ReadOnlyText,
+            origin.sourceName.empty() ? "unnamed" : origin.sourceName, true,
+            "Original source object name; never written back to .level."));
+        properties.Add(MakeProperty("historical.object_index",
+            "Historical Object Index", EditorPropertyType::ReadOnlyText,
+            std::to_string(origin.sourceObjectIndex), true,
+            "Original manifest record index."));
+        properties.Add(MakeProperty("historical.source_offset",
+            "Historical Source Offset", EditorPropertyType::ReadOnlyText,
+            std::to_string(origin.sourceOffset), true,
+            "Original source byte offset retained as inert provenance."));
+        properties.Add(MakeProperty("historical.decode_status",
+            "Historical Decode Status", EditorPropertyType::ReadOnlyText,
+            origin.decodeStatus, true, "Specialized decoder result."));
+        properties.Add(MakeProperty("historical.disposition",
+            "Conversion Disposition", EditorPropertyType::ReadOnlyText,
+            ToString(origin.disposition), true,
+            "How this node was migrated into the editable snapshot."));
+        if (!origin.referenceName.empty())
+            properties.Add(MakeProperty("historical.reference",
+                "Historical Reference", EditorPropertyType::ReadOnlyText,
+                origin.referenceName, true,
+                "Inert historical reference; no resource is resolved."));
+        if (!origin.retainedFieldSummary.empty())
+            properties.Add(MakeProperty("historical.fields",
+                "Preserved Historical Fields",
+                EditorPropertyType::ReadOnlyText,
+                origin.retainedFieldSummary, true,
+                "Bounded summary of source-confirmed inert values."));
+        if (!origin.retainedWarningSummary.empty())
+            properties.Add(MakeProperty("historical.warnings",
+                "Migration Warnings", EditorPropertyType::ReadOnlyText,
+                origin.retainedWarningSummary, true,
+                "Historical behavior or payload not migrated."));
+        if (!origin.opaqueDataSummary.empty())
+            properties.Add(MakeProperty("historical.opaque",
+                "Excluded Opaque Data", EditorPropertyType::ReadOnlyText,
+                origin.opaqueDataSummary, true,
+                "Size/status metadata only; raw bytes were not copied."));
+    }
     if (!IsGroupKind(node.Kind()))
     {
         const EditorTransform& transform = node.Transform();
