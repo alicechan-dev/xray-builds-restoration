@@ -45,3 +45,7 @@ axis hit, object and empty-space behavior is unchanged.
 
 Tool mode now defines the complete priority: active drag, Move handle,
 placement click, object pick, then empty space. Right-drag never places.
+
+In historical mode, picking returns a stable record ID and selects its
+read-only tree/provenance record. Move-handle and placement branches are
+disabled, while ordinary selection and camera interaction remain available.

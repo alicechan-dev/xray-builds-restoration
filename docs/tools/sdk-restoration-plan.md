@@ -623,3 +623,12 @@ Compressed known containers, unsupported versions, malformed bounds, and
 resource-limit violations fail closed. Historical object construction, full
 tool decoding, scene import/edit/save, and runtime integration remain future
 audited phases.
+
+## wxSDKEditor Historical Read-Only Document Checkpoint
+
+Confirmed manifest records now have a separate, wx-free historical document
+with stable provenance identity, read-only selection/properties, and a generic
+confirmed-transform preview. This is the first direct historical scene-record
+transplant into the new UI, but not scene editing: save, mutation, history,
+factories, specialized bodies, compression decoding, and referenced assets
+remain out of scope. Editable snapshot behavior remains a separate mode.

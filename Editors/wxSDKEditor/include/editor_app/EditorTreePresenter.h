@@ -2,6 +2,7 @@
 #define XR_WX_SDK_EDITOR_EDITOR_TREE_PRESENTER_H
 
 #include "editor_app/EditorDocument.h"
+#include "editor_app/EditorDocumentMode.h"
 #include "editor_app/EditorToolController.h"
 #include "editor_assets/EditorAssetCatalog.h"
 #include "editor_assets/EditorAssetSelectionModel.h"
@@ -17,13 +18,15 @@
 class IDialogService;
 class IEditorTree;
 class IPropertyPanel;
+class EditorHistoricalSceneDocument;
+struct EditorSceneManifest;
+class EditorPreviewScene;
 
 class EditorTreePresenter
 {
 public:
     using MessageCallback = std::function<void(const std::string&)>;
-    using PreviewCallback = std::function<void(
-        const EditorTreeModel&, const std::string&)>;
+    using PreviewCallback = std::function<void(const EditorPreviewScene&)>;
 
     EditorTreePresenter(EditorDocument& document, IEditorTree& tree,
         IPropertyPanel& properties,
@@ -32,6 +35,13 @@ public:
         PreviewCallback previewChanged = {});
 
     void InitializeDemo();
+    void AttachHistoricalDocument(EditorHistoricalSceneDocument& document);
+    bool OpenHistoricalScene(EditorSceneManifest manifest,
+        std::string* reason = nullptr);
+    EditorDocumentMode GetDocumentMode() const { return mode_; }
+    bool IsReadOnly() const
+    { return mode_ == EditorDocumentMode::HistoricalSceneReadOnly; }
+    std::string GetActiveDisplayName() const;
     void NewDocument();
     void RefreshSelection();
     void AddDemoNode(const char* baseName, const char* category);
@@ -63,8 +73,8 @@ public:
     std::string ResolvePlacementParentPath() const;
     bool Undo();
     bool Redo();
-    bool CanUndo() const { return history_.CanUndo(); }
-    bool CanRedo() const { return history_.CanRedo(); }
+    bool CanUndo() const { return !IsReadOnly() && history_.CanUndo(); }
+    bool CanRedo() const { return !IsReadOnly() && history_.CanRedo(); }
 
 private:
     EditorTreeNode* SelectedNode() const;
@@ -75,6 +85,12 @@ private:
     void SetStatus(const std::string& message) const;
     void NotifyDocumentChanged() const;
     const EditorAssetDescriptor* FindAsset(const std::string& assetId) const;
+    EditorTreeModel& ActiveModel();
+    const EditorTreeModel& ActiveModel() const;
+    EditorSelectionModel& ActiveSelection();
+    const EditorSelectionModel& ActiveSelection() const;
+    bool RejectReadOnly(const char* operation) const;
+    void UseEditableDocument();
 
     IEditorTree& tree_;
     IPropertyPanel& properties_;
@@ -87,6 +103,8 @@ private:
     EditorTreeModel& model_;
     EditorSelectionModel& selection_;
     EditorCommandHistory& history_;
+    EditorHistoricalSceneDocument* historicalDocument_ = nullptr;
+    EditorDocumentMode mode_ = EditorDocumentMode::EditableSnapshot;
     EditorToolController tools_;
     EditorAssetCatalog assetCatalog_ = EditorAssetCatalog::CreateBuiltIn();
     EditorAssetCatalog importedAssetCatalog_;

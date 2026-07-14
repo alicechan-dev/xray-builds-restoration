@@ -95,7 +95,19 @@ EditorTreeNode* EditorTreeModel::FindByPath(const std::string& path)
     return FindNode(root_.get(), path, &EditorTreeNode::Path);
 }
 
+const EditorTreeNode* EditorTreeModel::FindByPath(
+    const std::string& path) const
+{
+    return FindNode(root_.get(), path, &EditorTreeNode::Path);
+}
+
 EditorTreeNode* EditorTreeModel::FindByLabel(const std::string& label)
+{
+    return FindNode(root_.get(), label, &EditorTreeNode::Label);
+}
+
+const EditorTreeNode* EditorTreeModel::FindByLabel(
+    const std::string& label) const
 {
     return FindNode(root_.get(), label, &EditorTreeNode::Label);
 }

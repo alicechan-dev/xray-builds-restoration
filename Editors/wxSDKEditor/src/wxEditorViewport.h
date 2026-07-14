@@ -27,6 +27,7 @@ public:
     bool IsGridVisible() const;
     void RebuildPreview(const EditorTreeModel& model,
         const std::string& selectedPath);
+    void SetPreviewScene(EditorPreviewScene scene);
     void TogglePreviewLabels();
     bool ArePreviewLabelsVisible() const;
     bool FrameSelected();

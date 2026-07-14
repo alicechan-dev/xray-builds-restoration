@@ -1,6 +1,8 @@
 #include "editor_app/EditorTreePresenter.h"
 #include "editor_assets/EditorMetadataCatalogAdapter.h"
 #include "editor_model/EditorPropertySet.h"
+#include "editor_scene/EditorHistoricalSceneDocument.h"
+#include "editor_view/EditorPreviewScene.h"
 #include "editor_ui/IDialogService.h"
 #include "editor_ui/IEditorTree.h"
 #include "editor_ui/IPropertyPanel.h"
@@ -152,6 +154,10 @@ public:
     {
         applyHandler = std::move(handler);
     }
+    void SetEditingEnabled(bool enabled) override
+    {
+        editingEnabled = enabled;
+    }
     bool Apply(const std::string& key, const std::string& value)
     {
         return applyHandler && applyHandler(key, value);
@@ -162,6 +168,7 @@ public:
     int showCount = 0;
     EditorPropertySet lastProperties;
     ApplyHandler applyHandler;
+    bool editingEnabled = true;
 };
 
 class FakeDialogService final : public IDialogService
@@ -204,6 +211,30 @@ private:
 bool ContainsText(const std::string& text, const std::string& value)
 {
     return text.find(value) != std::string::npos;
+}
+
+EditorSceneManifest HistoricalManifest()
+{
+    EditorSceneManifest manifest;
+    manifest.sourceFile = "fixture.level";
+    manifest.version = 5;
+    manifest.hasVersion = true;
+    for (std::size_t index = 0; index < 2; ++index)
+    {
+        EditorSceneObjectRecord object;
+        object.recordIndex = index;
+        object.sourceOffset = 100 + index * 20;
+        object.classId = 2;
+        object.hasClassId = true;
+        object.name = "duplicate";
+        object.hasName = true;
+        object.hasTransform = true;
+        object.position = {static_cast<float>(index), 2.0f, 3.0f};
+        object.scale = {1.0f, 1.0f, 1.0f};
+        object.chunkPath = "object/" + std::to_string(index);
+        manifest.objects.push_back(std::move(object));
+    }
+    return manifest;
 }
 }
 
@@ -625,6 +656,84 @@ int RunEditorTreePresenterTests()
         importedPresenter.SetImportedAssetCatalog(std::move(blockedCatalog));
         check(!importedPresenter.SelectAsset("imported.section.blocked"),
             "non-placeable imported descriptor cannot enter placement mode");
+    }
+
+    {
+        FakeEditorTree historicalTree;
+        FakePropertyPanel historicalProperties;
+        FakeDialogService historicalDialogs;
+        EditorDocument editableDocument;
+        EditorHistoricalSceneDocument historicalDocument;
+        EditorPreviewScene preview;
+        EditorTreePresenter historicalPresenter(editableDocument,
+            historicalTree, historicalProperties, historicalDialogs, {}, {},
+            {}, [&preview](const EditorPreviewScene& scene) { preview = scene; });
+        historicalPresenter.AttachHistoricalDocument(historicalDocument);
+        historicalPresenter.InitializeDemo();
+
+        EditorSceneManifest invalid = HistoricalManifest();
+        invalid.version = 4;
+        std::string reason;
+        const EditorTreeNode* editableRoot = editableDocument.Model().Root();
+        check(!historicalPresenter.OpenHistoricalScene(
+                std::move(invalid), &reason) &&
+            historicalPresenter.GetDocumentMode() ==
+                EditorDocumentMode::EditableSnapshot &&
+            editableDocument.Model().Root() == editableRoot,
+            "failed historical open preserves editable mode and model");
+
+        check(historicalPresenter.OpenHistoricalScene(
+                HistoricalManifest(), &reason) &&
+            historicalPresenter.IsReadOnly() &&
+            historicalPresenter.GetActiveDisplayName() == "fixture.level" &&
+            !historicalProperties.editingEnabled &&
+            historicalTree.Contains("duplicate") &&
+            historicalTree.Contains("duplicate [#2]") &&
+            preview.GetObjects().size() == 2,
+            "historical open switches to read-only tree and preview");
+        check(!historicalPresenter.CanUndo() &&
+            !historicalPresenter.CanRedo() &&
+            !historicalPresenter.SetToolMode(EditorToolMode::Move) &&
+            historicalPresenter.GetToolMode() == EditorToolMode::Select &&
+            !historicalPresenter.SelectAsset("demo.actor") &&
+            !historicalPresenter.PlaceAt({}),
+            "history, mutation tools, and placement are unavailable");
+
+        check(historicalTree.SelectByLabel("duplicate"),
+            "historical item can be selected");
+        historicalPresenter.RefreshSelection();
+        check(historicalProperties.lastProperties.Find("stable_record_id") &&
+            historicalProperties.lastProperties.Find("class_id") &&
+            historicalProperties.lastProperties.Find("source_offset") &&
+            !historicalProperties.Apply("label", "changed"),
+            "historical selection exposes read-only provenance properties");
+        const EditorHistoricalSceneObjectData& first =
+            historicalDocument.Objects().front();
+        EditorTreeNode* firstNode = historicalDocument.GetTreeModel().FindByPath(
+            first.nodePath);
+        const std::size_t itemCount = historicalTree.items.size();
+        historicalPresenter.AddDemoNode("blocked", "blocked");
+        historicalPresenter.DeleteSelected();
+        check(!historicalPresenter.MoveSelectedTo("Historical Scene") &&
+            firstNode && !historicalPresenter.RenameNode(
+                *firstNode, "changed", &reason) &&
+            !historicalPresenter.SetLogicalTransform(first.nodePath, {}) &&
+            !historicalPresenter.SaveSnapshot("blocked.wx_tree_snapshot") &&
+            !historicalPresenter.Undo() && !historicalPresenter.Redo() &&
+            historicalTree.items.size() == itemCount &&
+            firstNode->Label() == "duplicate",
+            "all mutation routes reject without changing historical data");
+        check(historicalPresenter.FindFirst("duplicate") == 2 &&
+            historicalPresenter.SelectLogicalPath(first.stableRecordId) &&
+            preview.SelectedPath() == first.stableRecordId,
+            "find and preview-to-tree selection remain enabled");
+
+        historicalPresenter.NewDocument();
+        check(!historicalPresenter.IsReadOnly() &&
+            historicalProperties.editingEnabled &&
+            historicalPresenter.SetToolMode(EditorToolMode::Move) &&
+            editableDocument.Model().Root() && !editableDocument.IsModified(),
+            "New restores normal editable behavior");
     }
 
     return failures;

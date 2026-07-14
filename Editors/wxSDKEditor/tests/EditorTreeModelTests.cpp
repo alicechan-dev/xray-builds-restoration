@@ -39,6 +39,7 @@ int RunEditorPreviewSceneTests();
 int RunEditorToolControllerTests();
 int RunEditorMetadataTests();
 int RunEditorSceneProbeTests();
+int RunEditorHistoricalSceneDocumentTests();
 
 int main()
 {
@@ -562,6 +563,7 @@ int main()
     failures += RunEditorToolControllerTests();
     failures += RunEditorMetadataTests();
     failures += RunEditorSceneProbeTests();
+    failures += RunEditorHistoricalSceneDocumentTests();
 
     if (failures)
     {

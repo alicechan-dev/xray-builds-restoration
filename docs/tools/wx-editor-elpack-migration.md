@@ -246,3 +246,8 @@ and object manifest is rendered by a dedicated wx tree without calling
 `TElTree`, `ItemListHelper`, `FolderLib`, xrEProps, or old LevelEditor code.
 This does not port historical scene editing or grant object-construction
 semantics to the manifest.
+
+The read-only historical document now transplants confirmed manifest values
+through `EditorTreeModel`, properties, selection, and preview without old
+`TElTree` or object classes. It remains a new adapter path, not an ElPack or
+LevelEditor compatibility implementation.

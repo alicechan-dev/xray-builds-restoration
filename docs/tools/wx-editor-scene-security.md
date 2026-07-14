@@ -22,8 +22,8 @@ scripts, loads plugins or libraries, opens archives, or decodes object-specific
 payloads. Unknown chunks are metadata, not executable or recursively trusted
 content. There is intentionally no raw-hex editor and no scene save path.
 
-Inspection failure leaves the current inspector manifest and the editable
-development document unchanged. A future import or conversion feature must be
-a separate audited operation with its own model and tests; the manifest is not
-permission to instantiate runtime/editor classes.
-
+Inspection failure leaves the current inspector manifest and active document
+unchanged. The read-only historical document conversion is a separate,
+wx-free, tested model that copies only confirmed inert values. The manifest is
+not permission to instantiate runtime/editor classes, and conversion still
+performs no referenced-file loading or scene writes.

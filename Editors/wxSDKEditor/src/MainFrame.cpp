@@ -41,6 +41,7 @@ enum
     IdMoveSelected,
     IdImportPathList,
     IdInspectHistoricalScene,
+    IdOpenHistoricalScene,
     IdFindItem,
     IdClearSelection,
     IdShowSelection,
@@ -108,6 +109,8 @@ void wxSDKEditorFrame::CreateMenus()
     fileMenu->Append(IdImportPathList, "&Import Demo Path List...");
     fileMenu->Append(IdInspectHistoricalScene,
         "Inspect &Historical Scene...");
+    fileMenu->Append(IdOpenHistoricalScene,
+        "Open Historical Scene &Read-Only...");
     fileMenu->AppendSeparator();
     fileMenu->Append(wxID_EXIT, "E&xit\tAlt-X");
     menuBar->Append(fileMenu, "&File");
@@ -164,12 +167,28 @@ void wxSDKEditorFrame::CreateMenus()
     Bind(wxEVT_CLOSE_WINDOW, &wxSDKEditorFrame::OnClose, this);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnNewDocument, this, wxID_NEW);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnOpenDocument, this, wxID_OPEN);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnOpenHistoricalScene,
+        this, IdOpenHistoricalScene);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveDocument, this, wxID_SAVE);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSaveDocumentAs, this, wxID_SAVEAS);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnUndo, this, wxID_UNDO);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnRedo, this, wxID_REDO);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateUndo, this, wxID_UNDO);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateRedo, this, wxID_REDO);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateEditableAction,
+        this, wxID_SAVE);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateEditableAction,
+        this, wxID_SAVEAS);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateEditableAction,
+        this, IdAddDemoObject);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateEditableAction,
+        this, IdAddDemoGroup);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateEditableAction,
+        this, IdDeleteSelected);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateEditableAction,
+        this, IdMoveSelected);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateEditableAction,
+        this, IdImportPathList);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleSceneTree,
         this, IdViewSceneTree);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleProperties,
@@ -269,7 +288,10 @@ void wxSDKEditorFrame::CreateEditorToolbar()
 void wxSDKEditorFrame::SetToolMode(EditorToolMode mode)
 {
     if (treePresenter_)
+    {
         treePresenter_->SetToolMode(mode);
+        mode = treePresenter_->GetToolMode();
+    }
     if (viewport_)
     {
         const EditorAssetDescriptor* descriptor = nullptr;
@@ -354,9 +376,10 @@ void wxSDKEditorFrame::CreateWorkspace()
         [this](const std::string& message) {
             output_->AppendText("\n" + wxString::FromUTF8(message) + "\n");
         }, [this](const std::string&) { UpdateDocumentTitle(); },
-        [this](const EditorTreeModel& model, const std::string& selectedPath) {
-            viewport_->RebuildPreview(model, selectedPath);
+        [this](const EditorPreviewScene& scene) {
+            viewport_->SetPreviewScene(scene);
         });
+    treePresenter_->AttachHistoricalDocument(historicalDocument_);
     viewport_->SetTransformHandler(
         [this](const std::string& path, const EditorTransform& transform) {
             return treePresenter_->SetLogicalTransform(path, transform);
@@ -479,6 +502,55 @@ void wxSDKEditorFrame::OnOpenDocument(wxCommandEvent&)
         SetToolMode(EditorToolMode::Select);
 }
 
+void wxSDKEditorFrame::OnOpenHistoricalScene(wxCommandEvent&)
+{
+    if (!ConfirmSaveChanges())
+        return;
+    wxFileDialog dialog(this, "Open historical X-Ray scene read-only",
+        wxEmptyString, wxEmptyString,
+        "Historical X-Ray scenes (*.level)|*.level|All files (*.*)|*.*",
+        wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dialog.ShowModal() != wxID_OK)
+        return;
+
+    EditorSceneManifest manifest;
+    std::string reason;
+    EditorHistoricalSceneProbe probe;
+    if (!probe.ProbeSceneFile(
+        std::filesystem::path(dialog.GetPath().ToStdWstring()),
+        manifest, &reason) ||
+        !treePresenter_->OpenHistoricalScene(std::move(manifest), &reason))
+    {
+        dialogService_.Error("Historical scene open failed", reason.c_str());
+        SetStatusText("Historical scene open failed: " + reason);
+        return;
+    }
+
+    SetToolMode(EditorToolMode::Select);
+    const EditorSceneManifest& source = historicalDocument_.GetManifest();
+    const std::string summary = "Historical scene opened read-only: file=" +
+        historicalDocument_.GetDisplayName() + ", version=" +
+        std::to_string(source.version) + ", bytes=" +
+        std::to_string(source.totalSize) + ", declared=" +
+        (source.hasDeclaredObjectCount
+            ? std::to_string(source.declaredObjectCount) : "unknown") +
+        ", confirmed=" +
+        std::to_string(historicalDocument_.GetConfirmedObjectCount()) +
+        ", named=" +
+        std::to_string(historicalDocument_.GetNamedObjectCount()) +
+        ", transformed=" +
+        std::to_string(historicalDocument_.GetTransformedObjectCount()) +
+        ", compressed_unsupported=" +
+        std::to_string(
+            historicalDocument_.GetUnsupportedCompressedChunkCount()) +
+        ", bodies_unsupported=" +
+        std::to_string(historicalDocument_.GetUnsupportedBodyCount()) +
+        ", diagnostics=" + std::to_string(source.diagnostics.size()) + ".";
+    output_->AppendText("\n" + wxString::FromUTF8(summary) + "\n");
+    SetStatusText(summary);
+    UpdateDocumentTitle();
+}
+
 void wxSDKEditorFrame::OnSaveDocument(wxCommandEvent&)
 {
     SaveDocument();
@@ -491,6 +563,8 @@ void wxSDKEditorFrame::OnSaveDocumentAs(wxCommandEvent&)
 
 bool wxSDKEditorFrame::ConfirmSaveChanges()
 {
+    if (treePresenter_ && treePresenter_->IsReadOnly())
+        return true;
     if (!document_.IsModified())
         return true;
 
@@ -508,6 +582,11 @@ bool wxSDKEditorFrame::ConfirmSaveChanges()
 
 bool wxSDKEditorFrame::SaveDocument()
 {
+    if (treePresenter_ && treePresenter_->IsReadOnly())
+    {
+        treePresenter_->SaveSnapshot({});
+        return false;
+    }
     if (!document_.HasFilePath())
         return SaveDocumentAs();
     const bool saved = treePresenter_->SaveSnapshot(document_.GetFilePath());
@@ -518,6 +597,11 @@ bool wxSDKEditorFrame::SaveDocument()
 
 bool wxSDKEditorFrame::SaveDocumentAs()
 {
+    if (treePresenter_ && treePresenter_->IsReadOnly())
+    {
+        treePresenter_->SaveSnapshot({});
+        return false;
+    }
     wxFileDialog dialog(this, "Save development tree snapshot", wxEmptyString,
         document_.GetDisplayName() == "Untitled"
             ? "untitled.wx_tree_snapshot" : document_.GetDisplayName(),
@@ -533,8 +617,12 @@ bool wxSDKEditorFrame::SaveDocumentAs()
 
 void wxSDKEditorFrame::UpdateDocumentTitle()
 {
-    std::string title = "wxSDKEditor - " + document_.GetDisplayName();
-    if (document_.IsModified())
+    const bool readOnly = treePresenter_ && treePresenter_->IsReadOnly();
+    std::string title = "wxSDKEditor - " + (treePresenter_
+        ? treePresenter_->GetActiveDisplayName() : document_.GetDisplayName());
+    if (readOnly)
+        title += " [Read-Only]";
+    else if (document_.IsModified())
         title += " *";
     SetTitle(wxString::FromUTF8(title));
 }
@@ -557,6 +645,11 @@ void wxSDKEditorFrame::OnUpdateUndo(wxUpdateUIEvent& event)
 void wxSDKEditorFrame::OnUpdateRedo(wxUpdateUIEvent& event)
 {
     event.Enable(treePresenter_ && treePresenter_->CanRedo());
+}
+
+void wxSDKEditorFrame::OnUpdateEditableAction(wxUpdateUIEvent& event)
+{
+    event.Enable(!treePresenter_ || !treePresenter_->IsReadOnly());
 }
 
 void wxSDKEditorFrame::OnToggleSceneTree(wxCommandEvent&)
@@ -734,6 +827,7 @@ void wxSDKEditorFrame::OnToggleMoveSnap(wxCommandEvent&)
 
 void wxSDKEditorFrame::OnUpdateMoveSnap(wxUpdateUIEvent& event)
 {
+    event.Enable(!treePresenter_ || !treePresenter_->IsReadOnly());
     event.Check(viewport_ && viewport_->IsMoveSnapEnabled());
 }
 
@@ -768,6 +862,8 @@ void wxSDKEditorFrame::OnUpdateToolMode(wxUpdateUIEvent& event)
         expected = EditorToolMode::PlaceObject;
     else if (event.GetId() == IdToolPlaceLight)
         expected = EditorToolMode::PlaceLight;
+    event.Enable(expected == EditorToolMode::Select ||
+        !treePresenter_->IsReadOnly());
     event.Check(treePresenter_->GetToolMode() == expected);
 }
 
@@ -905,6 +1001,12 @@ void wxSDKEditorFrame::OnShowSelection(wxCommandEvent&)
 
 void wxSDKEditorFrame::OnTreeEndLabelEdit(wxTreeEvent& event)
 {
+    if (treePresenter_->IsReadOnly())
+    {
+        event.Veto();
+        SetStatusText("Rename rejected: Historical scene is read-only.");
+        return;
+    }
     if (event.IsEditCancelled())
     {
         event.Skip();
@@ -937,6 +1039,11 @@ void wxSDKEditorFrame::OnTreeKeyDown(wxKeyEvent& event)
 {
     if (event.GetKeyCode() == WXK_F2)
     {
+        if (treePresenter_->IsReadOnly())
+        {
+            SetStatusText("Rename rejected: Historical scene is read-only.");
+            return;
+        }
         editorTree_->BeginEditSelectedLabel();
         return;
     }

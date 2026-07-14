@@ -82,3 +82,8 @@ metadata contents are serialized.
 Historical scene inspection is also application-session state, not document
 state. Inspecting or failing to inspect a `.level` file does not replace the
 tree model, clear history, change the save point, or mark the snapshot dirty.
+
+Opening a historical scene read-only uses a separate document and selection
+model rather than changing this editable snapshot document. New and Open
+Snapshot reactivate this document. See [Document
+Modes](wx-editor-document-modes.md).

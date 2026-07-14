@@ -31,9 +31,12 @@ wxPropertyPanel::wxPropertyPanel(wxWindow* parent) : wxPanel(parent)
     addRow("Path", path_, wxTE_READONLY);
     sizer->Add(grid, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
 
-    auto* apply = new wxButton(this, wxID_APPLY, "Apply");
-    apply->Bind(wxEVT_BUTTON, &wxPropertyPanel::OnApply, this);
-    sizer->Add(apply, 0, wxALIGN_RIGHT | wxLEFT | wxRIGHT | wxBOTTOM, 12);
+    details_ = new wxTextCtrl(this, wxID_ANY, wxEmptyString,
+        wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY);
+    sizer->Add(details_, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
+    apply_ = new wxButton(this, wxID_APPLY, "Apply");
+    apply_->Bind(wxEVT_BUTTON, &wxPropertyPanel::OnApply, this);
+    sizer->Add(apply_, 0, wxALIGN_RIGHT | wxLEFT | wxRIGHT | wxBOTTOM, 12);
     SetSizer(sizer);
 }
 
@@ -44,6 +47,7 @@ void wxPropertyPanel::Clear()
     category_->Clear();
     kind_->Clear();
     path_->Clear();
+    details_->Clear();
     Layout();
 }
 
@@ -58,12 +62,26 @@ void wxPropertyPanel::ShowProperties(const EditorPropertySet& properties)
     category_->ChangeValue(value("category"));
     kind_->ChangeValue(value("kind"));
     path_->ChangeValue(value("path"));
+    wxString details;
+    for (const EditorProperty& property : properties.Properties())
+    {
+        details += wxString::FromUTF8(property.label) + ": " +
+            wxString::FromUTF8(property.value) + "\n";
+    }
+    details_->ChangeValue(details);
     Layout();
 }
 
 void wxPropertyPanel::SetApplyHandler(ApplyHandler handler)
 {
     applyHandler_ = std::move(handler);
+}
+
+void wxPropertyPanel::SetEditingEnabled(bool enabled)
+{
+    label_->SetEditable(enabled);
+    category_->SetEditable(enabled);
+    apply_->Enable(enabled);
 }
 
 void wxPropertyPanel::OnApply(wxCommandEvent&)

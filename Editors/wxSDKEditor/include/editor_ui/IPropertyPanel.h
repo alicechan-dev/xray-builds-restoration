@@ -18,6 +18,7 @@ public:
     virtual void ShowPlaceholder(const char* text) = 0;
     virtual void ShowProperties(const EditorPropertySet& properties) = 0;
     virtual void SetApplyHandler(ApplyHandler handler) = 0;
+    virtual void SetEditingEnabled(bool enabled) = 0;
 };
 
 #endif

@@ -317,3 +317,9 @@ bounded chunks and confirms only object wrappers, names, and transforms proved
 by the active historical writer. It does not replace the development document,
 construct objects, load assets, or write scene data. Synthetic malformed-input
 and atomic-result tests pass in the wx-free test target.
+
+Confirmed records may now open in an explicit historical read-only document
+mode. The wx tree, provenance properties, selection/query, and generic preview
+use stable record IDs; all mutation/history/save paths are disabled and
+defensively rejected. No `.level` write path or referenced-asset loading was
+added, and compressed/specialized contents remain unsupported.

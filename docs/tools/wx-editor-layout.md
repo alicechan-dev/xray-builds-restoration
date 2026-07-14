@@ -61,3 +61,7 @@ filters and selection are UI state and never dirty the document.
 The read-only Scene Inspector adds a hidden-by-default right-docked pane. Its
 visibility participates in the AUI perspective, while its inspected manifest
 does not. Reset Layout hides the pane and inspection never dirties a document.
+
+Document mode does not alter pane ownership or persistence. The historical
+tree reuses Scene / Objects, provenance uses Properties, and the inert preview
+uses the center viewport; the independent Scene Inspector remains available.

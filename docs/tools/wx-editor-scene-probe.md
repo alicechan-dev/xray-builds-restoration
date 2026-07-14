@@ -34,3 +34,6 @@ See [Scene Format Audit](wx-editor-scene-format-audit.md), [Security
 Boundary](wx-editor-scene-security.md), and [Scene
 Inspector](wx-editor-scene-inspector.md).
 
+The same atomic manifest can now feed the separate read-only historical
+document mode. Probe failure still leaves both editable and historical
+workspace state unchanged; conversion adds no parsing or object construction.

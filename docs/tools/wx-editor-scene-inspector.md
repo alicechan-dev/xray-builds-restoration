@@ -21,3 +21,7 @@ the development scene tree or viewport, construct objects, load assets, or
 write `.level` files. The existing snapshot and imported-metadata workflows
 remain separate.
 
+The inspector command remains distinct from **Open Historical Scene
+Read-Only...**. The latter builds a separate inert tree/preview document from
+confirmed records, while this pane continues to display its own session
+manifest and never edits either document.

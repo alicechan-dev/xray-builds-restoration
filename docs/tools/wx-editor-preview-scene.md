@@ -74,3 +74,8 @@ Nodes carrying an `imported.section.*` ID map to the existing inert Spawn
 preview even when the session catalog is unavailable. This keeps saved
 development documents inspectable without loading metadata and does not add
 mesh, texture, renderer, or runtime-class behavior.
+
+Historical preview uses a separate adapter. It emits generic boxes only for
+finite confirmed transforms and identifies them by stable record ID, so
+duplicate names remain distinct. Unconfirmed transforms stay in the tree but
+are omitted from preview. See [Historical Preview](wx-editor-historical-preview.md).

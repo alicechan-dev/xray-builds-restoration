@@ -3,6 +3,7 @@
 #include "editor_view/IEditorViewportRenderer.h"
 #include "editor_view/EditorTreePreviewAdapter.h"
 
+#include <utility>
 #include <wx/dcbuffer.h>
 
 namespace
@@ -87,6 +88,14 @@ void wxEditorViewport::RebuildPreview(
     const EditorTreeModel& model, const std::string& selectedPath)
 {
     previewScene_ = BuildEditorPreviewScene(model, selectedPath);
+    renderer_.SetScene(&previewScene_);
+    controller_.Render();
+    Refresh(false);
+}
+
+void wxEditorViewport::SetPreviewScene(EditorPreviewScene scene)
+{
+    previewScene_ = std::move(scene);
     renderer_.SetScene(&previewScene_);
     controller_.Render();
     Refresh(false);

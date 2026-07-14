@@ -391,3 +391,11 @@ objects, load references, replace the development document, or write scenes.
 See [Scene Format Audit](wx-editor-scene-format-audit.md), [Scene
 Probe](wx-editor-scene-probe.md), and [Scene
 Inspector](wx-editor-scene-inspector.md).
+
+Confirmed manifest records can now be opened as a separate read-only
+historical document. Stable record IDs support duplicate names, provenance is
+shown read-only, and only confirmed finite transforms receive generic preview
+boxes. Existing `.wx_tree_snapshot` editing is unchanged. See [Historical
+Document](wx-editor-historical-document.md), [Historical
+Preview](wx-editor-historical-preview.md), and [Document
+Modes](wx-editor-document-modes.md).

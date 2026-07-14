@@ -77,3 +77,8 @@ Nodes with `imported.section.*` IDs also expose read-only `prototype_section`
 and `metadata_resolution`. While the session catalog is loaded they may expose
 the relative `metadata_source`; after it is cleared they report `unresolved`
 without losing identity or preventing snapshot loading.
+
+Historical mode supplies a separate all-read-only property set containing
+source name, stable record ID, record index, class ID, complete confirmed
+transform, confirmation/support flags, chunk path, source offset, scene
+version, and diagnostics. Apply is disabled and presenter mutation is rejected.

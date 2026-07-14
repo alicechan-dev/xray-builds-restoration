@@ -54,3 +54,6 @@ Advancing beyond this ladder requires a separate source audit. In particular,
 the current probe does not support compressed scene containers, specialized
 tool classes, object-specific bodies, or historical save/write behavior.
 
+The read-only historical document consumes only levels 2 through 4 of this
+evidence ladder. It does not broaden parsing or treat specialized bodies as
+supported. See [Historical Scene Document](wx-editor-historical-document.md).

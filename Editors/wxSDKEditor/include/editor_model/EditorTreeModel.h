@@ -52,7 +52,9 @@ public:
     EditorTreeNode* Root() { return root_.get(); }
     const EditorTreeNode* Root() const { return root_.get(); }
     EditorTreeNode* FindByPath(const std::string& path);
+    const EditorTreeNode* FindByPath(const std::string& path) const;
     EditorTreeNode* FindByLabel(const std::string& label);
+    const EditorTreeNode* FindByLabel(const std::string& label) const;
     EditorTreeNode* FindChildCaseInsensitive(
         EditorTreeNode& parent, const std::string& label);
     std::string MakeUniqueChildName(

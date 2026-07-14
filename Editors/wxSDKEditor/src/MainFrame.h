@@ -6,6 +6,7 @@
 #include "editor_app/EditorToolMode.h"
 #include "editor_assets/EditorImportedMetadata.h"
 #include "editor_scene/EditorSceneManifest.h"
+#include "editor_scene/EditorHistoricalSceneDocument.h"
 
 #include <memory>
 #include <string>
@@ -47,12 +48,14 @@ private:
     void OnClose(wxCloseEvent& event);
     void OnNewDocument(wxCommandEvent& event);
     void OnOpenDocument(wxCommandEvent& event);
+    void OnOpenHistoricalScene(wxCommandEvent& event);
     void OnSaveDocument(wxCommandEvent& event);
     void OnSaveDocumentAs(wxCommandEvent& event);
     void OnUndo(wxCommandEvent& event);
     void OnRedo(wxCommandEvent& event);
     void OnUpdateUndo(wxUpdateUIEvent& event);
     void OnUpdateRedo(wxUpdateUIEvent& event);
+    void OnUpdateEditableAction(wxUpdateUIEvent& event);
     void OnToggleSceneTree(wxCommandEvent& event);
     void OnToggleProperties(wxCommandEvent& event);
     void OnToggleOutput(wxCommandEvent& event);
@@ -105,6 +108,7 @@ private:
     wxAuiManager auiManager_;
     wxString defaultPerspective_;
     EditorDocument document_;
+    EditorHistoricalSceneDocument historicalDocument_;
     EditorImportedMetadata importedMetadata_;
     EditorSceneManifest inspectedScene_;
     wxDialogService dialogService_;

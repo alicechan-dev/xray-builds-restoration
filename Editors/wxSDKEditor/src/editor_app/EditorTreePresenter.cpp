@@ -6,6 +6,10 @@
 #include "editor_model/EditorPropertySet.h"
 #include "editor_model/EditorTreeQuery.h"
 #include "editor_model/EditorTreeSnapshot.h"
+#include "editor_scene/EditorHistoricalSceneDocument.h"
+#include "editor_scene/EditorHistoricalScenePreviewAdapter.h"
+#include "editor_scene/EditorHistoricalSceneProperties.h"
+#include "editor_view/EditorTreePreviewAdapter.h"
 #include "editor_ui/IDialogService.h"
 #include "editor_ui/IEditorTree.h"
 #include "editor_ui/IPropertyPanel.h"
@@ -36,9 +40,79 @@ void EditorTreePresenter::InitializeDemo()
     NotifyDocumentChanged();
 }
 
+void EditorTreePresenter::AttachHistoricalDocument(
+    EditorHistoricalSceneDocument& document)
+{
+    historicalDocument_ = &document;
+}
+
+bool EditorTreePresenter::OpenHistoricalScene(
+    EditorSceneManifest manifest, std::string* reason)
+{
+    if (!historicalDocument_)
+    {
+        if (reason)
+            *reason = "Historical document storage is unavailable.";
+        return false;
+    }
+    if (!historicalDocument_->BuildFromManifest(std::move(manifest), reason))
+        return false;
+    mode_ = EditorDocumentMode::HistoricalSceneReadOnly;
+    tools_.Reset();
+    properties_.SetEditingEnabled(false);
+    Rebuild(nullptr, true);
+    SetStatus("Opened historical scene read-only.");
+    NotifyDocumentChanged();
+    return true;
+}
+
+std::string EditorTreePresenter::GetActiveDisplayName() const
+{
+    return IsReadOnly() && historicalDocument_
+        ? historicalDocument_->GetDisplayName() : document_.GetDisplayName();
+}
+
+EditorTreeModel& EditorTreePresenter::ActiveModel()
+{
+    return IsReadOnly() ? historicalDocument_->GetTreeModel() : model_;
+}
+
+const EditorTreeModel& EditorTreePresenter::ActiveModel() const
+{
+    return IsReadOnly() ? historicalDocument_->GetTreeModel() : model_;
+}
+
+EditorSelectionModel& EditorTreePresenter::ActiveSelection()
+{
+    return IsReadOnly() ? historicalDocument_->GetSelectionModel() : selection_;
+}
+
+const EditorSelectionModel& EditorTreePresenter::ActiveSelection() const
+{
+    return IsReadOnly() ? historicalDocument_->GetSelectionModel() : selection_;
+}
+
+bool EditorTreePresenter::RejectReadOnly(const char* operation) const
+{
+    if (!IsReadOnly())
+        return false;
+    const std::string message = std::string(operation) +
+        " rejected: Historical scene is read-only.";
+    dialogs_.Warning("Historical scene is read-only", message.c_str());
+    SetStatus(message);
+    return true;
+}
+
+void EditorTreePresenter::UseEditableDocument()
+{
+    mode_ = EditorDocumentMode::EditableSnapshot;
+    properties_.SetEditingEnabled(true);
+}
+
 void EditorTreePresenter::NewDocument()
 {
     document_.NewDocument();
+    UseEditableDocument();
     tools_.Reset();
     Rebuild(nullptr, true);
     SetStatus("Created a new development document.");
@@ -47,6 +121,8 @@ void EditorTreePresenter::NewDocument()
 
 bool EditorTreePresenter::SetToolMode(EditorToolMode mode)
 {
+    if (IsReadOnly() && mode != EditorToolMode::Select)
+        return !RejectReadOnly("Tool change");
     const bool changed = tools_.SetMode(mode);
     SetStatus(std::string("Tool: ") + EditorToolModeName(mode) + ". " +
         tools_.StatusText());
@@ -63,6 +139,8 @@ bool EditorTreePresenter::CancelActiveTool()
 
 bool EditorTreePresenter::SelectAsset(const std::string& assetId)
 {
+    if (RejectReadOnly("Asset placement"))
+        return false;
     const EditorAssetDescriptor* descriptor = assetCatalog_.FindById(assetId);
     const EditorAssetCatalog* catalog = &assetCatalog_;
     if (!descriptor)
@@ -119,14 +197,17 @@ std::string EditorTreePresenter::ResolvePlacementParentPath() const
     if (selected && selected->Parent())
         return selected->Parent()->Path();
 
-    const EditorTreeNode* objects = model_.FindByLabel("Objects");
+    const EditorTreeModel& model = ActiveModel();
+    const EditorTreeNode* objects = model.FindByLabel("Objects");
     if (objects && IsGroupKind(objects->Kind()))
         return objects->Path();
-    return model_.Root() ? model_.Root()->Path() : std::string();
+    return model.Root() ? model.Root()->Path() : std::string();
 }
 
 bool EditorTreePresenter::PlaceAt(const EditorTransform& transform)
 {
+    if (RejectReadOnly("Placement"))
+        return false;
     if (!tools_.IsPlacementMode() || !transform.IsFinite())
         return false;
 
@@ -220,15 +301,16 @@ void EditorTreePresenter::PopulateNode(
 
 void EditorTreePresenter::Rebuild(EditorTreeNode* selectedNode, bool selectFirst)
 {
+    EditorTreeModel& model = ActiveModel();
     tree_.Clear();
-    if (!model_.Root())
+    if (!model.Root())
     {
         properties_.Clear();
         RefreshPreview();
         return;
     }
 
-    PopulateNode(*model_.Root(), IEditorTree::InvalidItem);
+    PopulateNode(*model.Root(), IEditorTree::InvalidItem);
     tree_.ExpandAllItems();
     if (selectedNode)
         tree_.SelectByUserData(reinterpret_cast<IEditorTree::UserData>(selectedNode));
@@ -240,15 +322,16 @@ void EditorTreePresenter::Rebuild(EditorTreeNode* selectedNode, bool selectFirst
 void EditorTreePresenter::RebuildByPath(
     const std::string& selectedPath, bool selectFirst)
 {
-    Rebuild(selectedPath.empty() ? nullptr : model_.FindByPath(selectedPath),
+    Rebuild(selectedPath.empty() ? nullptr : ActiveModel().FindByPath(selectedPath),
         selectFirst);
 }
 
 void EditorTreePresenter::RefreshSelection()
 {
     const EditorTreeNode* node = SelectedNode();
-    selection_.Clear();
-    selection_.Select(node);
+    EditorSelectionModel& selection = ActiveSelection();
+    selection.Clear();
+    selection.Select(node);
     RefreshPreview();
     if (!node)
     {
@@ -256,16 +339,42 @@ void EditorTreePresenter::RefreshSelection()
         return;
     }
 
-    properties_.ShowProperties(BuildEditorNodePropertySet(
-        *node, FindAsset(node->AssetId())));
+    if (IsReadOnly() && historicalDocument_)
+    {
+        const EditorHistoricalSceneObjectData* object =
+            historicalDocument_->FindByNodePath(node->Path());
+        if (object)
+            properties_.ShowProperties(
+                BuildHistoricalSceneObjectPropertySet(*object));
+        else
+            properties_.ShowProperties(BuildEditorNodePropertySet(*node));
+        return;
+    }
+    properties_.ShowProperties(
+        BuildEditorNodePropertySet(*node, FindAsset(node->AssetId())));
 }
 
 void EditorTreePresenter::RefreshPreview() const
 {
     if (!previewChanged_)
         return;
-    const std::vector<std::string> paths = selection_.GetSelectedPaths(model_);
-    previewChanged_(model_, paths.empty() ? std::string() : paths.front());
+    const EditorTreeModel& model = ActiveModel();
+    const std::vector<std::string> paths = ActiveSelection().GetSelectedPaths(model);
+    if (IsReadOnly() && historicalDocument_)
+    {
+        std::string stableId;
+        if (!paths.empty())
+        {
+            if (const EditorHistoricalSceneObjectData* object =
+                historicalDocument_->FindByNodePath(paths.front()))
+                stableId = object->stableRecordId;
+        }
+        previewChanged_(BuildHistoricalScenePreview(
+            *historicalDocument_, stableId));
+        return;
+    }
+    previewChanged_(BuildEditorPreviewScene(
+        model, paths.empty() ? std::string() : paths.front()));
 }
 
 bool EditorTreePresenter::SelectLogicalPath(const std::string& logicalPath)
@@ -276,7 +385,14 @@ bool EditorTreePresenter::SelectLogicalPath(const std::string& logicalPath)
         SetStatus("No preview object under cursor.");
         return false;
     }
-    EditorTreeNode* node = model_.FindByPath(logicalPath);
+    std::string nodePath = logicalPath;
+    if (IsReadOnly() && historicalDocument_)
+    {
+        const EditorHistoricalSceneObjectData* object =
+            historicalDocument_->FindByStableId(logicalPath);
+        nodePath = object ? object->nodePath : std::string();
+    }
+    EditorTreeNode* node = ActiveModel().FindByPath(nodePath);
     if (!node)
     {
         ClearSelection();
@@ -294,6 +410,8 @@ bool EditorTreePresenter::SelectLogicalPath(const std::string& logicalPath)
 bool EditorTreePresenter::SetLogicalTransform(
     const std::string& path, const EditorTransform& transform)
 {
+    if (RejectReadOnly("Move"))
+        return false;
     EditorTreeNode* node = model_.FindByPath(path);
     if (!node)
         return false;
@@ -335,11 +453,13 @@ void EditorTreePresenter::SetStatus(const std::string& message) const
 void EditorTreePresenter::NotifyDocumentChanged() const
 {
     if (documentChanged_)
-        documentChanged_(document_.GetDisplayName());
+        documentChanged_(GetActiveDisplayName());
 }
 
 void EditorTreePresenter::AddDemoNode(const char* baseName, const char* category)
 {
+    if (RejectReadOnly("Add"))
+        return;
     EditorTreeNode* parent = SelectedNode();
     if (!parent)
         parent = model_.Root();
@@ -378,6 +498,8 @@ void EditorTreePresenter::AddDemoNode(const char* baseName, const char* category
 
 void EditorTreePresenter::DeleteSelected()
 {
+    if (RejectReadOnly("Delete"))
+        return;
     EditorTreeNode* selected = SelectedNode();
     if (!selected)
     {
@@ -430,6 +552,8 @@ void EditorTreePresenter::DeleteSelected()
 std::vector<std::string> EditorTreePresenter::GetMoveDestinations() const
 {
     std::vector<std::string> paths;
+    if (IsReadOnly())
+        return paths;
     const EditorTreeNode* selected = SelectedNode();
     if (!selected)
         return paths;
@@ -447,6 +571,8 @@ std::vector<std::string> EditorTreePresenter::GetMoveDestinations() const
 
 bool EditorTreePresenter::MoveSelectedTo(const std::string& newParentPath)
 {
+    if (RejectReadOnly("Move"))
+        return false;
     EditorTreeNode* selected = SelectedNode();
     if (!selected)
     {
@@ -501,6 +627,8 @@ bool EditorTreePresenter::MoveSelectedTo(const std::string& newParentPath)
 bool EditorTreePresenter::ApplySelectedProperty(
     const std::string& key, std::string value)
 {
+    if (RejectReadOnly("Property edit"))
+        return false;
     EditorTreeNode* selected = SelectedNode();
     if (!selected)
     {
@@ -547,6 +675,12 @@ bool EditorTreePresenter::ApplySelectedProperty(
 bool EditorTreePresenter::RenameNode(
     EditorTreeNode& node, std::string newName, std::string* reason)
 {
+    if (RejectReadOnly("Rename"))
+    {
+        if (reason)
+            *reason = "Historical scene is read-only.";
+        return false;
+    }
     const std::string previousLabel = node.Label();
     const std::string oldPath = node.Path();
     auto command = std::make_unique<EditorModelCommand>(model_,
@@ -586,6 +720,7 @@ bool EditorTreePresenter::LoadSnapshot(const std::filesystem::path& path)
         return false;
     }
 
+    UseEditableDocument();
     tools_.Reset();
     Rebuild(nullptr, true);
     SetStatus("Loaded demo tree snapshot.");
@@ -595,6 +730,8 @@ bool EditorTreePresenter::LoadSnapshot(const std::filesystem::path& path)
 
 bool EditorTreePresenter::Undo()
 {
+    if (RejectReadOnly("Undo"))
+        return false;
     const std::string name = history_.GetUndoName();
     std::string reason;
     if (!history_.Undo(&reason))
@@ -610,6 +747,8 @@ bool EditorTreePresenter::Undo()
 
 bool EditorTreePresenter::Redo()
 {
+    if (RejectReadOnly("Redo"))
+        return false;
     const std::string name = history_.GetRedoName();
     std::string reason;
     if (!history_.Redo(&reason))
@@ -625,6 +764,8 @@ bool EditorTreePresenter::Redo()
 
 bool EditorTreePresenter::SaveSnapshot(const std::filesystem::path& path)
 {
+    if (RejectReadOnly("Save"))
+        return false;
     std::string reason;
     if (!document_.SaveAs(path, &reason))
     {
@@ -649,6 +790,7 @@ bool EditorTreePresenter::ImportPathList(
         return false;
     }
 
+    UseEditableDocument();
     tools_.Reset();
     Rebuild(nullptr, true);
     if (output_)
@@ -662,7 +804,7 @@ std::size_t EditorTreePresenter::FindFirst(std::string text)
 {
     EditorTreeQueryOptions options;
     options.text = std::move(text);
-    const EditorTreeQueryResult matches = QueryEditorTree(model_, options);
+    const EditorTreeQueryResult matches = QueryEditorTree(ActiveModel(), options);
     if (matches.empty())
     {
         SetStatus("No matching tree items found.");
@@ -680,7 +822,7 @@ std::size_t EditorTreePresenter::FindFirst(std::string text)
 void EditorTreePresenter::ClearSelection()
 {
     tree_.ClearSelection();
-    selection_.Clear();
+    ActiveSelection().Clear();
     properties_.Clear();
     RefreshPreview();
     SetStatus("Selection cleared.");
@@ -688,7 +830,8 @@ void EditorTreePresenter::ClearSelection()
 
 void EditorTreePresenter::ReportSelection()
 {
-    const std::vector<std::string> paths = selection_.GetSelectedPaths(model_);
+    const std::vector<std::string> paths =
+        ActiveSelection().GetSelectedPaths(ActiveModel());
     if (paths.empty())
     {
         SetStatus("No model items selected.");
