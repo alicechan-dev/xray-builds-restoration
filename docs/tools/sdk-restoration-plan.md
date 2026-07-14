@@ -648,5 +648,9 @@ decodes its version, inert object-library reference metadata, and flags without
 resolving the reference. Of 15,416 sampled class-2 bodies, 15,412 are Supported
 and four are Partial because motion chunks remain bounded inventory. Unknown
 classes stay generic and malformed specialized decoding preserves the wrapper.
-Glow (class 1) is the recommended next isolated decoder; scene editing,
-factories, asset loading, and writes remain out of scope.
+Glow (class 1) was the second isolated decoder. All 511 sampled bodies use
+version `0x0012` and decode as Supported; inert names/radius/flags and
+provenance are visible read-only, with radius represented only by a diagnostic
+ring. Light (class 3) is the next recommended audit because its optional
+animation/fuzzy chunks require more evidence. Scene editing, factories, asset
+loading, and writes remain out of scope.

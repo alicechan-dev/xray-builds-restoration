@@ -49,4 +49,5 @@ they are not parsed through or silently converted to empty data.
 The headless executable also accepts `--audit-scenes <root>`. It recursively
 selects only `.level` files, sorts them, and reports aggregate class/body
 coverage without writing a report or exporting bytes. Retained bodies are
-offered to the explicit class dispatcher; currently only class 2 has a decoder.
+offered to the explicit class dispatcher; classes 1 (glow) and 2 (scene
+object) currently have decoders.

@@ -37,3 +37,7 @@ The class-2 decoder rejects missing/duplicate required chunks, unsupported
 versions, truncated values, child-bound violations, oversized strings, and
 compressed specialized children. Unknown and motion chunks are bounded
 inventory only. A malformed specialized body preserves its generic wrapper.
+
+The class-1 glow decoder applies the same body/chunk/string retention limits.
+It additionally validates version-specific params sizes and finite radius or
+legacy-position floats. Shader and texture strings are inert and never opened.

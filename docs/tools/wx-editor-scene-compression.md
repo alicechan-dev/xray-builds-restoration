@@ -53,7 +53,7 @@ prints counts and byte totals only; it does not export payloads or assets.
 ## Current scope
 
 Successful decoding can reveal confirmed wrappers, names, classes, transforms,
-and source-audited class-2 bodies inside compressed containers. It does not
+and source-audited class-1/class-2 bodies inside compressed containers. It does not
 instantiate historical objects or load referenced assets. Since the format has
 no checksum, a corrupt stream that remains
 structurally valid cannot be cryptographically authenticated.

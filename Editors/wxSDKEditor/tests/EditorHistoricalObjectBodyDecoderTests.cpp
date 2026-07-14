@@ -1,7 +1,9 @@
 #include "editor_scene/EditorHistoricalObjectBodyDecoder.h"
 
 #include <cstdint>
+#include <cstring>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -19,6 +21,13 @@ void U32(Bytes& bytes, std::uint32_t value)
 {
     for (int shift = 0; shift != 32; shift += 8)
         bytes.push_back(static_cast<std::uint8_t>(value >> shift));
+}
+
+void Float(Bytes& bytes, float value)
+{
+    std::uint32_t bits = 0;
+    std::memcpy(&bits, &value, sizeof(bits));
+    U32(bytes, bits);
 }
 
 void CString(Bytes& bytes, const char* value)
@@ -58,6 +67,39 @@ Bytes SceneObjectBody(bool flags = false)
         Bytes value;
         U32(value, 0x12345678);
         Append(body, Chunk(0x0905, value));
+    }
+    return body;
+}
+
+Bytes GlowBody(std::uint16_t version = 0x0012, bool optional = false)
+{
+    Bytes body;
+    Bytes versionValue;
+    U16(versionValue, version);
+    Append(body, Chunk(0xc411, versionValue));
+    Bytes params;
+    Float(params, 2.5f);
+    if (version == 0x0011)
+    {
+        Float(params, 1.0f);
+        Float(params, 2.0f);
+        Float(params, 3.0f);
+    }
+    Append(body, Chunk(0xc413, params));
+    if (optional)
+    {
+        Bytes shader;
+        CString(shader, "effects\\glow");
+        Append(body, Chunk(0xc414, shader));
+    }
+    Bytes texture;
+    CString(texture, "glow\\lamp");
+    Append(body, Chunk(0xc415, texture));
+    if (optional)
+    {
+        Bytes flags;
+        U16(flags, 1);
+        Append(body, Chunk(0xc416, flags));
     }
     return body;
 }
@@ -117,6 +159,103 @@ int RunEditorHistoricalObjectBodyDecoderTests()
     check(generic.status == EditorHistoricalObjectDecodeStatus::Unsupported &&
         !generic.hasSceneObject,
         "unknown dispatcher class remains generic");
+
+    const EditorHistoricalObjectBodyDecodeResult minimumGlow =
+        DecodeHistoricalObjectBody(1, GlowBody(), 2000, "glow-body");
+    check(minimumGlow.status == EditorHistoricalObjectDecodeStatus::Supported &&
+        minimumGlow.hasGlow && minimumGlow.hasBodyVersion &&
+        minimumGlow.bodyVersion == 0x0012 &&
+        minimumGlow.glow.radius == 2.5f &&
+        minimumGlow.glow.textureName == "glow\\lamp" &&
+        !minimumGlow.glow.hasShader && !minimumGlow.glow.hasFlags,
+        "minimum glow body decodes required inert fields");
+    check(minimumGlow.glow.versionProvenance.sourceOffset == 2008 &&
+        minimumGlow.glow.radiusProvenance.chunkPath ==
+            "glow-body/0x0000C413" &&
+        minimumGlow.glow.textureProvenance.chunkId == 0xc415,
+        "glow field provenance retains offsets and chunk paths");
+
+    const EditorHistoricalObjectBodyDecodeResult fullGlow =
+        DecodeHistoricalObjectBody(1, GlowBody(0x0012, true), 0, "body");
+    check(fullGlow.status == EditorHistoricalObjectDecodeStatus::Supported &&
+        fullGlow.glow.hasShader &&
+        fullGlow.glow.shaderName == "effects\\glow" &&
+        fullGlow.glow.hasFlags && fullGlow.glow.flags == 1,
+        "optional glow shader and flags decode exactly");
+
+    const EditorHistoricalObjectBodyDecodeResult legacyGlow =
+        DecodeHistoricalObjectBody(1, GlowBody(0x0011), 0, "body");
+    check(legacyGlow.status == EditorHistoricalObjectDecodeStatus::Partial &&
+        legacyGlow.glow.hasLegacyPosition &&
+        legacyGlow.glow.legacyPosition[0] == 1.0f &&
+        legacyGlow.glow.legacyPosition[2] == 3.0f,
+        "legacy glow position is retained without changing shared placement");
+
+    Bytes unknownGlow = GlowBody();
+    Append(unknownGlow, Chunk(0xdead, {1, 2}));
+    const EditorHistoricalObjectBodyDecodeResult partialGlow =
+        DecodeHistoricalObjectBody(1, unknownGlow, 0, "body");
+    check(partialGlow.status == EditorHistoricalObjectDecodeStatus::Partial &&
+        partialGlow.unknownChunks.size() == 1 &&
+        partialGlow.unknownChunks[0].id == 0xdead,
+        "unknown glow child is retained and marks decode partial");
+
+    Bytes missingGlow;
+    Append(missingGlow, Chunk(0xc411, {0x12, 0x00}));
+    Bytes missingTextureParams;
+    Float(missingTextureParams, 1.0f);
+    Append(missingGlow, Chunk(0xc413, missingTextureParams));
+    check(DecodeHistoricalObjectBody(1, missingGlow, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "missing required glow texture is malformed");
+
+    Bytes duplicateGlow = GlowBody();
+    Append(duplicateGlow, Chunk(0xc411, {0x12, 0x00}));
+    check(DecodeHistoricalObjectBody(1, duplicateGlow, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "duplicate glow specialized chunk is malformed");
+
+    Bytes unsupportedGlow = GlowBody();
+    unsupportedGlow[8] = 0x13;
+    check(DecodeHistoricalObjectBody(1, unsupportedGlow, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "unsupported glow version is malformed");
+
+    Bytes truncatedGlow = GlowBody();
+    truncatedGlow[14] = 3;
+    check(DecodeHistoricalObjectBody(1, truncatedGlow, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "wrong-sized glow params are malformed");
+
+    Bytes nonFiniteGlow = GlowBody();
+    const float nan = (std::numeric_limits<float>::quiet_NaN)();
+    std::uint32_t nanBits = 0;
+    std::memcpy(&nanBits, &nan, sizeof(nanBits));
+    for (int index = 0; index != 4; ++index)
+        nonFiniteGlow[18 + index] =
+            static_cast<std::uint8_t>(nanBits >> (index * 8));
+    check(DecodeHistoricalObjectBody(1, nonFiniteGlow, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "non-finite glow radius is malformed");
+
+    EditorHistoricalObjectBodyDecodeLimits glowStringLimits;
+    glowStringLimits.maximumStringLength = 3;
+    check(DecodeHistoricalObjectBody(1, GlowBody(), 0, "body",
+        glowStringLimits).status == EditorHistoricalObjectDecodeStatus::Malformed,
+        "over-limit glow texture string is malformed");
+
+    Bytes compressedGlow = GlowBody();
+    compressedGlow[3] |= 0x80;
+    check(DecodeHistoricalObjectBody(1, compressedGlow, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "compressed specialized glow child is rejected");
+
+    Bytes badGlowBounds = GlowBody();
+    badGlowBounds[4] = 0xff;
+    badGlowBounds[5] = 0xff;
+    check(DecodeHistoricalObjectBody(1, badGlowBounds, 0, "body").status ==
+        EditorHistoricalObjectDecodeStatus::Malformed,
+        "glow child outside body bounds is malformed");
 
     Bytes noVersion;
     Bytes reference;

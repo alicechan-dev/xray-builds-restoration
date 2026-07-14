@@ -88,6 +88,29 @@ EditorPropertySet BuildHistoricalSceneObjectPropertySet(
             "Retained Unsupported Chunks",
             std::to_string(object.bodyDecode.unsupportedChunks.size())));
     }
+    if (object.bodyDecode.hasGlow)
+    {
+        const EditorHistoricalGlowRecord& glow = object.bodyDecode.glow;
+        properties.Add(Property("glow.shader", "Glow Shader",
+            glow.hasShader ? glow.shaderName : "not present"));
+        properties.Add(Property("glow.texture", "Glow Texture",
+            glow.textureName));
+        properties.Add(Property("glow.radius", "Glow Radius",
+            std::to_string(glow.radius)));
+        properties.Add(Property("glow.flags", "Glow Flags",
+            glow.hasFlags ? Hex(glow.flags) : "not present"));
+        properties.Add(Property("glow.texture_source_offset",
+            "Glow Texture Source Offset",
+            std::to_string(glow.textureProvenance.sourceOffset)));
+        properties.Add(Property("glow.radius_source_offset",
+            "Glow Radius Source Offset",
+            std::to_string(glow.radiusProvenance.sourceOffset)));
+        properties.Add(Property("glow.unknown_chunks", "Unknown Body Chunks",
+            std::to_string(object.bodyDecode.unknownChunks.size())));
+        properties.Add(Property("glow.unsupported_chunks",
+            "Retained Unsupported Chunks",
+            std::to_string(object.bodyDecode.unsupportedChunks.size())));
+    }
     properties.Add(Property("source_chunk_path", "Source Chunk Path",
         object.chunkPath));
     properties.Add(Property("source_offset", "Source Offset",

@@ -3,6 +3,8 @@
 #include "editor_view/EditorPreviewScene.h"
 #include "editor_view/EditorViewportState.h"
 
+#include <algorithm>
+
 namespace
 {
 EditorViewportStyle StyleFor(EditorPreviewKind kind)
@@ -11,6 +13,7 @@ EditorViewportStyle StyleFor(EditorPreviewKind kind)
     {
     case EditorPreviewKind::Box: return EditorViewportStyle::Object;
     case EditorPreviewKind::Light: return EditorViewportStyle::Light;
+    case EditorPreviewKind::Glow: return EditorViewportStyle::Marker;
     case EditorPreviewKind::Spawn: return EditorViewportStyle::Spawn;
     default: return EditorViewportStyle::Marker;
     }
@@ -47,9 +50,15 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
         if (object.kind == EditorPreviewKind::Box)
             drawList_.Add({EditorViewportPrimitiveType::Rectangle, style,
                 x - 14.0f, y - 10.0f, x + 14.0f, y + 10.0f});
-        else if (object.kind == EditorPreviewKind::Light)
+        else if (object.kind == EditorPreviewKind::Light ||
+            object.kind == EditorPreviewKind::Glow)
+        {
+            const float radius = object.kind == EditorPreviewKind::Glow
+                ? (std::clamp)(object.sizeX * projection_.scale, 4.0f, 200.0f)
+                : 9.0f;
             drawList_.Add({EditorViewportPrimitiveType::Circle, style,
-                x, y, 0.0f, 0.0f, 9.0f});
+                x, y, 0.0f, 0.0f, radius});
+        }
         else
         {
             drawList_.Add({EditorViewportPrimitiveType::Line, style,

@@ -256,4 +256,6 @@ only inert chunk bytes and does not construct old editor objects or controls.
 
 The class-2 scene-object decoder is likewise a wx-free data transplant, not an
 ElPack bridge. It does not call `ItemListHelper`, `FolderLib`, old factories,
-or object-library UI. Historical Borland/VCL sources remain untouched.
+or object-library UI. The class-1 glow decoder follows the same inert wx-free
+boundary and does not use old rendering/property controls. Historical
+Borland/VCL sources remain untouched.

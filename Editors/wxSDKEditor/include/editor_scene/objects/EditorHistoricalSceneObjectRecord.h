@@ -1,38 +1,12 @@
 #ifndef XR_WX_SDK_EDITOR_HISTORICAL_SCENE_OBJECT_RECORD_H
 #define XR_WX_SDK_EDITOR_HISTORICAL_SCENE_OBJECT_RECORD_H
 
-#include <cstddef>
+#include "editor_scene/objects/EditorHistoricalGlowRecord.h"
+#include "editor_scene/objects/EditorHistoricalObjectBodyRecord.h"
+
 #include <cstdint>
 #include <string>
 #include <vector>
-
-enum class EditorHistoricalObjectDecodeStatus
-{
-    Supported,
-    Partial,
-    Unsupported,
-    Malformed
-};
-
-const char* ToString(EditorHistoricalObjectDecodeStatus status);
-
-struct EditorHistoricalFieldProvenance
-{
-    std::uint32_t chunkId = 0;
-    std::size_t bodyOffset = 0;
-    std::size_t sourceOffset = 0;
-    std::size_t size = 0;
-    std::string chunkPath;
-};
-
-struct EditorHistoricalBodyChunkRecord
-{
-    std::uint32_t id = 0;
-    std::size_t headerOffset = 0;
-    std::size_t dataOffset = 0;
-    std::size_t size = 0;
-    std::string path;
-};
 
 struct EditorHistoricalSceneObjectBodyRecord
 {
@@ -56,6 +30,8 @@ struct EditorHistoricalObjectBodyDecodeResult
     std::uint16_t bodyVersion = 0;
     bool hasSceneObject = false;
     EditorHistoricalSceneObjectBodyRecord sceneObject;
+    bool hasGlow = false;
+    EditorHistoricalGlowRecord glow;
     std::vector<EditorHistoricalBodyChunkRecord> unknownChunks;
     std::vector<EditorHistoricalBodyChunkRecord> unsupportedChunks;
     std::vector<std::string> diagnostics;

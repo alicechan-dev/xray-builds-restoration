@@ -26,6 +26,8 @@ not depend on display or source name. Each provenance record retains class ID,
 source name, chunk path, offset, scene version, confirmed transform state, and
 specialized decode result. Class-2 records also retain inert reference,
 version, flags, and field provenance. No raw manifest-buffer pointers are kept.
+Class-1 records retain inert shader/texture names, radius, flags, version, and
+field provenance.
 
 Opening is atomic: probe and conversion failure leave the active editable or
 historical document unchanged. The document never saves, rewrites, normalizes,
@@ -39,3 +41,6 @@ chunk path. Failed compressed containers create no objects.
 The first specialized transplant supports `CSceneObject`: 15,412 sampled
 records decode fully and four motion-bearing records decode partially. Generic
 objects and malformed specialized bodies remain selectable and readable.
+The second transplant supports all 511 sampled `CGlow` bodies. Referenced
+shader and texture names are never opened; the source-confirmed radius drives
+only a diagnostic preview ring.

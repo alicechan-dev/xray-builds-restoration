@@ -173,6 +173,23 @@ int RunEditorPreviewSceneTests()
         "light-circle hit returns logical identity");
     check(!PickEditorPreview(shapes, 5.0f, 5.0f).hit,
         "empty-space miss is safe");
+    EditorPreviewScene glowScene;
+    glowScene.AddObject({"glow", "glow", 0.0f, 0.0f, -5.0f,
+        2.5f, 2.5f, 2.5f, EditorPreviewKind::Glow});
+    renderer.Resize(640, 480);
+    renderer.SetScene(&glowScene);
+    renderer.Render(viewport);
+    const auto& glowPrimitives = renderer.DrawList().Primitives();
+    check(!glowPrimitives.empty() &&
+        glowPrimitives[0].type == EditorViewportPrimitiveType::Circle &&
+        glowPrimitives[0].radius == 100.0f,
+        "glow radius produces bounded diagnostic circle");
+    const std::vector<EditorPreviewPickShape> glowShapes =
+        BuildEditorPreviewPickShapes(glowScene, context);
+    check(glowShapes.size() == 1 && glowShapes[0].circular &&
+        glowShapes[0].radius == 100.0f &&
+        PickEditorPreview(glowShapes, 400.0f, 240.0f).hit,
+        "glow diagnostic circle uses matching pick radius");
     EditorPreviewPickShape markerShape;
     markerShape.logicalPath = "marker";
     markerShape.kind = EditorPreviewKind::Marker;

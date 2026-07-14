@@ -36,3 +36,7 @@ exports or writes decompressed payloads.
 For decoded class-2 records, object details show body version, inert reference
 metadata, flags, unknown/unsupported child counts, and decoder diagnostics.
 All values remain read-only; the inspector never resolves the reference.
+
+For decoded class-1 glows, details show version, shader and texture names,
+radius, optional flags, field source offsets, retained chunk counts, and
+diagnostics. The names are not resolved and no rendering resource is created.

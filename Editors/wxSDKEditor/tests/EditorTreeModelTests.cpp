@@ -11,6 +11,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <cstring>
 #include <filesystem>
 #include <map>
 #include <set>
@@ -46,6 +47,26 @@ struct SceneClassAudit
         std::size_t maximumSize = 0;
     };
 
+    struct GlowAudit
+    {
+        std::size_t parsed = 0;
+        std::size_t malformed = 0;
+        std::size_t shaders = 0;
+        std::size_t emptyShaders = 0;
+        std::size_t textures = 0;
+        std::size_t emptyTextures = 0;
+        std::size_t radii = 0;
+        std::size_t nonFiniteRadii = 0;
+        float minimumRadius = 0.0f;
+        float maximumRadius = 0.0f;
+        std::size_t flags = 0;
+        std::uint16_t minimumFlags = 0;
+        std::uint16_t maximumFlags = 0;
+        std::map<std::uint16_t, std::size_t> versions;
+        std::map<std::uint16_t, std::set<std::string>> versionScenes;
+        std::map<std::string, std::size_t> layouts;
+    };
+
     std::size_t records = 0;
     std::size_t named = 0;
     std::size_t transformed = 0;
@@ -57,7 +78,14 @@ struct SceneClassAudit
     std::size_t maximumBodySize = 0;
     std::set<std::string> scenes;
     std::map<std::uint32_t, BodyChunkAudit> bodyChunks;
+    GlowAudit glow;
 };
+
+std::uint16_t ReadAuditU16(const std::uint8_t* bytes)
+{
+    return static_cast<std::uint16_t>(bytes[0]) |
+        (static_cast<std::uint16_t>(bytes[1]) << 8);
+}
 
 std::uint32_t ReadAuditU32(const std::uint8_t* bytes)
 {
@@ -68,9 +96,10 @@ std::uint32_t ReadAuditU32(const std::uint8_t* bytes)
 }
 
 bool AuditBodyChunks(const EditorSceneObjectRecord& object,
-    SceneClassAudit& entry)
+    SceneClassAudit& entry, const std::string& sceneName)
 {
     std::size_t offset = 0;
+    std::string layout;
     while (offset < object.bodyBytes.size())
     {
         if (object.bodyBytes.size() - offset < 8)
@@ -87,7 +116,75 @@ bool AuditBodyChunks(const EditorSceneObjectRecord& object,
         ++chunk.occurrences;
         chunk.minimumSize = (std::min)(chunk.minimumSize, size);
         chunk.maximumSize = (std::max)(chunk.maximumSize, size);
+
+        const std::uint32_t id = rawId & 0x7fffffffu;
+        if (!layout.empty())
+            layout += ',';
+        layout += std::to_string(id);
+        if (object.classId == 1u)
+        {
+            const std::uint8_t* payload = object.bodyBytes.data() + offset;
+            if (id == 0xc411u && size == 2)
+            {
+                const std::uint16_t version = ReadAuditU16(payload);
+                ++entry.glow.versions[version];
+                entry.glow.versionScenes[version].insert(sceneName);
+            }
+            else if ((id == 0xc414u || id == 0xc415u) && size != 0)
+            {
+                const bool terminated = payload[size - 1] == 0;
+                const bool empty = size == 1 && terminated;
+                if (!terminated)
+                    ++entry.glow.malformed;
+                else if (id == 0xc414u)
+                {
+                    ++entry.glow.shaders;
+                    entry.glow.emptyShaders += empty ? 1u : 0u;
+                }
+                else
+                {
+                    ++entry.glow.textures;
+                    entry.glow.emptyTextures += empty ? 1u : 0u;
+                }
+            }
+            else if (id == 0xc413u && size >= sizeof(float))
+            {
+                float radius = 0.0f;
+                std::memcpy(&radius, payload, sizeof(radius));
+                ++entry.glow.radii;
+                if (!std::isfinite(radius))
+                    ++entry.glow.nonFiniteRadii;
+                else if (entry.glow.radii - entry.glow.nonFiniteRadii == 1)
+                    entry.glow.minimumRadius = entry.glow.maximumRadius = radius;
+                else
+                {
+                    entry.glow.minimumRadius = (std::min)(
+                        entry.glow.minimumRadius, radius);
+                    entry.glow.maximumRadius = (std::max)(
+                        entry.glow.maximumRadius, radius);
+                }
+            }
+            else if (id == 0xc416u && size == 2)
+            {
+                const std::uint16_t flags = ReadAuditU16(payload);
+                ++entry.glow.flags;
+                if (entry.glow.flags == 1)
+                    entry.glow.minimumFlags = entry.glow.maximumFlags = flags;
+                else
+                {
+                    entry.glow.minimumFlags = (std::min)(
+                        entry.glow.minimumFlags, flags);
+                    entry.glow.maximumFlags = (std::max)(
+                        entry.glow.maximumFlags, flags);
+                }
+            }
+        }
         offset += size;
+    }
+    if (object.classId == 1u)
+    {
+        ++entry.glow.parsed;
+        ++entry.glow.layouts[layout];
     }
     return true;
 }
@@ -152,7 +249,7 @@ int AuditScenes(const std::filesystem::path& root)
             entry.maximumBodySize = (std::max)(
                 entry.maximumBodySize, object.bodyBytes.size());
             entry.scenes.insert(scene.filename().string());
-            if (!AuditBodyChunks(object, entry))
+            if (!AuditBodyChunks(object, entry, scene.filename().string()))
             {
                 std::cerr << "Scene audit found malformed retained body for class "
                     << object.classId << " in " << scene.filename().string()
@@ -194,6 +291,31 @@ int AuditScenes(const std::filesystem::path& root)
                 << " occurrences=" << chunk.occurrences
                 << " size_min=" << chunk.minimumSize
                 << " size_max=" << chunk.maximumSize << '\n';
+        }
+        if (item.first == 1u)
+        {
+            const SceneClassAudit::GlowAudit& glow = entry.glow;
+            std::cout << "  glow parsed=" << glow.parsed
+                << " malformed_fields=" << glow.malformed
+                << " shaders=" << glow.shaders
+                << " empty_shaders=" << glow.emptyShaders
+                << " textures=" << glow.textures
+                << " empty_textures=" << glow.emptyTextures
+                << " radii=" << glow.radii
+                << " nonfinite_radii=" << glow.nonFiniteRadii
+                << " radius_min=" << glow.minimumRadius
+                << " radius_max=" << glow.maximumRadius
+                << " flags=" << glow.flags
+                << " flags_min=" << glow.minimumFlags
+                << " flags_max=" << glow.maximumFlags << '\n';
+            for (const auto& version : glow.versions)
+                std::cout << "  glow_version=" << version.first
+                    << " occurrences=" << version.second
+                    << " scenes=" << glow.versionScenes.at(version.first).size()
+                    << '\n';
+            for (const auto& layoutItem : glow.layouts)
+                std::cout << "  glow_layout=" << layoutItem.first
+                    << " occurrences=" << layoutItem.second << '\n';
         }
     }
     return 0;

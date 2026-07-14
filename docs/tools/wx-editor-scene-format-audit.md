@@ -39,7 +39,8 @@ reader:
 - `0x0000F903`: position, rotation, and scale as nine 32-bit floats.
 
 All other common chunks remain inventory records. A separate audited
-dispatcher now decodes only class ID 2 (`CSceneObject`) specialized fields;
+dispatcher now decodes class ID 1 (`CGlow`) and class ID 2 (`CSceneObject`)
+specialized fields;
 unknown classes remain generic. It never resolves a class factory or loads a
 referenced asset.
 
@@ -56,7 +57,7 @@ referenced asset.
 Every further class still requires a separate source audit. The current probe
 does not support historical save/write behavior or speculative body layouts.
 
-The read-only historical document consumes levels 2 through 5. Only class 2
+The read-only historical document consumes levels 2 through 5. Classes 1 and 2
 currently reaches level 5; every other specialized body remains generic. See
 [Historical Scene Document](wx-editor-historical-document.md).
 ## Confirmed compression

@@ -11,7 +11,7 @@ common nine-float transform, and the probe retained no structural diagnostic.
 | ID | Historical class | Records | Scenes | Body bytes | Current decode |
 |---:|---|---:|---:|---:|---|
 | 0 | `OBJCLASS_GROUP` / `CGroupObject` | 6 | 5 | 595-13,835 | Unsupported |
-| 1 | `OBJCLASS_GLOW` / `CGlow` | 511 | 17 | 145-166 | Unsupported |
+| 1 | `OBJCLASS_GLOW` / `CGlow` | 511 | 17 | 145-166 | 511 Supported |
 | 2 | `OBJCLASS_SCENEOBJECT` / `CSceneObject` | 15,416 | 17 | 122-19,789 | 15,412 Supported; 4 Partial |
 | 3 | `OBJCLASS_LIGHT` / `CLight` | 1,729 | 17 | 171-327 | Unsupported |
 | 5 | `OBJCLASS_SOUND_SRC` / `ESoundSource` | 187 | 5 | 166-206 | Unsupported |
@@ -60,5 +60,8 @@ All listed classes invoke `CCustomObject::Load/Save` from
 6. **Spawn point (6):** common, but versioned spawn packets and attachments are
    substantially more complex.
 
-Scene object therefore won the first decoder pass. Glow is the recommended
-next class. Historical sources and scene files remain untouched.
+Scene object therefore won the first decoder pass. Glow was the second pass:
+all 511 records use version `0x0012`, have finite radii from 0.5 to 5.0, and
+decode as `Supported`. Light is now the recommended next class, after a
+complete audit of its optional animation/fuzzy chunks. Historical sources and
+scene files remain untouched.

@@ -322,8 +322,8 @@ Confirmed records may now open in an explicit historical read-only document
 mode. The wx tree, provenance properties, selection/query, and generic preview
 use stable record IDs; all mutation/history/save paths are disabled and
 defensively rejected. No `.level` write path or referenced-asset loading was
-added. Compression and class-2 metadata are read-only; other specialized
-classes remain unsupported.
+added. Compression and class-1/class-2 metadata are read-only; other
+specialized classes remain unsupported.
 - wxSDKEditor historical read-only scenes now decode bounded build-1935 X-Ray
   LZHUF chunks, retain compression provenance, and expose confirmed nested
   records without writing scenes or loading historical/runtime objects.
@@ -332,3 +332,7 @@ classes remain unsupported.
   are fully supported and four motion-bearing bodies are partial inventory.
   Properties and Inspector expose inert reference/version/flags; preview stays
   a generic box and no reference or asset is loaded.
+- The second specialized decoder supports all 511 sampled class-1 `CGlow`
+  bodies across all 17 scenes. It exposes inert version, shader/texture names,
+  radius, flags, and provenance. Radius drives only a bounded diagnostic ring;
+  referenced assets and historical classes are never loaded.

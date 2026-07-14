@@ -87,3 +87,7 @@ Decoded class-2 records additionally expose historical type, decode status,
 body version, inert reference name/version/reserved value, flags, and retained
 unknown/unsupported chunk counts. These fields are always read-only and never
 trigger reference loading.
+
+Decoded class-1 glows expose shader/texture names, radius, optional flags,
+unknown/unsupported chunk counts, and radius/texture source offsets. These are
+also read-only and never cause asset lookup or historical object creation.

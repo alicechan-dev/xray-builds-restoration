@@ -179,6 +179,46 @@ int RunEditorHistoricalSceneDocumentTests()
             std::string::npos,
         "scene-object reference augments the conservative generic preview label");
 
+    EditorSceneManifest glowManifest;
+    glowManifest.sourceFile = "glow.level";
+    glowManifest.version = 5;
+    glowManifest.hasVersion = true;
+    EditorSceneObjectRecord glow = Object(13, 700, "lamp_glow", true);
+    glow.classId = 1;
+    glow.bodyDecode.status = EditorHistoricalObjectDecodeStatus::Supported;
+    glow.bodyDecode.typeName = "Glow";
+    glow.bodyDecode.hasBodyVersion = true;
+    glow.bodyDecode.bodyVersion = 0x0012;
+    glow.bodyDecode.hasGlow = true;
+    glow.bodyDecode.glow.version = 0x0012;
+    glow.bodyDecode.glow.hasShader = true;
+    glow.bodyDecode.glow.shaderName = "effects\\glow";
+    glow.bodyDecode.glow.textureName = "glow\\lamp";
+    glow.bodyDecode.glow.radius = 2.5f;
+    glow.bodyDecode.glow.radiusProvenance.sourceOffset = 740;
+    glow.bodyDecode.glow.textureProvenance.sourceOffset = 760;
+    glowManifest.objects.push_back(glow);
+    EditorHistoricalSceneDocument glowDocument;
+    check(glowDocument.BuildFromManifest(glowManifest, &reason) &&
+        glowDocument.Objects()[0].bodySupported,
+        "decoded glow attaches to historical document inertly");
+    const EditorPropertySet glowProperties =
+        BuildHistoricalSceneObjectPropertySet(glowDocument.Objects()[0]);
+    check(glowProperties.Find("glow.texture") &&
+        glowProperties.Find("glow.texture")->value == "glow\\lamp" &&
+        glowProperties.Find("glow.radius") &&
+        glowProperties.Find("glow.radius")->readOnly &&
+        glowProperties.Find("glow.radius_source_offset")->value == "740",
+        "glow fields and provenance appear as read-only properties");
+    const EditorPreviewScene glowPreview = BuildHistoricalScenePreview(
+        glowDocument, glowDocument.Objects()[0].stableRecordId);
+    check(glowPreview.GetObjects().size() == 1 &&
+        glowPreview.GetObjects()[0].kind == EditorPreviewKind::Glow &&
+        glowPreview.GetObjects()[0].sizeX == 2.5f &&
+        glowPreview.SelectedPath() ==
+            glowDocument.Objects()[0].stableRecordId,
+        "glow radius drives conservative diagnostic preview ring");
+
     const std::string preservedId = document.Objects()[0].stableRecordId;
     EditorSceneManifest invalid = Manifest();
     invalid.version = 4;

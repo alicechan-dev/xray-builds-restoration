@@ -218,6 +218,27 @@ void wxSceneInspector::OnSelectionChanged(wxTreeEvent& event)
                 << "\nRetained unsupported chunks: "
                 << object.bodyDecode.unsupportedChunks.size();
         }
+        if (object.bodyDecode.hasGlow)
+        {
+            const EditorHistoricalGlowRecord& glow = object.bodyDecode.glow;
+            output << "\nGlow shader: "
+                << (glow.hasShader ? glow.shaderName : "not present")
+                << "\nGlow texture: " << glow.textureName
+                << "\nGlow radius: " << glow.radius
+                << "\nGlow flags: ";
+            if (glow.hasFlags)
+                output << Hex(glow.flags);
+            else
+                output << "not present";
+            output << "\nRadius source offset: "
+                << glow.radiusProvenance.sourceOffset
+                << "\nTexture source offset: "
+                << glow.textureProvenance.sourceOffset
+                << "\nUnknown body chunks: "
+                << object.bodyDecode.unknownChunks.size()
+                << "\nRetained unsupported chunks: "
+                << object.bodyDecode.unsupportedChunks.size();
+        }
         for (const std::string& diagnostic : object.bodyDecode.diagnostics)
             output << "\nDecoder diagnostic: " << diagnostic;
     }

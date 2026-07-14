@@ -9,6 +9,7 @@ enum class EditorPreviewKind
     Box,
     Marker,
     Light,
+    Glow,
     Spawn,
     Unknown
 };

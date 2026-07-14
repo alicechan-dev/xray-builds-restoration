@@ -20,4 +20,7 @@ labels, picking, and Frame Selected remain available. Move gizmo and placement
 operations remain disabled.
 Compression does not change preview policy: only confirmed finite transforms
 produce generic markers. Decoded records do not trigger asset loading or
-class-specific historical rendering.
+class-specific historical rendering. A decoded glow is the conservative
+diagnostic exception: its source-confirmed radius produces a bounded circle
+through the normal draw-list and picking paths. No referenced texture, shader,
+sprite, or historical renderer is loaded.

@@ -4,8 +4,8 @@
 the confirmed generic wrapper and narrowly audited specialized records. It is
 not a historical factory or plugin system.
 
-The dispatcher currently maps only class ID 2 to the scene-object decoder.
-Every other ID returns `Unsupported` and preserves the generic class/name/
+The dispatcher maps class ID 1 to the glow decoder and class ID 2 to the
+scene-object decoder. Every other ID returns `Unsupported` and preserves the generic class/name/
 transform manifest. Specialized failure returns `Malformed` on that object;
 it does not erase the generic record or instantiate historical code.
 
@@ -26,5 +26,6 @@ and 32 retained unknown or unsupported chunks. The production probe separately
 caps retained bodies to 128 MiB per scene. Child sizes, duplicates, required
 chunks, versions, and strings are validated before publication.
 
-See [Historical Scene Object](wx-editor-historical-scene-object.md) and
+See [Historical Glow](wx-editor-historical-glow.md),
+[Historical Scene Object](wx-editor-historical-scene-object.md), and
 [Class Inventory](wx-editor-scene-class-inventory.md).

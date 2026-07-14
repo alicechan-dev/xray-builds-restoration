@@ -2,6 +2,7 @@
 
 #include "editor_view/EditorViewportState.h"
 
+#include <algorithm>
 #include <cmath>
 
 EditorPreviewProjectionContext MakeEditorPreviewProjectionContext(
@@ -75,9 +76,12 @@ std::vector<EditorPreviewPickShape> BuildEditorPreviewPickShapes(
             shape.halfWidth = 14.0f;
             shape.halfHeight = 10.0f;
         }
-        else if (object.kind == EditorPreviewKind::Light)
+        else if (object.kind == EditorPreviewKind::Light ||
+            object.kind == EditorPreviewKind::Glow)
         {
-            shape.radius = 9.0f;
+            shape.radius = object.kind == EditorPreviewKind::Glow
+                ? (std::clamp)(object.sizeX * context.scale, 4.0f, 200.0f)
+                : 9.0f;
             shape.circular = true;
         }
         else

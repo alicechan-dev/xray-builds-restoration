@@ -1,6 +1,7 @@
 #include "editor_scene/EditorHistoricalObjectBodyDecoder.h"
 
 #include "editor_scene/EditorBinaryReader.h"
+#include "editor_scene/objects/EditorHistoricalGlowDecoder.h"
 
 #include <set>
 #include <cstring>
@@ -10,6 +11,7 @@ namespace
 {
 constexpr std::uint32_t CompressMark = 0x80000000u;
 constexpr std::uint32_t SceneObjectClass = 2u;
+constexpr std::uint32_t GlowClass = 1u;
 constexpr std::uint32_t SceneObjectVersionChunk = 0x0900u;
 constexpr std::uint32_t SceneObjectReferenceChunk = 0x0902u;
 constexpr std::uint32_t SceneObjectPlacementChunk = 0x0904u;
@@ -296,6 +298,9 @@ EditorHistoricalObjectBodyDecodeResult DecodeHistoricalObjectBody(
     std::size_t bodyDataOffset, const std::string& bodyChunkPath,
     const EditorHistoricalObjectBodyDecodeLimits& limits)
 {
+    if (classId == GlowClass)
+        return DecodeHistoricalGlowBody(bodyBytes, bodyDataOffset,
+            bodyChunkPath, limits);
     if (classId == SceneObjectClass)
         return DecodeSceneObject(bodyBytes, bodyDataOffset, bodyChunkPath,
             limits);
