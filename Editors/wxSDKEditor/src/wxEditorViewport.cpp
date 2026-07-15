@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <utility>
 #include <wx/dcbuffer.h>
+#include <wx/dcclient.h>
 
 namespace
 {
@@ -46,6 +47,8 @@ wxEditorViewport::wxEditorViewport(wxWindow* parent) :
             .logicalPath;
     });
     Bind(wxEVT_PAINT, &wxEditorViewport::OnPaint, this);
+    Bind(wxEVT_ERASE_BACKGROUND, &wxEditorViewport::OnEraseBackground, this);
+    Bind(wxEVT_DESTROY, &wxEditorViewport::OnDestroy, this);
     Bind(wxEVT_SIZE, &wxEditorViewport::OnSize, this);
     Bind(wxEVT_SET_FOCUS, &wxEditorViewport::OnFocus, this);
     Bind(wxEVT_KILL_FOCUS, &wxEditorViewport::OnFocus, this);
@@ -63,6 +66,12 @@ wxEditorViewport::wxEditorViewport(wxWindow* parent) :
     Bind(wxEVT_KEY_UP, &wxEditorViewport::OnKeyUp, this);
     Bind(wxEVT_TIMER, &wxEditorViewport::OnTimer, this);
     timer_.Start(33);
+}
+
+wxEditorViewport::~wxEditorViewport()
+{
+    timer_.Stop();
+    d3dRenderer_.Shutdown();
 }
 
 void wxEditorViewport::ToggleGrid()
@@ -109,8 +118,17 @@ void wxEditorViewport::SetRenderScene(EditorRenderScene scene,
     EditorRenderGeometryCache* geometryCache)
 {
     renderScene_ = std::move(scene);
+    const std::size_t generation = assets ? assets->Generation() : 0;
+    if (generation != renderAssetGeneration_)
+    {
+        d3dRenderer_.ClearGeometryCache();
+        renderAssetGeneration_ = generation;
+    }
     renderAssets_ = assets;
     geometryCache_ = geometryCache;
+    PrepareActiveSceneGeometry();
+    d3dRenderer_.Bind(renderAssets_, geometryCache_);
+    d3dRenderer_.SetScene(renderScene_);
     Refresh(false);
 }
 
@@ -134,7 +152,59 @@ bool wxEditorViewport::AreRenderAssetDiagnosticsVisible() const { return rendere
 void wxEditorViewport::ToggleRealMeshWireframe()
 { wireframeVisible_ = !wireframeVisible_; Refresh(false); }
 void wxEditorViewport::ToggleBackfaceCulling()
-{ backfaceCulling_ = !backfaceCulling_; Refresh(false); }
+{ backfaceCulling_ = !backfaceCulling_; d3dOptions_.backfaceCulling = backfaceCulling_; Refresh(false); }
+
+void wxEditorViewport::SetBackend(EditorViewportBackend backend)
+{
+    if (backend == EditorViewportBackend::SoftwareDiagnostic)
+    {
+        d3dRenderer_.Shutdown();
+        d3dAttempted_ = false;
+        d3dAvailable_ = false;
+    }
+    backend_ = backend;
+    if (backend_ == EditorViewportBackend::Direct3D11 && !EnsureD3D11())
+        backend_ = EditorViewportBackend::SoftwareDiagnostic;
+    Refresh(false);
+}
+
+void wxEditorViewport::ToggleFilledMeshes()
+{ d3dOptions_.filledMeshes = !d3dOptions_.filledMeshes; Refresh(false); }
+void wxEditorViewport::ToggleWireframeOverlay()
+{ d3dOptions_.wireframeOverlay = !d3dOptions_.wireframeOverlay; Refresh(false); }
+void wxEditorViewport::ToggleIsolateSelected()
+{ d3dOptions_.isolateSelected = !d3dOptions_.isolateSelected; Refresh(false); }
+
+bool wxEditorViewport::EnsureD3D11()
+{
+    if (d3dRenderer_.IsInitialized()) return true;
+    if (d3dAttempted_) return false;
+    d3dAttempted_ = true;
+    d3dAvailable_ = d3dRenderer_.Initialize(GetHandle(),
+        controller_.State().width, controller_.State().height, &d3dFailure_);
+    if (d3dAvailable_)
+    {
+        d3dRenderer_.Bind(renderAssets_, geometryCache_);
+        d3dRenderer_.SetScene(renderScene_);
+    }
+    return d3dAvailable_;
+}
+
+void wxEditorViewport::PrepareActiveSceneGeometry()
+{
+    if (!renderAssets_ || !geometryCache_ || !geometryCache_->IsBound()) return;
+    EditorRenderAssetWorkingSet set;
+    set.Rebuild(renderScene_, *renderAssets_);
+    for (const auto& entry : set.Entries())
+    {
+        if (!entry.staticGeometry) continue;
+        if (const EditorRenderObjectAsset* asset = renderAssets_->Find(entry.assetId))
+        {
+            std::string ignored;
+            geometryCache_->Request(*asset, &ignored);
+        }
+    }
+}
 
 bool wxEditorViewport::FrameSelected()
 {
@@ -215,10 +285,26 @@ void wxEditorViewport::SetPlacementDescriptor(
 
 void wxEditorViewport::OnPaint(wxPaintEvent&)
 {
-    wxAutoBufferedPaintDC dc(this);
+    wxPaintDC dc(this);
     const EditorViewportState& state = controller_.State();
-    dc.SetBackground(wxBrush(wxColour(34, 38, 42)));
-    dc.Clear();
+    bool d3dFrame = backend_ == EditorViewportBackend::Direct3D11 &&
+        EnsureD3D11();
+    if (d3dFrame)
+    {
+        d3dOptions_.backfaceCulling = backfaceCulling_;
+        if (!d3dRenderer_.Render(state, d3dOptions_))
+        {
+            d3dRenderer_.Shutdown();
+            d3dAvailable_ = false;
+            backend_ = EditorViewportBackend::SoftwareDiagnostic;
+            d3dFrame = false;
+        }
+    }
+    if (!d3dFrame)
+    {
+        dc.SetBackground(wxBrush(wxColour(34, 38, 42)));
+        dc.Clear();
+    }
 
     if (state.gridVisible)
     {
@@ -234,7 +320,7 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
     }
 
     controller_.Render();
-    if (wireframeVisible_ && renderAssets_ && geometryCache_)
+    if (!d3dFrame && wireframeVisible_ && renderAssets_ && geometryCache_)
         wireframeFrame_ = wireframeRenderer_.Render(renderScene_,
             *renderAssets_, *geometryCache_,
             MakeEditorWireframeCamera(state), backfaceCulling_);
@@ -296,8 +382,9 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
         }
     }
     dc.SetTextForeground(wxColour(205, 213, 220));
-    dc.DrawText(wireframeVisible_ ? "Software wireframe renderer"
-        : "Real mesh wireframe disabled", 12, 12);
+    dc.DrawText(d3dFrame ? "Direct3D 11 renderer" :
+        (wireframeVisible_ ? "Software wireframe renderer" :
+            "Real mesh wireframe disabled"), 12, 12);
     dc.DrawText(wxString::Format("Size: %d x %d", state.width, state.height),
         12, 34);
     dc.DrawText(wxString::Format("Mouse: %d, %d  Focus: %s",
@@ -308,7 +395,17 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
         state.camera.pitch, state.camera.movementSpeed), 12, 74);
     dc.DrawText("Tool: " + wxString::FromUTF8(EditorToolModeName(toolMode_)),
         12, 94);
-    if (wireframeVisible_)
+    if (d3dFrame)
+    {
+        const auto& value = d3dRenderer_.Diagnostics();
+        dc.DrawText(wxString::Format(
+            "D3D11: %s frame=%.2fms workset=%zu resident=%zu uploads=%zu draws=%zu instances=%zu triangles=%zu fallback=%zu",
+            wxString::FromUTF8(value.status), value.cpuFrameMilliseconds,
+            value.workingSetAssets, value.residentAssets,
+            value.uploadsThisFrame, value.drawCalls, value.instancesDrawn,
+            value.trianglesSubmitted, value.fallbackBounds), 12, 114);
+    }
+    else if (wireframeVisible_)
         dc.DrawText(wxString::Format(
             "Wireframe: visible=%zu decoded=%zu triangles=%zu lines=%zu culled=%zu fallback=%zu budget_skip=%zu failures=%zu",
             wireframeFrame_.statistics.visibleInstances,
@@ -372,7 +469,30 @@ void wxEditorViewport::OnSize(wxSizeEvent& event)
 {
     const wxSize size = event.GetSize();
     controller_.OnResize(size.GetWidth(), size.GetHeight());
+    if (d3dRenderer_.IsInitialized())
+    {
+        std::string reason;
+        if (!d3dRenderer_.Resize(size.GetWidth(), size.GetHeight(), &reason))
+        {
+            d3dFailure_ = reason;
+            d3dRenderer_.Shutdown();
+            backend_ = EditorViewportBackend::SoftwareDiagnostic;
+            d3dAvailable_ = false;
+        }
+    }
     Refresh(false);
+    event.Skip();
+}
+
+void wxEditorViewport::OnEraseBackground(wxEraseEvent&)
+{
+    // D3D clears its swap-chain target; suppress the native erase to avoid flicker.
+}
+
+void wxEditorViewport::OnDestroy(wxWindowDestroyEvent& event)
+{
+    timer_.Stop();
+    d3dRenderer_.Shutdown();
     event.Skip();
 }
 

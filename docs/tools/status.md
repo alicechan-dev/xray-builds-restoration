@@ -381,8 +381,9 @@ read-only decoder inventories 627 assets, 2,418 meshes, 7,686,510 vertices, and
 candidates and defers 44 skeletal assets. All 15,416 audited SceneObject
 references receive real bounds in neutral scene submissions and the diagnostic
 preview. The standalone CPU wireframe backend now decodes and displays real
-static position/index geometry with lazy bounded caching, perspective clipping,
-selected-first frame budgets, and bounds fallback. Production decoded all 583
-static candidates with zero structural failures. Textures, shaders, materials,
-skeletal decoding, thumbnails, and GPU resources remain unimplemented. The next
-recommended backend is standalone D3D11 over the neutral contracts.
+static position/index geometry with lazy bounded caching and bounds fallback.
+A standalone D3D11 backend now provides hardware/WARP device fallback,
+depth-tested flat fill, optional wireframe, selection color, active-scene asset
+working sets, and immutable shared GPU buffers. The software backend remains
+selectable. Textures, historical materials, and skeletal rendering remain
+unimplemented.

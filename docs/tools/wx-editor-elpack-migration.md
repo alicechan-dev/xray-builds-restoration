@@ -284,5 +284,6 @@ preview also remain below this boundary. They are wx-free value/model code and
 do not revive `TElTree`, `xrEProps`, VCL, ElPack, or the historical renderer.
 
 Static position/index decoding, cache ownership, projection, clipping, budgets,
-and semantic line generation remain in the same wx-free boundary. The concrete
-wx layer only draws already-clipped lines and provides menu toggles.
+and semantic line generation remain in the same wx-free boundary. Standalone
+D3D11 is another consumer of the renderer-neutral contracts and does not revive
+ElPack, VCL, `xrEProps`, or historical renderer ownership.

@@ -26,4 +26,5 @@ Readiness is explicit:
 The production registry starts with 583 static decode candidates and 44
 skeletal deferred assets. A successful lazy request transitions a candidate to
 `StaticGeometryDecoded`; geometry remains shared in the session cache and is
-rendered only as CPU wireframe. Skeletal assets never make that transition.
+rendered by either the CPU diagnostic backend or the standalone D3D11 backend.
+Skeletal assets never make that transition and retain bounds fallback.

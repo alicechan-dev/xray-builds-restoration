@@ -66,6 +66,11 @@ enum
     IdToggleRenderAssetDiagnostics,
     IdToggleRealMeshWireframe,
     IdToggleBackfaceCulling,
+    IdBackendDirect3D11,
+    IdBackendSoftwareDiagnostic,
+    IdToggleFilledMeshes,
+    IdToggleWireframeOverlay,
+    IdToggleIsolateSelected,
     IdFrameSelected,
     IdToggleMoveSnap,
     IdToolSelect,
@@ -156,7 +161,15 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendCheckItem(IdToggleRealMeshWireframe,
         "Real Mesh &Wireframe");
     viewMenu->AppendCheckItem(IdToggleBackfaceCulling,
-        "Wireframe &Backface Culling");
+        "&Backface Culling");
+    auto* backendMenu = new wxMenu();
+    backendMenu->AppendRadioItem(IdBackendDirect3D11, "Direct3D &11");
+    backendMenu->AppendRadioItem(IdBackendSoftwareDiagnostic,
+        "&Software Diagnostic");
+    viewMenu->AppendSubMenu(backendMenu, "Renderer &Backend");
+    viewMenu->AppendCheckItem(IdToggleFilledMeshes, "&Filled Mesh Preview");
+    viewMenu->AppendCheckItem(IdToggleWireframeOverlay, "Wireframe &Overlay");
+    viewMenu->AppendCheckItem(IdToggleIsolateSelected, "&Isolate Selected");
     viewMenu->Append(IdFrameSelected, "Frame &Selected");
     viewMenu->AppendCheckItem(IdToggleMoveSnap, "Snap Move To &Grid");
     menuBar->Append(viewMenu, "&View");
@@ -276,6 +289,20 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdToggleRealMeshWireframe);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateBackfaceCulling,
         this, IdToggleBackfaceCulling);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSelectDirect3D11,
+        this, IdBackendDirect3D11);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnSelectSoftwareDiagnostic,
+        this, IdBackendSoftwareDiagnostic);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateRendererBackend,
+        this, IdBackendDirect3D11, IdBackendSoftwareDiagnostic);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleFilledMeshes,
+        this, IdToggleFilledMeshes);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleWireframeOverlay,
+        this, IdToggleWireframeOverlay);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleIsolateSelected,
+        this, IdToggleIsolateSelected);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateD3DViewOption,
+        this, IdToggleFilledMeshes, IdToggleIsolateSelected);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleMoveSnap,
         this, IdToggleMoveSnap);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateMoveSnap,
@@ -1028,6 +1055,16 @@ void wxSDKEditorFrame::OnToggleRealMeshWireframe(wxCommandEvent&)
 { viewport_->ToggleRealMeshWireframe(); }
 void wxSDKEditorFrame::OnToggleBackfaceCulling(wxCommandEvent&)
 { viewport_->ToggleBackfaceCulling(); }
+void wxSDKEditorFrame::OnSelectDirect3D11(wxCommandEvent&)
+{ viewport_->SetBackend(EditorViewportBackend::Direct3D11); }
+void wxSDKEditorFrame::OnSelectSoftwareDiagnostic(wxCommandEvent&)
+{ viewport_->SetBackend(EditorViewportBackend::SoftwareDiagnostic); }
+void wxSDKEditorFrame::OnToggleFilledMeshes(wxCommandEvent&)
+{ viewport_->ToggleFilledMeshes(); }
+void wxSDKEditorFrame::OnToggleWireframeOverlay(wxCommandEvent&)
+{ viewport_->ToggleWireframeOverlay(); }
+void wxSDKEditorFrame::OnToggleIsolateSelected(wxCommandEvent&)
+{ viewport_->ToggleIsolateSelected(); }
 
 void wxSDKEditorFrame::OnFrameSelected(wxCommandEvent&)
 {
@@ -1050,6 +1087,22 @@ void wxSDKEditorFrame::OnUpdateRealMeshWireframe(wxUpdateUIEvent& event)
 { event.Check(viewport_ && viewport_->IsRealMeshWireframeVisible()); }
 void wxSDKEditorFrame::OnUpdateBackfaceCulling(wxUpdateUIEvent& event)
 { event.Check(viewport_ && viewport_->IsBackfaceCullingEnabled()); }
+void wxSDKEditorFrame::OnUpdateRendererBackend(wxUpdateUIEvent& event)
+{
+    if (!viewport_) return;
+    event.Check((event.GetId() == IdBackendDirect3D11) ==
+        (viewport_->Backend() == EditorViewportBackend::Direct3D11));
+}
+void wxSDKEditorFrame::OnUpdateD3DViewOption(wxUpdateUIEvent& event)
+{
+    if (!viewport_) return;
+    event.Enable(viewport_->Backend() == EditorViewportBackend::Direct3D11);
+    if (event.GetId() == IdToggleFilledMeshes)
+        event.Check(viewport_->AreFilledMeshesVisible());
+    else if (event.GetId() == IdToggleWireframeOverlay)
+        event.Check(viewport_->IsWireframeOverlayVisible());
+    else event.Check(viewport_->IsolateSelected());
+}
 
 void wxSDKEditorFrame::OnToggleMoveSnap(wxCommandEvent&)
 {

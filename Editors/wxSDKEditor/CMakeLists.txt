@@ -15,6 +15,7 @@ set(XR_WX_SDK_EDITOR_MODEL_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_render/EditorRenderAsset.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_render/EditorRenderAssetRegistry.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_render/EditorRenderScene.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_render/EditorRenderAssetWorkingSet.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_render/EditorRenderGeometryCache.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_render/EditorSoftwareWireframeRenderer.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/editor_scene/EditorBinaryReader.cpp"
@@ -80,6 +81,7 @@ set(XR_WX_SDK_EDITOR_MODEL_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_render/EditorRenderAsset.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_render/EditorRenderAssetRegistry.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_render/EditorRenderScene.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_render/EditorRenderAssetWorkingSet.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_render/EditorRenderGeometryCache.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_render/EditorSoftwareWireframeRenderer.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/include/editor_scene/EditorBinaryReader.h"
@@ -152,6 +154,7 @@ set(XR_WX_SDK_EDITOR_SOURCES
   src/wxEditorViewport.cpp
   src/wxPropertyPanel.cpp
   src/wxSceneInspector.cpp
+  src/editor_render/d3d11/EditorD3D11Renderer.cpp
 )
 
 set(XR_WX_SDK_EDITOR_HEADERS
@@ -168,6 +171,7 @@ set(XR_WX_SDK_EDITOR_HEADERS
   src/wxEditorViewport.h
   src/wxPropertyPanel.h
   src/wxSceneInspector.h
+  include/editor_render/d3d11/EditorD3D11Renderer.h
 )
 
 set(XR_WX_SDK_EDITOR_LIBRARIES)
@@ -222,6 +226,9 @@ target_compile_definitions(wxSDKEditor PRIVATE
 
 target_link_libraries(wxSDKEditor PRIVATE
   ${XR_WX_SDK_EDITOR_LIBRARIES}
+  d3d11
+  dxgi
+  d3dcompiler
 )
 
 set_target_properties(wxSDKEditor PROPERTIES

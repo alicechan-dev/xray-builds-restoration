@@ -20,6 +20,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <unordered_set>
 #include <vector>
 
 namespace
@@ -299,6 +300,8 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
     std::size_t sampleCulled=0,sampleFallback=0,sampleBudgetSkipped=0,sampleFailures=0;
     EditorRenderGeometryCache sampleCache;sampleCache.Bind(library.Root(),&registry);
     EditorSoftwareWireframeRenderer sampleRenderer;
+    std::unordered_set<std::string> allUsedAssets;
+    std::size_t largestWorkingSet=0,largestWorkingSetBytes=0;
     for (const auto& scene : scenes) {
         EditorSceneManifest manifest;
         if (!EditorHistoricalSceneProbe().ProbeSceneFile(scene, manifest, &reason)) {
@@ -307,6 +310,9 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
         }
         EditorSceneObjectResolutionStatistics perScene;
         EditorRenderScene sampleScene;
+        std::unordered_set<std::string> sceneAssets;
+        std::size_t sceneStatic=0,sceneSkeletal=0,sceneMissingAssets=0;
+        std::size_t sceneEstimatedGpuBytes=0;
         for (const auto& object : manifest.objects) {
             if (!object.bodyDecode.hasSceneObject) continue;
             const auto result = ResolveObjectReference(
@@ -314,6 +320,14 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
             Accumulate(perScene, result.state); Accumulate(aggregate, result.state);
             if(result.entry&&result.entry->parseStatus==EditorObjectParseStatus::Partial)++partialReferences;
             const auto* asset=result.entry?registry.Find(result.entry->referenceId):nullptr;
+            if (asset && sceneAssets.insert(asset->assetId).second) {
+                allUsedAssets.insert(asset->assetId);
+                if(asset->objectKind==EditorObjectKind::Static){++sceneStatic;
+                    sceneEstimatedGpuBytes+=asset->totalVertices*sizeof(EditorGeometryPosition)+
+                        asset->totalTriangles*3*sizeof(std::uint32_t);}
+                else if(asset->objectKind==EditorObjectKind::Skeletal)++sceneSkeletal;
+            } else if (!asset && result.state==EditorObjectResolutionState::Missing)
+                ++sceneMissingAssets;
             if(asset&&asset->bounds.valid)++boundsInstances;else ++fallbackInstances;
             if(asset&&asset->bounds.valid&&object.hasTransform&&sampleScene.Instances().size()<64){
                 EditorRenderInstance instance;instance.assetId=asset->assetId;instance.objectBounds=asset->bounds;
@@ -334,13 +348,22 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
             sampleTriangles+=frame.statistics.trianglesSubmitted;sampleLines+=frame.statistics.linesDrawn;
             sampleCulled+=frame.statistics.culledInstances;sampleFallback+=frame.statistics.fallbackBounds;
             sampleBudgetSkipped+=frame.statistics.budgetSkippedObjects;sampleFailures+=frame.statistics.decodeFailures;}
+        largestWorkingSet=(std::max)(largestWorkingSet,sceneAssets.size());
+        largestWorkingSetBytes=(std::max)(largestWorkingSetBytes,sceneEstimatedGpuBytes);
         std::cout << "scene=" << scene.filename().string() << " queried=" << perScene.queried
             << " resolved=" << perScene.resolved << " missing=" << perScene.missing
-            << " ambiguous=" << perScene.ambiguous << " invalid=" << perScene.invalid << '\n';
+            << " ambiguous=" << perScene.ambiguous << " invalid=" << perScene.invalid
+            << " unique_assets=" << sceneAssets.size() << " static_assets=" << sceneStatic
+            << " skeletal_deferred=" << sceneSkeletal << " missing_assets=" << sceneMissingAssets
+            << " estimated_gpu_bytes=" << sceneEstimatedGpuBytes << '\n';
     }
     std::cout << "scenes=" << scenes.size() << "\nreferences_queried=" << aggregate.queried
         << "\nresolved=" << aggregate.resolved << "\nmissing=" << aggregate.missing
         << "\nambiguous=" << aggregate.ambiguous << "\ninvalid=" << aggregate.invalid << '\n';
+    std::cout<<"unique_assets_used_across_scenes="<<allUsedAssets.size()
+        <<"\nunused_library_assets="<<(registry.Assets().size()-allUsedAssets.size())
+        <<"\nlargest_scene_working_set="<<largestWorkingSet
+        <<"\nlargest_scene_estimated_gpu_bytes="<<largestWorkingSetBytes<<'\n';
     std::cout<<"scene_instances_with_bounds="<<boundsInstances<<"\nscene_fallback_instances="<<fallbackInstances
         <<"\npartial_entry_references="<<partialReferences<<'\n';
     std::cout<<"wireframe_sample_visible_instances="<<sampleVisible

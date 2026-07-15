@@ -21,3 +21,6 @@ The geometry cache may update a static candidate to `StaticGeometryDecoded` or
 to a cached failure classification. Cache clear restores original readiness;
 library reload clears old cache state before the registry is replaced. See
 [Geometry Cache](wx-editor-geometry-cache.md).
+
+The registry now exposes a session generation. D3D11 uses generation changes
+to invalidate stale GPU buffers after Object Library replacement or clear.

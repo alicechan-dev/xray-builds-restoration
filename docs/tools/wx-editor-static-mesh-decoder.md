@@ -25,3 +25,5 @@ non-finite positions, or bounds mismatches. It observed 959 repeated-index
 degenerates and 984 zero-area triangles. Position/index storage totals
 241,579,344 bytes; the largest decoded asset is 11,321,472 bytes.
 
+The D3D11 backend consumes the same validated positions and uint32 indices.
+Decode remains CPU-owned and outside the per-frame D3D draw loop.

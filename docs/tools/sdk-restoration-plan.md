@@ -699,6 +699,7 @@ real-bounds diagnostic preview are covered by headless tests and lawful
 read-only production audits. Do not connect runtime renderers or decode skeletal
 geometry next. The bounded static decoder and standalone software wireframe
 checkpoint are now implemented and should be reviewed before backend expansion.
-The next backend candidate is standalone D3D11; keep textures, shaders,
-thumbnails, materials, skeletal data, and GPU ownership as later independent
-stages.
+The standalone D3D11 flat/depth backend is now implemented over the neutral
+contracts, with software fallback and measured production working sets. The
+next isolated renderer stage is a texture/material bridge. Skeletal data,
+animation, historical shaders, and xrLC remain later independent stages.

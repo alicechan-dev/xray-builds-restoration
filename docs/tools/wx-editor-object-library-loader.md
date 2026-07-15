@@ -11,3 +11,6 @@ executes plugins, or opens referenced resources. It streams confirmed mesh
 records with bounded seeks and reads to validate counts and aggregate bounds;
 it never retains untrusted geometry payloads. Successful load is followed by
 transactional construction of the session-only render asset registry.
+
+The D3D11 backend never reads this format. It receives only validated,
+renderer-neutral cache geometry and invalidates resources on registry changes.

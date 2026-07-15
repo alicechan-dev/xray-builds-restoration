@@ -448,9 +448,8 @@ static decode candidates and 44 skeletal assets deferred. No source geometry,
 textures, shaders, thumbnails, GPU resources, runtime renderer, or `.level`
 writer was added. See [Render Asset Boundary](wx-editor-render-asset-boundary.md).
 
-The next checkpoint adds real static mesh outlines through a wx-free decoder,
-lazy 256 MiB session cache, explicit perspective camera, clipping, and bounded
-CPU wireframe renderer. All 583 lawful static candidates decode; 44 skeletal
-assets remain bounds-only. Stable bounds picking is unchanged. No textures,
-materials, filled triangles, GPU resources, or historical runtime renderer are
-connected.
+The editor now defaults to a standalone D3D11 backend on Windows and falls back
+to the preserved CPU diagnostic renderer. Static geometry uses depth-tested
+flat fill with optional wireframe, selected highlighting, immutable shared GPU
+buffers, and a current-scene working set. No historical runtime renderer,
+textures, materials, skeletal rendering, or animation is connected.

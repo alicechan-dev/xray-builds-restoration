@@ -20,5 +20,7 @@ camera-space center, depth range, and exact coarse-culling result. It does not
 write per-frame log output.
 
 Picking remains the stable projected-bounds policy. Triangle and face picking,
-filled rasterization, depth buffers, textures, materials, normals, shaders,
-skeletal meshes, and GPU resources are deferred.
+The software path remains a selectable diagnostic fallback and correctness
+oracle. Interactive filled/depth rendering now belongs to the standalone
+D3D11 backend; textures, historical materials, skeletal meshes, and triangle
+picking remain deferred.

@@ -7,6 +7,7 @@ bool EditorRenderAssetRegistry::Build(const EditorObjectLibrary& library,
 {
     if (!library.IsLoaded()) { if (reason) *reason = "Object Library is not loaded."; return false; }
     EditorRenderAssetRegistry candidate; candidate.loaded_ = true;
+    candidate.generation_ = generation_ + 1;
     for (const auto& entry : library.Entries()) {
         EditorRenderObjectAsset asset;
         asset.assetId = entry.referenceId; asset.objectKind = entry.kind;
@@ -41,7 +42,8 @@ bool EditorRenderAssetRegistry::Build(const EditorObjectLibrary& library,
     *this = std::move(candidate); return true;
 }
 
-void EditorRenderAssetRegistry::Clear() { loaded_ = false; assets_.clear(); index_.clear(); }
+void EditorRenderAssetRegistry::Clear()
+{ loaded_ = false; assets_.clear(); index_.clear(); ++generation_; }
 const EditorRenderObjectAsset* EditorRenderAssetRegistry::Find(std::string_view id) const
 { auto it=index_.find(std::string(id)); return it==index_.end()?nullptr:&assets_[it->second]; }
 EditorRenderObjectAsset* EditorRenderAssetRegistry::Find(std::string_view id)

@@ -14,3 +14,7 @@ The summary now also reports renderer-neutral readiness and aggregate mesh,
 vertex, and triangle counts. These are metadata diagnostics, not thumbnails or
 real mesh rendering. Selection properties expose the resolved asset readiness
 and real bounds without loading referenced resources.
+
+The renderer builds a separate active-scene working set from catalog IDs; it
+does not upload all 627 catalog entries. Used/missing/deferred browser filters
+remain a follow-up UI refinement.

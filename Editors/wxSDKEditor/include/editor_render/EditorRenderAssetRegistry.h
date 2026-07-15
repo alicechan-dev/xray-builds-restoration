@@ -27,10 +27,12 @@ public:
         EditorRenderAssetReadiness readiness);
     const std::vector<EditorRenderObjectAsset>& Assets() const { return assets_; }
     EditorRenderAssetStatistics Statistics() const;
+    std::size_t Generation() const { return generation_; }
 private:
     bool loaded_ = false;
     std::vector<EditorRenderObjectAsset> assets_;
     std::unordered_map<std::string, std::size_t> index_;
+    std::size_t generation_ = 0;
 };
 
 #endif

@@ -101,3 +101,6 @@ feeds shared static geometry to the CPU wireframe backend. Bounds remain the
 selection policy and fallback. See [Object Bounds Preview](wx-editor-object-bounds-preview.md),
 [Render Scene Submission](wx-editor-render-scene-submission.md), and
 [Software Wireframe Renderer](wx-editor-software-wireframe-renderer.md).
+
+The preview scene remains the semantic overlay and bounds-picking source. Flat
+D3D11 static meshes come from the parallel renderer-neutral render scene.

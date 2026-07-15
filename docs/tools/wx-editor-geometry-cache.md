@@ -17,3 +17,5 @@ The cache is not serialized, does not alter command history or dirty state,
 and performs no writes. Rendering may cause a first lazy read, but no further
 filesystem access occurs for a cached asset.
 
+For D3D11, active-scene assets are prepared on scene submission and uploaded
+under a per-frame budget. Camera-only frames use `Find` and never decode.

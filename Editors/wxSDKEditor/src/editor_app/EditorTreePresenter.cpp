@@ -479,8 +479,8 @@ void EditorTreePresenter::RefreshPreview() const
             previewChanged_(BuildHistoricalScenePreview(
                 *historicalDocument_, stableId));
         if (renderSceneChanged_)
-            renderSceneChanged_(BuildEditorRenderScene(model, renderAssets_,
-                paths.empty() ? std::string() : paths.front()));
+            renderSceneChanged_(BuildHistoricalRenderScene(
+                *historicalDocument_, renderAssets_, stableId));
         return;
     }
     if (previewChanged_)

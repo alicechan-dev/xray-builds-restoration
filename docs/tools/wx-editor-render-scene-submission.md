@@ -16,3 +16,6 @@ The lawful production audit resolved all 15,416 SceneObject references and all
 had registry bounds. Instances reference shared cached geometry by asset ID;
 they never duplicate vertex/index arrays. The CPU wireframe backend consumes
 these submissions while skeletal/missing/failed assets retain bounds fallback.
+The D3D11 backend consumes the same instances and shares one immutable GPU
+resource across duplicate occurrences. Historical read-only submission uses
+decoded scene records directly and does not require conversion metadata.

@@ -9,6 +9,7 @@
 #include "editor_assets/EditorAssetDescriptor.h"
 #include "editor_render/EditorRenderScene.h"
 #include "editor_render/EditorSoftwareWireframeRenderer.h"
+#include "editor_render/d3d11/EditorD3D11Renderer.h"
 
 #include <memory>
 #include <functional>
@@ -20,10 +21,17 @@ class EditorTreeModel;
 class EditorRenderAssetRegistry;
 class EditorRenderGeometryCache;
 
+enum class EditorViewportBackend
+{
+    SoftwareDiagnostic,
+    Direct3D11
+};
+
 class wxEditorViewport final : public wxPanel
 {
 public:
     explicit wxEditorViewport(wxWindow* parent);
+    ~wxEditorViewport() override;
 
     void ToggleGrid();
     void ResetCamera();
@@ -45,6 +53,15 @@ public:
     bool IsRealMeshWireframeVisible() const { return wireframeVisible_; }
     void ToggleBackfaceCulling();
     bool IsBackfaceCullingEnabled() const { return backfaceCulling_; }
+    void SetBackend(EditorViewportBackend backend);
+    EditorViewportBackend Backend() const { return backend_; }
+    bool IsDirect3D11Available() const { return d3dAvailable_; }
+    void ToggleFilledMeshes();
+    bool AreFilledMeshesVisible() const { return d3dOptions_.filledMeshes; }
+    void ToggleWireframeOverlay();
+    bool IsWireframeOverlayVisible() const { return d3dOptions_.wireframeOverlay; }
+    void ToggleIsolateSelected();
+    bool IsolateSelected() const { return d3dOptions_.isolateSelected; }
     bool FrameSelected();
     void ToggleMoveSnap();
     bool IsMoveSnapEnabled() const { return moveSnapEnabled_; }
@@ -75,11 +92,17 @@ private:
     void OnKeyDown(wxKeyEvent& event);
     void OnKeyUp(wxKeyEvent& event);
     void OnTimer(wxTimerEvent& event);
+    void OnEraseBackground(wxEraseEvent& event);
+    void OnDestroy(wxWindowDestroyEvent& event);
+    bool EnsureD3D11();
+    void PrepareActiveSceneGeometry();
 
     EditorPreviewScene previewScene_;
     EditorRenderScene renderScene_;
     EditorPreviewRenderer renderer_;
     EditorSoftwareWireframeRenderer wireframeRenderer_;
+    EditorD3D11Renderer d3dRenderer_;
+    EditorD3D11RenderOptions d3dOptions_;
     EditorWireframeFrame wireframeFrame_;
     EditorRenderAssetRegistry* renderAssets_ = nullptr;
     EditorRenderGeometryCache* geometryCache_ = nullptr;
@@ -100,7 +123,12 @@ private:
     EditorPreviewKind placementPreviewKind_ = EditorPreviewKind::Marker;
     bool moveSnapEnabled_ = false;
     bool wireframeVisible_ = true;
-    bool backfaceCulling_ = false;
+    bool backfaceCulling_ = true;
+    EditorViewportBackend backend_ = EditorViewportBackend::Direct3D11;
+    bool d3dAttempted_ = false;
+    bool d3dAvailable_ = false;
+    std::size_t renderAssetGeneration_ = 0;
+    std::string d3dFailure_;
 };
 
 #endif

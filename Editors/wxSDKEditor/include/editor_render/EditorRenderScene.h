@@ -9,6 +9,7 @@
 
 class EditorTreeModel;
 class EditorRenderAssetRegistry;
+class EditorHistoricalSceneDocument;
 
 struct EditorRenderInstance
 {
@@ -34,5 +35,9 @@ private:
 EditorRenderScene BuildEditorRenderScene(const EditorTreeModel& model,
     const EditorRenderAssetRegistry& registry,
     const std::string& selectedPath = {});
+EditorRenderScene BuildHistoricalRenderScene(
+    const EditorHistoricalSceneDocument& document,
+    const EditorRenderAssetRegistry& registry,
+    const std::string& selectedStableId = {});
 
 #endif

@@ -62,9 +62,10 @@ The viewport overlay reports the current tool and prospective placement
 coordinates. Placement uses the inverse of the same wx-free projection used by
 drawing/picking; crosshair feedback is transient. Right drag remains camera-only.
 
-The View menu exposes Object Bounds, Render Asset Diagnostics, Real Mesh
-Wireframe, and Wireframe Backface Culling toggles.
+The View menu exposes renderer backend selection, Filled Mesh Preview,
+Wireframe Overlay, Backface Culling, Isolate Selected, Object Bounds, and
+diagnostic software-wireframe controls.
 Projected bounds, picking, selection, and framing share the same conservative
 real-bounds extent when a reference resolves. Static source positions/indices
-are drawn by a bounded CPU wireframe pass before selection/gizmo overlays.
-Picking remains bounds-based and no GPU backend is connected.
+are handled by standalone D3D11 filled/depth rendering by default. The bounded
+CPU wireframe pass remains selectable. Picking remains bounds-based.

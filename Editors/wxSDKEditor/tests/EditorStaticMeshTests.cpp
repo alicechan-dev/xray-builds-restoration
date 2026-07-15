@@ -3,6 +3,7 @@
 #include "editor_model/EditorTreeModel.h"
 #include "editor_model/EditorTreeSnapshot.h"
 #include "editor_render/EditorRenderAssetRegistry.h"
+#include "editor_render/EditorRenderAssetWorkingSet.h"
 #include "editor_render/EditorRenderGeometryCache.h"
 #include "editor_render/EditorRenderScene.h"
 #include "editor_render/EditorSoftwareWireframeRenderer.h"
@@ -251,6 +252,25 @@ int RunEditorStaticMeshTests()
     EditorRenderScene scene;
     EditorRenderInstance instance = Instance(*registeredTriangle);
     instance.selected = true;
+    scene.Add(instance);
+    EditorRenderInstance duplicateInstance = instance;
+    duplicateInstance.selected = false;
+    duplicateInstance.transform.x = 2.0f;
+    scene.Add(duplicateInstance);
+    EditorRenderInstance missingWorkingSetInstance;
+    missingWorkingSetInstance.assetId = "not-in-library";
+    scene.Add(missingWorkingSetInstance);
+    EditorRenderAssetWorkingSet workingSet;
+    workingSet.Rebuild(scene, registry);
+    failures += Check(workingSet.Statistics().uniqueAssets == 2 &&
+        workingSet.Statistics().referencedInstances == 3 &&
+        workingSet.Statistics().staticAssets == 1 &&
+        workingSet.Statistics().missingAssets == 1 &&
+        workingSet.Entries()[0].assetId == "triangle" &&
+        workingSet.Entries()[0].instanceCount == 2 &&
+        workingSet.Entries()[0].selected,
+        "active-scene working set deduplicates assets and prioritizes selection");
+    scene = {};
     scene.Add(instance);
     EditorSoftwareWireframeRenderer renderer;
     auto frame = renderer.Render(scene, registry, cache, Camera(), false);
