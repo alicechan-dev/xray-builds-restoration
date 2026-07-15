@@ -8,7 +8,10 @@
 EditorPreviewProjectionContext MakeEditorPreviewProjectionContext(
     const EditorViewportState& state, int width, int height)
 {
-    return {width, height, state.camera.x, state.camera.z, 40.0f};
+    EditorViewportState adjusted=state;
+    adjusted.width=width;
+    adjusted.height=height;
+    return {MakeEditorRenderFrameContext(adjusted)};
 }
 
 EditorPreviewProjectedPoint ProjectEditorPreviewObject(
@@ -16,15 +19,14 @@ EditorPreviewProjectedPoint ProjectEditorPreviewObject(
     const EditorPreviewProjectionContext& context)
 {
     EditorPreviewProjectedPoint point;
-    if (!object.visible || context.width <= 0 || context.height <= 0)
+    if (!object.visible)
         return point;
-    point.x = static_cast<float>(context.width) * 0.5f +
-        (object.x - context.cameraX) * context.scale;
-    point.y = static_cast<float>(context.height) * 0.5f +
-        (object.z - context.cameraZ) * context.scale;
-    point.visible = point.x >= -40.0f && point.y >= -40.0f &&
-        point.x <= static_cast<float>(context.width + 40) &&
-        point.y <= static_cast<float>(context.height + 40);
+    const EditorProjectedPoint projected=ProjectEditorWorldPoint(
+        {object.x,object.y,object.z},context.frame);
+    point.x=projected.screenX;
+    point.y=projected.screenY;
+    point.visible=projected.finite&&projected.inFront&&projected.insideDepth&&
+        projected.insideViewport;
     return point;
 }
 
@@ -34,18 +36,34 @@ EditorPreviewWorldPoint UnprojectEditorPreviewToGround(
     float worldY, bool snap, float snapStep)
 {
     EditorPreviewWorldPoint point;
-    if (context.width <= 0 || context.height <= 0 ||
+    const auto& frame=context.frame;
+    if (frame.viewportWidth <= 0 || frame.viewportHeight <= 0 ||
         !std::isfinite(screenX) || !std::isfinite(screenY) ||
-        !std::isfinite(worldY) || !std::isfinite(context.cameraX) ||
-        !std::isfinite(context.cameraZ) || !std::isfinite(context.scale) ||
-        context.scale <= 0.0f || (snap && snapStep <= 0.0f))
+        !std::isfinite(worldY) || (snap && snapStep <= 0.0f))
         return point;
-
-    point.x = context.cameraX +
-        (screenX - static_cast<float>(context.width) * 0.5f) / context.scale;
+    constexpr float Pi=3.14159265358979323846f;
+    const float yaw=frame.yawDegrees*Pi/180.0f;
+    const float pitch=-frame.pitchDegrees*Pi/180.0f;
+    const float tanY=std::tan(frame.verticalFovDegrees*Pi/360.0f);
+    const float aspect=static_cast<float>(frame.viewportWidth)/frame.viewportHeight;
+    const float nx=2.0f*screenX/frame.viewportWidth-1.0f;
+    const float ny=1.0f-2.0f*screenY/frame.viewportHeight;
+    const float fx=std::cos(pitch)*std::sin(yaw);
+    const float fy=std::sin(pitch);
+    const float fz=std::cos(pitch)*std::cos(yaw);
+    const float rx=std::cos(yaw), rz=-std::sin(yaw);
+    const float ux=-std::sin(pitch)*std::sin(yaw);
+    const float uy=std::cos(pitch);
+    const float uz=-std::sin(pitch)*std::cos(yaw);
+    const float dx=fx+rx*nx*tanY*aspect+ux*ny*tanY;
+    const float dy=fy+uy*ny*tanY;
+    const float dz=fz+rz*nx*tanY*aspect+uz*ny*tanY;
+    if(std::fabs(dy)<1.0e-6f) return point;
+    const float t=(worldY-frame.cameraPosition.y)/dy;
+    if(t<=0.0f) return point;
+    point.x = frame.cameraPosition.x+dx*t;
     point.y = worldY;
-    point.z = context.cameraZ +
-        (screenY - static_cast<float>(context.height) * 0.5f) / context.scale;
+    point.z = frame.cameraPosition.z+dz*t;
     if (snap)
     {
         point.x = std::round(point.x / snapStep) * snapStep;
@@ -73,10 +91,15 @@ std::vector<EditorPreviewPickShape> BuildEditorPreviewPickShapes(
         shape.centerY = point.y;
         if (object.kind == EditorPreviewKind::Box)
         {
+            const EditorProjectedPoint center=ProjectEditorWorldPoint(
+                {object.x,object.y,object.z},context.frame);
+            const float scale=center.depth>0.0f?
+                context.frame.viewportHeight*0.5f/
+                std::tan(context.frame.verticalFovDegrees*3.14159265358979323846f/360.0f)/center.depth:1.0f;
             shape.halfWidth = object.realBounds ?
-                (std::clamp)(object.sizeX * context.scale * 0.5f, 4.0f, 240.0f) : 14.0f;
+                (std::clamp)(object.sizeX * scale * 0.5f, 4.0f, 240.0f) : 14.0f;
             shape.halfHeight = object.realBounds ?
-                (std::clamp)(object.sizeZ * context.scale * 0.5f, 4.0f, 240.0f) : 10.0f;
+                (std::clamp)(object.sizeY * scale * 0.5f, 4.0f, 240.0f) : 10.0f;
         }
         else if (object.kind == EditorPreviewKind::Light ||
             object.kind == EditorPreviewKind::HistoricalLight ||
@@ -84,7 +107,7 @@ std::vector<EditorPreviewPickShape> BuildEditorPreviewPickShapes(
         {
             shape.radius = object.kind == EditorPreviewKind::Glow ||
                     object.kind == EditorPreviewKind::HistoricalLight
-                ? (std::clamp)(object.sizeX * context.scale, 4.0f, 200.0f)
+                ? 9.0f
                 : 9.0f;
             shape.circular = true;
         }

@@ -8,6 +8,7 @@
 #include "editor_app/EditorToolMode.h"
 #include "editor_assets/EditorAssetDescriptor.h"
 #include "editor_render/EditorRenderScene.h"
+#include "editor_render/EditorRenderOverlay.h"
 #include "editor_render/EditorSoftwareWireframeRenderer.h"
 #include "editor_render/d3d11/EditorD3D11Renderer.h"
 
@@ -45,6 +46,18 @@ public:
         EditorRenderGeometryCache* geometryCache);
     void TogglePreviewLabels();
     bool ArePreviewLabelsVisible() const;
+    EditorPreviewLabelPolicy PreviewLabelPolicy() const { return overlayOptions_.labels; }
+    void SetPreviewLabelPolicy(EditorPreviewLabelPolicy value);
+    void ToggleRuntimeMarkers();
+    bool AreRuntimeMarkersVisible() const { return overlayOptions_.runtimeMarkers; }
+    void ToggleGlowMarkers();
+    bool AreGlowMarkersVisible() const { return overlayOptions_.glowMarkers; }
+    void ToggleLightMarkers();
+    bool AreLightMarkersVisible() const { return overlayOptions_.lightMarkers; }
+    void ToggleUnsupportedBounds();
+    bool AreUnsupportedBoundsVisible() const { return overlayOptions_.unsupportedBounds; }
+    void ToggleDepthTestRuntimeMarkers();
+    bool IsRuntimeMarkerDepthTestEnabled() const { return overlayOptions_.depthTestRuntimeMarkers; }
     void ToggleObjectBounds();
     bool AreObjectBoundsVisible() const;
     void ToggleRenderAssetDiagnostics();
@@ -103,6 +116,7 @@ private:
     EditorSoftwareWireframeRenderer wireframeRenderer_;
     EditorD3D11Renderer d3dRenderer_;
     EditorD3D11RenderOptions d3dOptions_;
+    EditorRenderOverlayOptions overlayOptions_;
     EditorWireframeFrame wireframeFrame_;
     EditorRenderAssetRegistry* renderAssets_ = nullptr;
     EditorRenderGeometryCache* geometryCache_ = nullptr;

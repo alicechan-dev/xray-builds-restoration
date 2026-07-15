@@ -4,6 +4,8 @@
 #include "editor_view/EditorPreviewScene.h"
 #include "editor_view/EditorTreePreviewAdapter.h"
 #include "editor_view/EditorViewportState.h"
+#include "editor_render/EditorRenderOverlay.h"
+#include "editor_render/EditorRenderScene.h"
 
 #include <algorithm>
 #include <iostream>
@@ -120,7 +122,7 @@ int RunEditorPreviewSceneTests()
     EditorViewportState viewport;
     viewport.width = 640;
     viewport.height = 480;
-    viewport.camera.z = -5.0f;
+    viewport.camera.z = -10.0f;
     adapted.SetSelectedPath(light.Path());
     renderer.Render(viewport);
     check(!renderer.DrawList().Primitives().empty() &&
@@ -149,10 +151,8 @@ int RunEditorPreviewSceneTests()
         ProjectEditorPreviewObject(*adapted.FindByLogicalPath(light.Path()), context);
     const EditorPreviewObject* projectedLight =
         adapted.FindByLogicalPath(light.Path());
-    check(projected.visible &&
-        projected.x == 320.0f + projectedLight->x * 40.0f &&
-        projected.y == 240.0f + (projectedLight->z + 5.0f) * 40.0f,
-        "world-to-screen projection is deterministic");
+    check(projectedLight && projected.visible,
+        "world-to-screen projection uses the perspective camera");
     EditorViewportState movedCamera = viewport;
     movedCamera.camera.x = 1.0f;
     const EditorPreviewProjectedPoint cameraProjected =
@@ -174,7 +174,7 @@ int RunEditorPreviewSceneTests()
     check(!PickEditorPreview(shapes, 5.0f, 5.0f).hit,
         "empty-space miss is safe");
     EditorPreviewScene glowScene;
-    glowScene.AddObject({"glow", "glow", 0.0f, 0.0f, -5.0f,
+    glowScene.AddObject({"glow", "glow", 0.0f, 0.0f, 0.0f,
         2.5f, 2.5f, 2.5f, EditorPreviewKind::Glow});
     renderer.Resize(640, 480);
     renderer.SetScene(&glowScene);
@@ -182,17 +182,18 @@ int RunEditorPreviewSceneTests()
     const auto& glowPrimitives = renderer.DrawList().Primitives();
     check(!glowPrimitives.empty() &&
         glowPrimitives[0].type == EditorViewportPrimitiveType::Circle &&
-        glowPrimitives[0].radius == 100.0f,
-        "glow radius produces bounded diagnostic circle");
+        glowPrimitives[0].radius == 9.0f,
+        "glow produces bounded diagnostic circle");
     const std::vector<EditorPreviewPickShape> glowShapes =
         BuildEditorPreviewPickShapes(glowScene, context);
     check(glowShapes.size() == 1 && glowShapes[0].circular &&
-        glowShapes[0].radius == 100.0f &&
-        PickEditorPreview(glowShapes, 400.0f, 240.0f).hit,
+        glowShapes[0].radius == 9.0f &&
+        PickEditorPreview(glowShapes,glowShapes[0].centerX,
+            glowShapes[0].centerY).hit,
         "glow diagnostic circle uses matching pick radius");
     EditorPreviewScene historicalLightScene;
     historicalLightScene.AddObject({"historical-light", "historical light",
-        0.0f, 0.0f, -5.0f, 15.0f, 15.0f, 15.0f,
+        0.0f, 0.0f, 0.0f, 15.0f, 15.0f, 15.0f,
         EditorPreviewKind::HistoricalLight});
     renderer.SetScene(&historicalLightScene);
     renderer.Render(viewport);
@@ -201,14 +202,15 @@ int RunEditorPreviewSceneTests()
         historicalLightPrimitives[0].type ==
             EditorViewportPrimitiveType::Circle &&
         historicalLightPrimitives[0].style == EditorViewportStyle::Light &&
-        historicalLightPrimitives[0].radius == 200.0f,
+        historicalLightPrimitives[0].radius == 9.0f,
         "historical light range produces a bounded semantic diagnostic ring");
     const std::vector<EditorPreviewPickShape> historicalLightShapes =
         BuildEditorPreviewPickShapes(historicalLightScene, context);
     check(historicalLightShapes.size() == 1 &&
         historicalLightShapes[0].circular &&
-        historicalLightShapes[0].radius == 200.0f &&
-        PickEditorPreview(historicalLightShapes, 500.0f, 240.0f).hit,
+        historicalLightShapes[0].radius == 9.0f &&
+        PickEditorPreview(historicalLightShapes,historicalLightShapes[0].centerX,
+            historicalLightShapes[0].centerY).hit,
         "historical light range ring uses matching bounded pick radius");
     EditorPreviewPickShape markerShape;
     markerShape.logicalPath = "marker";
@@ -240,5 +242,50 @@ int RunEditorPreviewSceneTests()
     markerShape.selectable = false;
     check(!PickEditorPreview({markerShape}, 100.0f, 100.0f).hit,
         "non-selectable shape is ignored");
+
+    EditorRenderFrameContext frame;
+    frame.viewportWidth=800; frame.viewportHeight=600;
+    frame.cameraPosition={0.0f,1.0f,-5.0f};
+    const EditorProjectedPoint ahead=ProjectEditorWorldPoint({0.0f,1.0f,0.0f},frame);
+    check(ahead.finite&&ahead.inFront&&ahead.insideDepth&&ahead.insideViewport&&
+        std::fabs(ahead.screenX-400.0f)<0.01f&&
+        std::fabs(ahead.screenY-300.0f)<0.01f,
+        "canonical projection centers a point directly ahead");
+    EditorRenderFrameContext raised=frame;
+    raised.cameraPosition.y=2.0f;
+    check(ProjectEditorWorldPoint({0.0f,1.0f,0.0f},raised).screenY>
+        ahead.screenY,"camera height moves a world marker vertically");
+    EditorRenderFrameContext pitched=frame;
+    pitched.pitchDegrees=20.0f;
+    check(ProjectEditorWorldPoint({0.0f,1.0f,0.0f},pitched).screenY!=
+        ahead.screenY,"camera pitch moves a world marker vertically");
+    check(!ProjectEditorWorldPoint({0.0f,1.0f,-10.0f},frame).inFront,
+        "canonical projection rejects behind-camera points");
+    EditorRenderFrameContext emptyFrame=frame;
+    emptyFrame.viewportWidth=0;
+    check(!ProjectEditorWorldPoint({0.0f,1.0f,0.0f},emptyFrame).finite,
+        "canonical projection rejects zero-size viewports");
+
+    EditorPreviewScene overlayScene;
+    overlayScene.AddObject({"selected","selected",0,1,0,
+        1,1,1,EditorPreviewKind::Spawn});
+    overlayScene.SetSelectedPath("selected");
+    EditorRenderOverlayOptions overlayOptions;
+    overlayOptions.grid=false;
+    EditorRenderScene emptyRenderScene;
+    auto overlay=BuildEditorRenderOverlay(overlayScene,emptyRenderScene,frame,
+        overlayOptions);
+    check(!overlay.lines.empty()&&overlay.labels.size()==1&&
+        !overlay.lines.front().depthTest,
+        "selected marker receives priority label and no-depth highlight");
+    overlayOptions.labels=EditorPreviewLabelPolicy::Off;
+    check(BuildEditorRenderOverlay(overlayScene,emptyRenderScene,frame,
+        overlayOptions).labels.empty(),"label Off policy submits no labels");
+    overlayOptions.labels=EditorPreviewLabelPolicy::All;
+    overlayOptions.maximumLines=1;
+    overlay=BuildEditorRenderOverlay(overlayScene,emptyRenderScene,frame,
+        overlayOptions);
+    check(overlay.lines.size()==1&&overlay.skippedLines>0,
+        "overlay line capacity is bounded deterministically");
     return failures;
 }

@@ -134,17 +134,39 @@ void wxEditorViewport::SetRenderScene(EditorRenderScene scene,
 
 void wxEditorViewport::TogglePreviewLabels()
 {
-    renderer_.SetLabelsVisible(!renderer_.LabelsVisible());
+    if(overlayOptions_.labels==EditorPreviewLabelPolicy::SelectedOnly)
+        SetPreviewLabelPolicy(EditorPreviewLabelPolicy::All);
+    else if(overlayOptions_.labels==EditorPreviewLabelPolicy::All)
+        SetPreviewLabelPolicy(EditorPreviewLabelPolicy::Off);
+    else SetPreviewLabelPolicy(EditorPreviewLabelPolicy::SelectedOnly);
     Refresh(false);
 }
 
+void wxEditorViewport::SetPreviewLabelPolicy(EditorPreviewLabelPolicy value)
+{
+    overlayOptions_.labels=value;
+    renderer_.SetLabelsVisible(value!=EditorPreviewLabelPolicy::Off);
+    Refresh(false);
+}
+
+void wxEditorViewport::ToggleRuntimeMarkers()
+{ overlayOptions_.runtimeMarkers=!overlayOptions_.runtimeMarkers; Refresh(false); }
+void wxEditorViewport::ToggleGlowMarkers()
+{ overlayOptions_.glowMarkers=!overlayOptions_.glowMarkers; Refresh(false); }
+void wxEditorViewport::ToggleLightMarkers()
+{ overlayOptions_.lightMarkers=!overlayOptions_.lightMarkers; Refresh(false); }
+void wxEditorViewport::ToggleUnsupportedBounds()
+{ overlayOptions_.unsupportedBounds=!overlayOptions_.unsupportedBounds; Refresh(false); }
+void wxEditorViewport::ToggleDepthTestRuntimeMarkers()
+{ overlayOptions_.depthTestRuntimeMarkers=!overlayOptions_.depthTestRuntimeMarkers; Refresh(false); }
+
 bool wxEditorViewport::ArePreviewLabelsVisible() const
 {
-    return renderer_.LabelsVisible();
+    return overlayOptions_.labels!=EditorPreviewLabelPolicy::Off;
 }
 
 void wxEditorViewport::ToggleObjectBounds()
-{ renderer_.SetObjectBoundsVisible(!renderer_.ObjectBoundsVisible()); controller_.Render(); Refresh(false); }
+{ renderer_.SetObjectBoundsVisible(!renderer_.ObjectBoundsVisible()); overlayOptions_.objectBounds=renderer_.ObjectBoundsVisible(); controller_.Render(); Refresh(false); }
 bool wxEditorViewport::AreObjectBoundsVisible() const { return renderer_.ObjectBoundsVisible(); }
 void wxEditorViewport::ToggleRenderAssetDiagnostics()
 { renderer_.SetAssetDiagnosticsVisible(!renderer_.AssetDiagnosticsVisible()); controller_.Render(); Refresh(false); }
@@ -287,12 +309,20 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
 {
     wxPaintDC dc(this);
     const EditorViewportState& state = controller_.State();
+    controller_.Render();
     bool d3dFrame = backend_ == EditorViewportBackend::Direct3D11 &&
         EnsureD3D11();
     if (d3dFrame)
     {
         d3dOptions_.backfaceCulling = backfaceCulling_;
-        if (!d3dRenderer_.Render(state, d3dOptions_))
+        overlayOptions_.grid=state.gridVisible;
+        overlayOptions_.gizmo=toolMode_==EditorToolMode::Move;
+        const EditorRenderOverlayBatch overlay=BuildEditorRenderOverlay(
+            previewScene_,renderScene_,MakeEditorRenderFrameContext(state),
+            overlayOptions_);
+        if (d3dRenderer_.Render(state, d3dOptions_,overlay))
+            return;
+        else
         {
             d3dRenderer_.Shutdown();
             d3dAvailable_ = false;
@@ -319,7 +349,6 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
         dc.DrawLine(0, state.height / 2, state.width, state.height / 2);
     }
 
-    controller_.Render();
     if (!d3dFrame && wireframeVisible_ && renderAssets_ && geometryCache_)
         wireframeFrame_ = wireframeRenderer_.Render(renderScene_,
             *renderAssets_, *geometryCache_,

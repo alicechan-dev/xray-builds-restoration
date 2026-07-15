@@ -55,28 +55,26 @@ int RunEditorToolControllerTests()
         "asset selection clears explicitly");
 
     EditorPreviewProjectionContext projection;
-    projection.width = 800;
-    projection.height = 600;
-    projection.cameraX = 3.0f;
-    projection.cameraZ = -2.0f;
-    projection.scale = 40.0f;
+    projection.frame.viewportWidth = 800;
+    projection.frame.viewportHeight = 600;
+    projection.frame.cameraPosition = {3.0f,5.0f,-2.0f};
+    projection.frame.pitchDegrees = 30.0f;
     const EditorPreviewWorldPoint center =
         UnprojectEditorPreviewToGround(400.0f, 300.0f, projection);
-    check(center.valid && std::fabs(center.x - 3.0f) < 0.001f &&
-        std::fabs(center.z + 2.0f) < 0.001f,
-        "viewport center maps to camera X/Z");
+    check(center.valid && std::fabs(center.x - 3.0f) < 0.001f && center.z>-2.0f,
+        "viewport center ray intersects the ground in front of the camera");
     const EditorPreviewWorldPoint offset =
         UnprojectEditorPreviewToGround(480.0f, 340.0f, projection, 1.0f);
-    check(offset.valid && std::fabs(offset.x - 5.0f) < 0.001f &&
-        std::fabs(offset.y - 1.0f) < 0.001f &&
-        std::fabs(offset.z + 1.0f) < 0.001f,
-        "screen offsets and placement height map consistently");
+    check(offset.valid && offset.x>center.x &&
+        std::fabs(offset.y - 1.0f) < 0.001f,
+        "perspective screen offsets and placement height map consistently");
     const EditorPreviewWorldPoint snapped =
         UnprojectEditorPreviewToGround(451.0f, 329.0f, projection,
             0.0f, true, 1.0f);
-    check(snapped.valid && snapped.x == 4.0f && snapped.z == -1.0f,
+    check(snapped.valid && snapped.x==std::round(snapped.x) &&
+        snapped.z==std::round(snapped.z),
         "placement snap rounds X/Z to fixed grid");
-    projection.width = 0;
+    projection.frame.viewportWidth = 0;
     check(!UnprojectEditorPreviewToGround(
         0.0f, 0.0f, projection).valid,
         "zero-size viewport rejects placement mapping");

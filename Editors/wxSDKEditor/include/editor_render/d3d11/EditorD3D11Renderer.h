@@ -2,6 +2,7 @@
 #define XR_WX_SDK_EDITOR_EDITOR_D3D11_RENDERER_H
 
 #include "editor_render/EditorRenderAssetWorkingSet.h"
+#include "editor_render/EditorRenderOverlay.h"
 
 #include <cstddef>
 #include <memory>
@@ -35,6 +36,9 @@ struct EditorD3D11Diagnostics
     std::size_t drawCalls = 0;
     std::size_t fallbackBounds = 0;
     std::size_t culledInstances = 0;
+    std::size_t overlayPrimitives = 0;
+    std::size_t labelsDrawn = 0;
+    std::size_t overlayDrawCalls = 0;
     std::size_t gpuBytes = 0;
     double cpuFrameMilliseconds = 0.0;
     std::string status;
@@ -57,7 +61,8 @@ public:
     void SetScene(const EditorRenderScene& scene);
     void ClearGeometryCache();
     bool Render(const EditorViewportState& state,
-        const EditorD3D11RenderOptions& options);
+        const EditorD3D11RenderOptions& options,
+        const EditorRenderOverlayBatch& overlay = {});
 
     bool IsInitialized() const;
     const EditorD3D11Diagnostics& Diagnostics() const;

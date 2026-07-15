@@ -62,6 +62,14 @@ enum
     IdFocusViewport,
     IdRebuildPreview,
     IdTogglePreviewLabels,
+    IdLabelsOff,
+    IdLabelsSelected,
+    IdLabelsAll,
+    IdToggleRuntimeMarkers,
+    IdToggleGlowMarkers,
+    IdToggleLightMarkers,
+    IdToggleUnsupportedBounds,
+    IdToggleRuntimeMarkerDepth,
     IdToggleObjectBounds,
     IdToggleRenderAssetDiagnostics,
     IdToggleRealMeshWireframe,
@@ -154,7 +162,17 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->Append(IdFocusViewport, "&Focus Viewport");
     viewMenu->AppendSeparator();
     viewMenu->Append(IdRebuildPreview, "&Rebuild Preview Scene");
-    viewMenu->AppendCheckItem(IdTogglePreviewLabels, "Preview &Labels");
+    auto* labelsMenu=new wxMenu();
+    labelsMenu->AppendRadioItem(IdLabelsOff,"&Off");
+    labelsMenu->AppendRadioItem(IdLabelsSelected,"&Selected Only");
+    labelsMenu->AppendRadioItem(IdLabelsAll,"&All");
+    viewMenu->AppendSubMenu(labelsMenu,"Preview &Labels");
+    viewMenu->AppendCheckItem(IdToggleRuntimeMarkers,"Runtime &Markers");
+    viewMenu->AppendCheckItem(IdToggleGlowMarkers,"&Glow Markers");
+    viewMenu->AppendCheckItem(IdToggleLightMarkers,"&Light Markers");
+    viewMenu->AppendCheckItem(IdToggleUnsupportedBounds,"&Unsupported Bounds");
+    viewMenu->AppendCheckItem(IdToggleRuntimeMarkerDepth,
+        "&Depth Test Runtime Markers");
     viewMenu->AppendCheckItem(IdToggleObjectBounds, "Object &Bounds");
     viewMenu->AppendCheckItem(IdToggleRenderAssetDiagnostics,
         "Render Asset &Diagnostics");
@@ -267,12 +285,34 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdToggleViewportGrid);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnRebuildPreview,
         this, IdRebuildPreview);
-    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnTogglePreviewLabels,
-        this, IdTogglePreviewLabels);
+    Bind(wxEVT_MENU,[this](wxCommandEvent& event){
+        const auto policy=event.GetId()==IdLabelsOff?EditorPreviewLabelPolicy::Off:
+            (event.GetId()==IdLabelsAll?EditorPreviewLabelPolicy::All:
+                EditorPreviewLabelPolicy::SelectedOnly);
+        viewport_->SetPreviewLabelPolicy(policy);
+    },IdLabelsOff,IdLabelsAll);
+    Bind(wxEVT_UPDATE_UI,[this](wxUpdateUIEvent& event){
+        if(!viewport_) return;
+        const auto policy=viewport_->PreviewLabelPolicy();
+        event.Check((event.GetId()==IdLabelsOff&&policy==EditorPreviewLabelPolicy::Off)||
+            (event.GetId()==IdLabelsSelected&&policy==EditorPreviewLabelPolicy::SelectedOnly)||
+            (event.GetId()==IdLabelsAll&&policy==EditorPreviewLabelPolicy::All));
+    },IdLabelsOff,IdLabelsAll);
+    Bind(wxEVT_MENU,[this](wxCommandEvent&){viewport_->ToggleRuntimeMarkers();},IdToggleRuntimeMarkers);
+    Bind(wxEVT_MENU,[this](wxCommandEvent&){viewport_->ToggleGlowMarkers();},IdToggleGlowMarkers);
+    Bind(wxEVT_MENU,[this](wxCommandEvent&){viewport_->ToggleLightMarkers();},IdToggleLightMarkers);
+    Bind(wxEVT_MENU,[this](wxCommandEvent&){viewport_->ToggleUnsupportedBounds();},IdToggleUnsupportedBounds);
+    Bind(wxEVT_MENU,[this](wxCommandEvent&){viewport_->ToggleDepthTestRuntimeMarkers();},IdToggleRuntimeMarkerDepth);
+    Bind(wxEVT_UPDATE_UI,[this](wxUpdateUIEvent& event){
+        if(!viewport_) return;
+        if(event.GetId()==IdToggleRuntimeMarkers) event.Check(viewport_->AreRuntimeMarkersVisible());
+        else if(event.GetId()==IdToggleGlowMarkers) event.Check(viewport_->AreGlowMarkersVisible());
+        else if(event.GetId()==IdToggleLightMarkers) event.Check(viewport_->AreLightMarkersVisible());
+        else if(event.GetId()==IdToggleUnsupportedBounds) event.Check(viewport_->AreUnsupportedBoundsVisible());
+        else event.Check(viewport_->IsRuntimeMarkerDepthTestEnabled());
+    },IdToggleRuntimeMarkers,IdToggleRuntimeMarkerDepth);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnFrameSelected,
         this, IdFrameSelected);
-    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdatePreviewLabels,
-        this, IdTogglePreviewLabels);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleObjectBounds,
         this, IdToggleObjectBounds);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleRenderAssetDiagnostics,

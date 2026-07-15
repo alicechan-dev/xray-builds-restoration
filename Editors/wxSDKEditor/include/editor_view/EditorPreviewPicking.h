@@ -2,6 +2,7 @@
 #define XR_WX_SDK_EDITOR_EDITOR_PREVIEW_PICKING_H
 
 #include "editor_view/EditorPreviewScene.h"
+#include "editor_render/EditorRenderProjection.h"
 
 #include <string>
 #include <vector>
@@ -10,11 +11,7 @@ struct EditorViewportState;
 
 struct EditorPreviewProjectionContext
 {
-    int width = 0;
-    int height = 0;
-    float cameraX = 0.0f;
-    float cameraZ = -5.0f;
-    float scale = 40.0f;
+    EditorRenderFrameContext frame;
 };
 
 struct EditorPreviewProjectedPoint

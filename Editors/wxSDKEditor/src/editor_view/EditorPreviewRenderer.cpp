@@ -50,10 +50,8 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
         const EditorViewportStyle style = StyleFor(object.kind);
         if (object.kind == EditorPreviewKind::Box)
         {
-            const float halfWidth = object.realBounds && objectBoundsVisible_ ?
-                (std::clamp)(object.sizeX * projection_.scale * 0.5f, 4.0f, 240.0f) : 14.0f;
-            const float halfHeight = object.realBounds && objectBoundsVisible_ ?
-                (std::clamp)(object.sizeZ * projection_.scale * 0.5f, 4.0f, 240.0f) : 10.0f;
+            const float halfWidth = 14.0f;
+            const float halfHeight = 10.0f;
             drawList_.Add({EditorViewportPrimitiveType::Rectangle, style,
                 x - halfWidth, y - halfHeight, x + halfWidth, y + halfHeight});
         }
@@ -63,7 +61,7 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
         {
             const float radius = object.kind == EditorPreviewKind::Glow ||
                     object.kind == EditorPreviewKind::HistoricalLight
-                ? (std::clamp)(object.sizeX * projection_.scale, 4.0f, 200.0f)
+                ? 9.0f
                 : 9.0f;
             drawList_.Add({EditorViewportPrimitiveType::Circle, style,
                 x, y, 0.0f, 0.0f, radius});
