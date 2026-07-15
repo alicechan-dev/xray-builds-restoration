@@ -5,6 +5,8 @@
 #include "stdafx.h"
 #include "UITextBanner.h"
 #include "../UI.h"
+#include "../Level.h"
+#include "../HUDManager.h"
 
 CUITextBanner::CUITextBanner()
 	:	m_bAnimate			(true),
@@ -89,11 +91,11 @@ void CUITextBanner::Out(float x, float y, const char *fmt, ...)
 	if(fontSize>0.0f)
 		m_pFont->SetSize(fontSize);
 
-	// ≈сли разрешение меньше базового, то корректируем положение вывода текста
-	if (x >= 1.0f && y >= 1.0f && Device.dwHeight < UI_BASE_HEIGHT)
+	// UI text uses the same virtual coordinate space as textured UI items.
+	if (x >= 1.0f && y >= 1.0f)
 	{
-		x *= static_cast<float>(Device.dwWidth) / UI_BASE_WIDTH;
-		y *= static_cast<float>(Device.dwHeight) / UI_BASE_HEIGHT;
+		x *= HUD().GetScale();
+		y *= HUD().GetScale();
 	}
 	m_pFont->Out(x, y, buf.c_str());
 	if (m_bNewRenderMethod)
