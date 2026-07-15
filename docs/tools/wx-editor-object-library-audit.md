@@ -26,3 +26,9 @@ registry classified 583 static objects as geometry decode candidates and 44
 skeletal objects as deferred. Before/after SHA-256, size, and UTC timestamp
 checks matched for all 627 `.object` and 17 `.level` files. No generated report
 or local absolute root is committed.
+
+The geometry audit decoded all 583 static candidates: 7,685,336 vertices and
+12,446,276 triangles in 241,579,344 bytes, with zero unsupported/malformed
+assets, invalid indices, non-finite positions, or bounds mismatches. It retained
+959 repeated-index degenerates and 984 zero-area triangles. A bounded headless
+wireframe sample reported zero decode failures.

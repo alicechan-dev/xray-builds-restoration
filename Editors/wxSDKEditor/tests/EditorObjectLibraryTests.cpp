@@ -6,6 +6,9 @@
 #include "editor_model/EditorTreeSnapshot.h"
 #include "editor_render/EditorRenderAssetRegistry.h"
 #include "editor_render/EditorRenderScene.h"
+#include "editor_assets/EditorStaticMeshDecoder.h"
+#include "editor_render/EditorRenderGeometryCache.h"
+#include "editor_render/EditorSoftwareWireframeRenderer.h"
 #include "editor_view/EditorTreePreviewAdapter.h"
 
 #include <algorithm>
@@ -187,6 +190,25 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
     EditorRenderAssetRegistry registry;
     if(!registry.Build(library,&reason)){std::cerr<<"Registry build failed: "<<reason<<'\n';return 2;}
     const auto rs=registry.Statistics();
+    std::size_t geometryDecoded=0,geometryUnsupported=0,geometryMalformed=0;
+    std::size_t decodedVertices=0,decodedTriangles=0,degenerateTriangles=0;
+    std::size_t zeroAreaTriangles=0,boundsMismatches=0,invalidIndices=0;
+    std::size_t nonFinitePositions=0,totalGeometryBytes=0,peakAssetBytes=0;
+    EditorStaticMeshDecoderLimits auditLimits;
+    auditLimits.maximumDecodedBytes=512ull*1024ull*1024ull;
+    EditorStaticMeshDecoder geometryDecoder(auditLimits);
+    for(const auto& asset:registry.Assets()){
+        if(asset.readiness!=EditorRenderAssetReadiness::StaticGeometryDecodeCandidate)continue;
+        EditorStaticAssetGeometry geometry;std::string decodeReason;
+        const auto status=geometryDecoder.Decode(library.Root(),asset,geometry,&decodeReason);
+        if(status==EditorStaticGeometryDecodeStatus::Decoded){++geometryDecoded;
+            decodedVertices+=geometry.totalVertices;decodedTriangles+=geometry.totalTriangles;
+            degenerateTriangles+=geometry.degenerateTriangles;zeroAreaTriangles+=geometry.zeroAreaTriangles;
+            boundsMismatches+=geometry.boundsMismatches;totalGeometryBytes+=geometry.MemoryBytes();
+            peakAssetBytes=(std::max)(peakAssetBytes,geometry.MemoryBytes());}
+        else if(status==EditorStaticGeometryDecodeStatus::Unsupported)++geometryUnsupported;
+        else{++geometryMalformed;invalidIndices+=decodeReason.find("out-of-range")!=std::string::npos;
+            nonFinitePositions+=decodeReason.find("non-finite")!=std::string::npos;}}
     std::size_t staticObjects=0,skeletalObjects=0,totalMeshes=0,totalVertices=0,totalTriangles=0;
     std::size_t minMeshes=library.Entries().empty()?0:static_cast<std::size_t>(-1),maxMeshes=0;
     std::size_t minVertices=static_cast<std::size_t>(-1),maxVertices=0,minTriangles=static_cast<std::size_t>(-1),maxTriangles=0;
@@ -231,7 +253,19 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
     std::cout<<"registry_assets="<<rs.assets<<"\nbounds_only="<<rs.boundsOnly<<"\nmetadata_ready="<<rs.metadataReady
         <<"\ndecode_candidates="<<rs.decodeCandidates<<"\nskeletal_deferred="<<rs.skeletalDeferred
         <<"\nasset_unsupported="<<rs.unsupported<<"\nasset_malformed="<<rs.malformed<<'\n';
+    std::cout<<"geometry_decoded_assets="<<geometryDecoded
+        <<"\ngeometry_unsupported_assets="<<geometryUnsupported
+        <<"\ngeometry_malformed_assets="<<geometryMalformed
+        <<"\ndecoded_vertices="<<decodedVertices<<"\ndecoded_triangles="<<decodedTriangles
+        <<"\ninvalid_indices="<<invalidIndices<<"\nnon_finite_positions="<<nonFinitePositions
+        <<"\ndegenerate_triangles="<<degenerateTriangles<<"\nzero_area_triangles="<<zeroAreaTriangles
+        <<"\nbounds_mismatches="<<boundsMismatches<<"\ndecoded_memory_bytes="<<totalGeometryBytes
+        <<"\npeak_asset_geometry_bytes="<<peakAssetBytes<<'\n';
     std::size_t boundsInstances=0,fallbackInstances=0,partialReferences=0;
+    std::size_t sampleVisible=0,sampleDecoded=0,sampleTriangles=0,sampleLines=0;
+    std::size_t sampleCulled=0,sampleFallback=0,sampleBudgetSkipped=0,sampleFailures=0;
+    EditorRenderGeometryCache sampleCache;sampleCache.Bind(library.Root(),&registry);
+    EditorSoftwareWireframeRenderer sampleRenderer;
     for (const auto& scene : scenes) {
         EditorSceneManifest manifest;
         if (!EditorHistoricalSceneProbe().ProbeSceneFile(scene, manifest, &reason)) {
@@ -239,6 +273,7 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
             return 2;
         }
         EditorSceneObjectResolutionStatistics perScene;
+        EditorRenderScene sampleScene;
         for (const auto& object : manifest.objects) {
             if (!object.bodyDecode.hasSceneObject) continue;
             const auto result = ResolveObjectReference(
@@ -247,7 +282,25 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
             if(result.entry&&result.entry->parseStatus==EditorObjectParseStatus::Partial)++partialReferences;
             const auto* asset=result.entry?registry.Find(result.entry->referenceId):nullptr;
             if(asset&&asset->bounds.valid)++boundsInstances;else ++fallbackInstances;
+            if(asset&&asset->bounds.valid&&object.hasTransform&&sampleScene.Instances().size()<64){
+                EditorRenderInstance instance;instance.assetId=asset->assetId;instance.objectBounds=asset->bounds;
+                instance.readiness=asset->readiness;instance.fallback=false;
+                instance.transform.x=object.position[0];instance.transform.y=object.position[1];instance.transform.z=object.position[2];
+                instance.transform.pitch=object.rotation[0];instance.transform.yaw=object.rotation[1];instance.transform.roll=object.rotation[2];
+                instance.transform.sx=object.scale[0];instance.transform.sy=object.scale[1];instance.transform.sz=object.scale[2];
+                sampleScene.Add(std::move(instance));}
         }
+        if(!sampleScene.Instances().empty()){
+            EditorWireframeCamera camera;camera.viewportWidth=800;camera.viewportHeight=600;
+            camera.x=sampleScene.Instances().front().transform.x;
+            camera.y=sampleScene.Instances().front().transform.y;
+            camera.z=sampleScene.Instances().front().transform.z-5.0f;
+            EditorWireframeBudget budget;budget.maximumInstances=64;budget.maximumTriangles=10000;budget.maximumLines=30000;
+            const auto frame=sampleRenderer.Render(sampleScene,registry,sampleCache,camera,false,budget);
+            sampleVisible+=frame.statistics.visibleInstances;sampleDecoded+=frame.statistics.decodedAssets;
+            sampleTriangles+=frame.statistics.trianglesSubmitted;sampleLines+=frame.statistics.linesDrawn;
+            sampleCulled+=frame.statistics.culledInstances;sampleFallback+=frame.statistics.fallbackBounds;
+            sampleBudgetSkipped+=frame.statistics.budgetSkippedObjects;sampleFailures+=frame.statistics.decodeFailures;}
         std::cout << "scene=" << scene.filename().string() << " queried=" << perScene.queried
             << " resolved=" << perScene.resolved << " missing=" << perScene.missing
             << " ambiguous=" << perScene.ambiguous << " invalid=" << perScene.invalid << '\n';
@@ -257,5 +310,13 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
         << "\nambiguous=" << aggregate.ambiguous << "\ninvalid=" << aggregate.invalid << '\n';
     std::cout<<"scene_instances_with_bounds="<<boundsInstances<<"\nscene_fallback_instances="<<fallbackInstances
         <<"\npartial_entry_references="<<partialReferences<<'\n';
+    std::cout<<"wireframe_sample_visible_instances="<<sampleVisible
+        <<"\nwireframe_sample_decoded_assets="<<sampleDecoded
+        <<"\nwireframe_sample_triangles="<<sampleTriangles
+        <<"\nwireframe_sample_lines="<<sampleLines
+        <<"\nwireframe_sample_culled_instances="<<sampleCulled
+        <<"\nwireframe_sample_fallback_bounds="<<sampleFallback
+        <<"\nwireframe_sample_budget_skipped="<<sampleBudgetSkipped
+        <<"\nwireframe_sample_decode_failures="<<sampleFailures<<'\n';
     return 0;
 }

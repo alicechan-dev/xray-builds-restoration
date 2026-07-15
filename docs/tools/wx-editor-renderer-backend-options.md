@@ -18,7 +18,8 @@ Ranked options:
    it would pull runtime assumptions into the editor and is not recommended for
    this restoration stage.
 
-The recommended next pass is a bounded static position/index decoder feeding a
-standalone software wireframe backend. Skeletal geometry, UV/material binding,
-textures, shaders, thumbnails, and GPU resources remain deferred.
-
+The first-ranked software path is now implemented and validated against all 583
+static candidates. The next recommended backend is standalone D3D11 consuming
+the same neutral geometry/scene contracts. Skeletal geometry, UV/material
+binding, textures, shaders, thumbnails, and GPU resources remain deferred until
+that backend is separately scoped.

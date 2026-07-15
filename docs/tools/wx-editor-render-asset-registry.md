@@ -17,3 +17,7 @@ The registry is not serialized into `.wx_tree_snapshot` files and does not
 modify `.object` or `.level` files. Synthetic tests cover build, lookup,
 readiness aggregation, clear, and preview fallback after clear.
 
+The geometry cache may update a static candidate to `StaticGeometryDecoded` or
+to a cached failure classification. Cache clear restores original readiness;
+library reload clears old cache state before the registry is replaced. See
+[Geometry Cache](wx-editor-geometry-cache.md).

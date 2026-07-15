@@ -96,7 +96,8 @@ New synthetic nodes continue to use asset/category behavior.
 
 Resolved historical SceneObjects now use a conservative rotation-safe display
 extent derived from real Object Library bounds and instance scale. The software
-preview still draws diagnostic boxes; no vertex/index payload is decoded or
-rendered. A parallel `EditorRenderScene` carries neutral instances for a future
-backend. See [Object Bounds Preview](wx-editor-object-bounds-preview.md) and
-[Render Scene Submission](wx-editor-render-scene-submission.md).
+preview still draws those diagnostic boxes while a parallel `EditorRenderScene`
+feeds shared static geometry to the CPU wireframe backend. Bounds remain the
+selection policy and fallback. See [Object Bounds Preview](wx-editor-object-bounds-preview.md),
+[Render Scene Submission](wx-editor-render-scene-submission.md), and
+[Software Wireframe Renderer](wx-editor-software-wireframe-renderer.md).

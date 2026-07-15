@@ -2,6 +2,8 @@
 
 #include "editor_view/IEditorViewportRenderer.h"
 #include "editor_view/EditorTreePreviewAdapter.h"
+#include "editor_render/EditorRenderAssetRegistry.h"
+#include "editor_render/EditorRenderGeometryCache.h"
 
 #include <utility>
 #include <wx/dcbuffer.h>
@@ -101,6 +103,16 @@ void wxEditorViewport::SetPreviewScene(EditorPreviewScene scene)
     Refresh(false);
 }
 
+void wxEditorViewport::SetRenderScene(EditorRenderScene scene,
+    EditorRenderAssetRegistry* assets,
+    EditorRenderGeometryCache* geometryCache)
+{
+    renderScene_ = std::move(scene);
+    renderAssets_ = assets;
+    geometryCache_ = geometryCache;
+    Refresh(false);
+}
+
 void wxEditorViewport::TogglePreviewLabels()
 {
     renderer_.SetLabelsVisible(!renderer_.LabelsVisible());
@@ -118,6 +130,10 @@ bool wxEditorViewport::AreObjectBoundsVisible() const { return renderer_.ObjectB
 void wxEditorViewport::ToggleRenderAssetDiagnostics()
 { renderer_.SetAssetDiagnosticsVisible(!renderer_.AssetDiagnosticsVisible()); controller_.Render(); Refresh(false); }
 bool wxEditorViewport::AreRenderAssetDiagnosticsVisible() const { return renderer_.AssetDiagnosticsVisible(); }
+void wxEditorViewport::ToggleRealMeshWireframe()
+{ wireframeVisible_ = !wireframeVisible_; Refresh(false); }
+void wxEditorViewport::ToggleBackfaceCulling()
+{ backfaceCulling_ = !backfaceCulling_; Refresh(false); }
 
 bool wxEditorViewport::FrameSelected()
 {
@@ -202,6 +218,19 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
     }
 
     controller_.Render();
+    if (wireframeVisible_ && renderAssets_ && geometryCache_)
+        wireframeFrame_ = wireframeRenderer_.Render(renderScene_,
+            *renderAssets_, *geometryCache_,
+            MakeEditorWireframeCamera(state), backfaceCulling_);
+    else
+        wireframeFrame_ = {};
+    for (const EditorWireframeLine& line : wireframeFrame_.lines)
+    {
+        dc.SetPen(wxPen(line.selected ? wxColour(255, 145, 55)
+            : wxColour(90, 205, 220), line.selected ? 2 : 1));
+        dc.DrawLine(static_cast<int>(line.x1), static_cast<int>(line.y1),
+            static_cast<int>(line.x2), static_cast<int>(line.y2));
+    }
     for (const EditorViewportPrimitive& primitive :
         renderer_.DrawList().Primitives())
     {
@@ -251,7 +280,8 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
         }
     }
     dc.SetTextForeground(wxColour(205, 213, 220));
-    dc.DrawText("Renderer is not connected", 12, 12);
+    dc.DrawText(wireframeVisible_ ? "Software wireframe renderer"
+        : "Real mesh wireframe disabled", 12, 12);
     dc.DrawText(wxString::Format("Size: %d x %d", state.width, state.height),
         12, 34);
     dc.DrawText(wxString::Format("Mouse: %d, %d  Focus: %s",
@@ -262,14 +292,26 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
         state.camera.pitch, state.camera.movementSpeed), 12, 74);
     dc.DrawText("Tool: " + wxString::FromUTF8(EditorToolModeName(toolMode_)),
         12, 94);
+    if (wireframeVisible_)
+        dc.DrawText(wxString::Format(
+            "Wireframe: visible=%zu decoded=%zu triangles=%zu lines=%zu culled=%zu fallback=%zu budget_skip=%zu failures=%zu",
+            wireframeFrame_.statistics.visibleInstances,
+            wireframeFrame_.statistics.decodedAssets,
+            wireframeFrame_.statistics.trianglesSubmitted,
+            wireframeFrame_.statistics.linesDrawn,
+            wireframeFrame_.statistics.culledInstances,
+            wireframeFrame_.statistics.fallbackBounds,
+            wireframeFrame_.statistics.budgetSkippedObjects,
+            wireframeFrame_.statistics.decodeFailures), 12, 114);
     if (placementPreview_.valid)
     {
         dc.DrawText(wxString::Format("Place: %.2f, %.2f, %.2f",
             placementPreview_.x, placementPreview_.y, placementPreview_.z),
-            12, 114);
+            12, wireframeVisible_ ? 134 : 114);
         if (!placementAssetName_.empty())
             dc.DrawText("Asset: " + wxString::FromUTF8(placementAssetName_ +
-                " (" + placementAssetId_ + ")"), 12, 134);
+                " (" + placementAssetId_ + ")"), 12,
+                wireframeVisible_ ? 154 : 134);
     }
 }
 

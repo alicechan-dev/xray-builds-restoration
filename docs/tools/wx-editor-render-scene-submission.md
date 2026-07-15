@@ -12,7 +12,7 @@ readiness. The viewport renderer interface exposes `SubmitScene` as a default
 no-op so existing software preview behavior remains compatible while a future
 backend can consume the neutral submission.
 
-The lawful production audit resolved all 15,416 SceneObject references. All
-15,416 had registry bounds and none required fallback. This is a submission and
-inventory result only: full positions/indices are not decoded or drawn yet.
-
+The lawful production audit resolved all 15,416 SceneObject references and all
+had registry bounds. Instances reference shared cached geometry by asset ID;
+they never duplicate vertex/index arrays. The CPU wireframe backend consumes
+these submissions while skeletal/missing/failed assets retain bounds fallback.

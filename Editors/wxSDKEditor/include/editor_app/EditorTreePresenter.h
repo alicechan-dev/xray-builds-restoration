@@ -9,6 +9,7 @@
 #include "editor_assets/EditorObjectLibraryLoader.h"
 #include "editor_assets/EditorObjectLibraryResolver.h"
 #include "editor_render/EditorRenderAssetRegistry.h"
+#include "editor_render/EditorRenderGeometryCache.h"
 #include "editor_scene/EditorHistoricalConversionPolicy.h"
 
 #include <cstddef>
@@ -26,18 +27,21 @@ class EditorHistoricalSceneDocument;
 struct EditorSceneManifest;
 struct EditorHistoricalConversionReport;
 class EditorPreviewScene;
+class EditorRenderScene;
 
 class EditorTreePresenter
 {
 public:
     using MessageCallback = std::function<void(const std::string&)>;
     using PreviewCallback = std::function<void(const EditorPreviewScene&)>;
+    using RenderSceneCallback = std::function<void(const EditorRenderScene&)>;
 
     EditorTreePresenter(EditorDocument& document, IEditorTree& tree,
         IPropertyPanel& properties,
         IDialogService& dialogs, MessageCallback status,
         MessageCallback output, MessageCallback documentChanged = {},
-        PreviewCallback previewChanged = {});
+        PreviewCallback previewChanged = {},
+        RenderSceneCallback renderSceneChanged = {});
 
     void InitializeDemo();
     void AttachHistoricalDocument(EditorHistoricalSceneDocument& document);
@@ -95,6 +99,8 @@ public:
     { return BuildEditorObjectLibraryStatistics(objectLibrary_); }
     EditorRenderAssetStatistics RenderAssetStatistics() const
     { return renderAssets_.Statistics(); }
+    EditorRenderAssetRegistry& RenderAssets() { return renderAssets_; }
+    EditorRenderGeometryCache& GeometryCache() { return geometryCache_; }
     const EditorAssetCatalog& AssetCatalog() const { return assetCatalog_; }
     const EditorAssetDescriptor* SelectedAsset() const;
     std::string ResolvePlacementParentPath() const;
@@ -126,6 +132,7 @@ private:
     MessageCallback output_;
     MessageCallback documentChanged_;
     PreviewCallback previewChanged_;
+    RenderSceneCallback renderSceneChanged_;
     EditorDocument& document_;
     EditorTreeModel& model_;
     EditorSelectionModel& selection_;
@@ -138,6 +145,7 @@ private:
     EditorAssetSelectionModel assetSelection_;
     EditorObjectLibrary objectLibrary_;
     EditorRenderAssetRegistry renderAssets_;
+    EditorRenderGeometryCache geometryCache_;
 };
 
 #endif

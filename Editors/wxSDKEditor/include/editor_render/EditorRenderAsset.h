@@ -13,6 +13,7 @@ enum class EditorRenderAssetReadiness
     BoundsOnly,
     StaticGeometryMetadataReady,
     StaticGeometryDecodeCandidate,
+    StaticGeometryDecoded,
     SkeletalDeferred,
     Unsupported,
     Malformed

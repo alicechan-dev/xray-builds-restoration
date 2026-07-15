@@ -10,6 +10,7 @@ struct EditorRenderAssetStatistics
 {
     std::size_t assets = 0, boundsOnly = 0, metadataReady = 0;
     std::size_t decodeCandidates = 0, skeletalDeferred = 0;
+    std::size_t decoded = 0;
     std::size_t unsupported = 0, malformed = 0;
     std::size_t meshes = 0, vertices = 0, triangles = 0;
 };
@@ -21,6 +22,9 @@ public:
     void Clear();
     bool IsLoaded() const { return loaded_; }
     const EditorRenderObjectAsset* Find(std::string_view normalizedId) const;
+    EditorRenderObjectAsset* Find(std::string_view normalizedId);
+    bool UpdateReadiness(std::string_view normalizedId,
+        EditorRenderAssetReadiness readiness);
     const std::vector<EditorRenderObjectAsset>& Assets() const { return assets_; }
     EditorRenderAssetStatistics Statistics() const;
 private:

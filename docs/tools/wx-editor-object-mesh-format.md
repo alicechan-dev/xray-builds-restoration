@@ -40,3 +40,7 @@ meshes, 2,379 version-2 vmap meshes, 4,796 UV maps, and 4 weight maps. The 103
 observed `0x1003` chunks are the source-named retired slot, not unknown format.
 No genuinely unknown mesh chunk IDs or malformed meshes were observed.
 
+The static geometry stage now retains the confirmed position triples and direct
+triangle indices for version `0x0011` static assets only. Its production decode
+results and validation policy are documented in
+[Static Mesh Decoder](wx-editor-static-mesh-decoder.md).

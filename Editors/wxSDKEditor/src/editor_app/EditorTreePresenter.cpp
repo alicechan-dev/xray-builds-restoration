@@ -1,4 +1,6 @@
 #include "editor_app/EditorTreePresenter.h"
+
+#include "editor_render/EditorRenderScene.h"
 #include "editor_app/EditorModelCommand.h"
 
 #include "editor_model/EditorTreePathListImport.h"
@@ -23,11 +25,13 @@
 EditorTreePresenter::EditorTreePresenter(EditorDocument& document,
     IEditorTree& tree, IPropertyPanel& properties, IDialogService& dialogs,
     MessageCallback status, MessageCallback output,
-    MessageCallback documentChanged, PreviewCallback previewChanged) :
+    MessageCallback documentChanged, PreviewCallback previewChanged,
+    RenderSceneCallback renderSceneChanged) :
     tree_(tree), properties_(properties), dialogs_(dialogs),
     status_(std::move(status)), output_(std::move(output)),
     documentChanged_(std::move(documentChanged)),
-    previewChanged_(std::move(previewChanged)), document_(document),
+    previewChanged_(std::move(previewChanged)),
+    renderSceneChanged_(std::move(renderSceneChanged)), document_(document),
     model_(document.Model()), selection_(document.Selection()),
     history_(document.History())
 {
@@ -247,9 +251,11 @@ bool EditorTreePresenter::LoadObjectLibrary(const std::filesystem::path& root,
     EditorObjectLibraryLoader loader;
     if (!loader.Load(root, objectLibrary_, statistics, reason))
         return false;
+    geometryCache_.Clear();
     if (!renderAssets_.Build(objectLibrary_, reason)) {
         objectLibrary_.Clear(); return false;
     }
+    geometryCache_.Bind(objectLibrary_.Root(), &renderAssets_);
     RefreshSelection();
     SetStatus("Loaded read-only Object Library metadata: " +
         std::to_string(statistics.entriesLoaded) + " entries.");
@@ -258,6 +264,7 @@ bool EditorTreePresenter::LoadObjectLibrary(const std::filesystem::path& root,
 
 void EditorTreePresenter::ClearObjectLibrary()
 {
+    geometryCache_.Clear();
     objectLibrary_.Clear();
     renderAssets_.Clear();
     RefreshSelection();
@@ -455,7 +462,7 @@ void EditorTreePresenter::RefreshSelection()
 
 void EditorTreePresenter::RefreshPreview() const
 {
-    if (!previewChanged_)
+    if (!previewChanged_ && !renderSceneChanged_)
         return;
     const EditorTreeModel& model = ActiveModel();
     const std::vector<std::string> paths = ActiveSelection().GetSelectedPaths(model);
@@ -468,12 +475,20 @@ void EditorTreePresenter::RefreshPreview() const
                 historicalDocument_->FindByNodePath(paths.front()))
                 stableId = object->stableRecordId;
         }
-        previewChanged_(BuildHistoricalScenePreview(
-            *historicalDocument_, stableId));
+        if (previewChanged_)
+            previewChanged_(BuildHistoricalScenePreview(
+                *historicalDocument_, stableId));
+        if (renderSceneChanged_)
+            renderSceneChanged_(BuildEditorRenderScene(model, renderAssets_,
+                paths.empty() ? std::string() : paths.front()));
         return;
     }
-    previewChanged_(BuildEditorPreviewScene(
-        model, paths.empty() ? std::string() : paths.front(), &renderAssets_));
+    if (previewChanged_)
+        previewChanged_(BuildEditorPreviewScene(
+            model, paths.empty() ? std::string() : paths.front(), &renderAssets_));
+    if (renderSceneChanged_)
+        renderSceneChanged_(BuildEditorRenderScene(model, renderAssets_,
+            paths.empty() ? std::string() : paths.front()));
 }
 
 bool EditorTreePresenter::SelectLogicalPath(const std::string& logicalPath)

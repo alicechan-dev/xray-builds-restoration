@@ -23,6 +23,7 @@ Readiness is explicit:
 - `Unsupported`: no safe supported representation is available.
 - `Malformed`: structural validation failed.
 
-The production registry contains 583 static decode candidates and 44 skeletal
-deferred assets. No asset is rendered as real geometry in this pass.
-
+The production registry starts with 583 static decode candidates and 44
+skeletal deferred assets. A successful lazy request transitions a candidate to
+`StaticGeometryDecoded`; geometry remains shared in the session cache and is
+rendered only as CPU wireframe. Skeletal assets never make that transition.

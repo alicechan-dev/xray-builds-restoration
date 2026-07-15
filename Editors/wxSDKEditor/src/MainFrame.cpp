@@ -10,6 +10,7 @@
 #include "wxAssetBrowser.h"
 #include "wxObjectLibraryBrowser.h"
 #include "wxEditorViewport.h"
+#include "editor_render/EditorRenderScene.h"
 #include "wxPropertyPanel.h"
 #include "wxSceneInspector.h"
 
@@ -63,6 +64,8 @@ enum
     IdTogglePreviewLabels,
     IdToggleObjectBounds,
     IdToggleRenderAssetDiagnostics,
+    IdToggleRealMeshWireframe,
+    IdToggleBackfaceCulling,
     IdFrameSelected,
     IdToggleMoveSnap,
     IdToolSelect,
@@ -150,6 +153,10 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendCheckItem(IdToggleObjectBounds, "Object &Bounds");
     viewMenu->AppendCheckItem(IdToggleRenderAssetDiagnostics,
         "Render Asset &Diagnostics");
+    viewMenu->AppendCheckItem(IdToggleRealMeshWireframe,
+        "Real Mesh &Wireframe");
+    viewMenu->AppendCheckItem(IdToggleBackfaceCulling,
+        "Wireframe &Backface Culling");
     viewMenu->Append(IdFrameSelected, "Frame &Selected");
     viewMenu->AppendCheckItem(IdToggleMoveSnap, "Snap Move To &Grid");
     menuBar->Append(viewMenu, "&View");
@@ -261,6 +268,14 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdToggleObjectBounds);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateRenderAssetDiagnostics,
         this, IdToggleRenderAssetDiagnostics);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleRealMeshWireframe,
+        this, IdToggleRealMeshWireframe);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleBackfaceCulling,
+        this, IdToggleBackfaceCulling);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateRealMeshWireframe,
+        this, IdToggleRealMeshWireframe);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateBackfaceCulling,
+        this, IdToggleBackfaceCulling);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleMoveSnap,
         this, IdToggleMoveSnap);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateMoveSnap,
@@ -424,6 +439,10 @@ void wxSDKEditorFrame::CreateWorkspace()
         }, [this](const std::string&) { UpdateDocumentTitle(); },
         [this](const EditorPreviewScene& scene) {
             viewport_->SetPreviewScene(scene);
+        }, [this](const EditorRenderScene& scene) {
+            viewport_->SetRenderScene(scene,
+                &treePresenter_->RenderAssets(),
+                &treePresenter_->GeometryCache());
         });
     treePresenter_->AttachHistoricalDocument(historicalDocument_);
     objectLibraryBrowser_->SetLoadHandler([this]() { OnLoadObjectLibrary(); });
@@ -728,6 +747,7 @@ void wxSDKEditorFrame::OnObjectLibrarySummary(wxCommandEvent&)
         "\nBounds only: " + std::to_string(r.boundsOnly) +
         "\nMetadata ready: " + std::to_string(r.metadataReady) +
         "\nStatic decode candidates: " + std::to_string(r.decodeCandidates) +
+        "\nStatic decoded: " + std::to_string(r.decoded) +
         "\nSkeletal deferred: " + std::to_string(r.skeletalDeferred) +
         "\nUnsupported: " + std::to_string(r.unsupported) +
         "\nMalformed: " + std::to_string(r.malformed) +
@@ -1004,6 +1024,10 @@ void wxSDKEditorFrame::OnToggleObjectBounds(wxCommandEvent&)
 { viewport_->ToggleObjectBounds(); }
 void wxSDKEditorFrame::OnToggleRenderAssetDiagnostics(wxCommandEvent&)
 { viewport_->ToggleRenderAssetDiagnostics(); }
+void wxSDKEditorFrame::OnToggleRealMeshWireframe(wxCommandEvent&)
+{ viewport_->ToggleRealMeshWireframe(); }
+void wxSDKEditorFrame::OnToggleBackfaceCulling(wxCommandEvent&)
+{ viewport_->ToggleBackfaceCulling(); }
 
 void wxSDKEditorFrame::OnFrameSelected(wxCommandEvent&)
 {
@@ -1022,6 +1046,10 @@ void wxSDKEditorFrame::OnUpdateObjectBounds(wxUpdateUIEvent& event)
 { event.Check(viewport_ && viewport_->AreObjectBoundsVisible()); }
 void wxSDKEditorFrame::OnUpdateRenderAssetDiagnostics(wxUpdateUIEvent& event)
 { event.Check(viewport_ && viewport_->AreRenderAssetDiagnosticsVisible()); }
+void wxSDKEditorFrame::OnUpdateRealMeshWireframe(wxUpdateUIEvent& event)
+{ event.Check(viewport_ && viewport_->IsRealMeshWireframeVisible()); }
+void wxSDKEditorFrame::OnUpdateBackfaceCulling(wxUpdateUIEvent& event)
+{ event.Check(viewport_ && viewport_->IsBackfaceCullingEnabled()); }
 
 void wxSDKEditorFrame::OnToggleMoveSnap(wxCommandEvent&)
 {

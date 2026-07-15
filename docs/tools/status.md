@@ -380,6 +380,9 @@ read-only decoder inventories 627 assets, 2,418 meshes, 7,686,510 vertices, and
 12,447,670 triangles. The registry classifies 583 static geometry decode
 candidates and defers 44 skeletal assets. All 15,416 audited SceneObject
 references receive real bounds in neutral scene submissions and the diagnostic
-preview. Real geometry rendering, textures, shaders, thumbnails, and GPU
-resources are not implemented. The next recommended step is a standalone
-software wireframe backend over a separately audited static geometry decoder.
+preview. The standalone CPU wireframe backend now decodes and displays real
+static position/index geometry with lazy bounded caching, perspective clipping,
+selected-first frame budgets, and bounds fallback. Production decoded all 583
+static candidates with zero structural failures. Textures, shaders, materials,
+skeletal decoding, thumbnails, and GPU resources remain unimplemented. The next
+recommended backend is standalone D3D11 over the neutral contracts.

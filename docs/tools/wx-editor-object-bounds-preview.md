@@ -12,6 +12,6 @@ picking, and framing use the same projected extent, avoiding a separate hidden
 shape. Clearing the Object Library safely restores the prior fallback preview;
 reloading restores real bounds.
 
-No textures, materials, shaders, thumbnails, vertex buffers, index buffers, or
-GPU resources are loaded. Real mesh rendering is a separate next pass.
-
+Object Bounds remain independently toggleable and remain the picking/fallback
+shape after real static wireframe was added. No textures, materials, shaders,
+thumbnails, GPU vertex/index buffers, or other GPU resources are loaded.

@@ -446,3 +446,10 @@ real Object Library bounds in the diagnostic preview. The lawful inventory is
 static decode candidates and 44 skeletal assets deferred. No source geometry,
 textures, shaders, thumbnails, GPU resources, runtime renderer, or `.level`
 writer was added. See [Render Asset Boundary](wx-editor-render-asset-boundary.md).
+
+The next checkpoint adds real static mesh outlines through a wx-free decoder,
+lazy 256 MiB session cache, explicit perspective camera, clipping, and bounded
+CPU wireframe renderer. All 583 lawful static candidates decode; 44 skeletal
+assets remain bounds-only. Stable bounds picking is unchanged. No textures,
+materials, filled triangles, GPU resources, or historical runtime renderer are
+connected.

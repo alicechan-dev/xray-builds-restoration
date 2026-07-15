@@ -697,6 +697,8 @@ The renderer-asset boundary is now ready for review: source-confirmed mesh
 metadata, transactional asset registry, renderer-neutral scene instances, and
 real-bounds diagnostic preview are covered by headless tests and lawful
 read-only production audits. Do not connect runtime renderers or decode skeletal
-geometry next. First add a bounded static position/index decoder and standalone
-software wireframe backend; keep textures, shaders, thumbnails, materials, and
-GPU ownership as later independent stages.
+geometry next. The bounded static decoder and standalone software wireframe
+checkpoint are now implemented and should be reviewed before backend expansion.
+The next backend candidate is standalone D3D11; keep textures, shaders,
+thumbnails, materials, skeletal data, and GPU ownership as later independent
+stages.

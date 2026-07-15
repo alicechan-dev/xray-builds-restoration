@@ -83,10 +83,14 @@ private:
     void OnTogglePreviewLabels(wxCommandEvent& event);
     void OnToggleObjectBounds(wxCommandEvent& event);
     void OnToggleRenderAssetDiagnostics(wxCommandEvent& event);
+    void OnToggleRealMeshWireframe(wxCommandEvent& event);
+    void OnToggleBackfaceCulling(wxCommandEvent& event);
     void OnFrameSelected(wxCommandEvent& event);
     void OnUpdatePreviewLabels(wxUpdateUIEvent& event);
     void OnUpdateObjectBounds(wxUpdateUIEvent& event);
     void OnUpdateRenderAssetDiagnostics(wxUpdateUIEvent& event);
+    void OnUpdateRealMeshWireframe(wxUpdateUIEvent& event);
+    void OnUpdateBackfaceCulling(wxUpdateUIEvent& event);
     void OnToggleMoveSnap(wxCommandEvent& event);
     void OnUpdateMoveSnap(wxUpdateUIEvent& event);
     void OnSelectTool(wxCommandEvent& event);

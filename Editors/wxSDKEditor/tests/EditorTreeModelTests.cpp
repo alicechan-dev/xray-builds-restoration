@@ -852,6 +852,7 @@ int RunEditorHistoricalObjectBodyDecoderTests();
 int RunEditorHistoricalSceneConversionTests();
 int RunEditorHistoricalOriginIntegrityTests();
 int RunEditorObjectLibraryTests();
+int RunEditorStaticMeshTests();
 int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
     const std::filesystem::path& sceneRoot);
 
@@ -1413,6 +1414,7 @@ int main(int argc, char** argv)
     failures += RunEditorHistoricalSceneConversionTests();
     failures += RunEditorHistoricalOriginIntegrityTests();
     failures += RunEditorObjectLibraryTests();
+    failures += RunEditorStaticMeshTests();
 
     if (failures)
     {

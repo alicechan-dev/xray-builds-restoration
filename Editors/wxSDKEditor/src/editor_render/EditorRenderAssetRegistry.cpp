@@ -44,6 +44,11 @@ bool EditorRenderAssetRegistry::Build(const EditorObjectLibrary& library,
 void EditorRenderAssetRegistry::Clear() { loaded_ = false; assets_.clear(); index_.clear(); }
 const EditorRenderObjectAsset* EditorRenderAssetRegistry::Find(std::string_view id) const
 { auto it=index_.find(std::string(id)); return it==index_.end()?nullptr:&assets_[it->second]; }
+EditorRenderObjectAsset* EditorRenderAssetRegistry::Find(std::string_view id)
+{ auto it=index_.find(std::string(id)); return it==index_.end()?nullptr:&assets_[it->second]; }
+bool EditorRenderAssetRegistry::UpdateReadiness(std::string_view id,
+    EditorRenderAssetReadiness readiness)
+{ if(auto* asset=Find(id)){asset->readiness=readiness;return true;}return false; }
 EditorRenderAssetStatistics EditorRenderAssetRegistry::Statistics() const
 {
     EditorRenderAssetStatistics s; s.assets=assets_.size();
@@ -51,6 +56,7 @@ EditorRenderAssetStatistics EditorRenderAssetRegistry::Statistics() const
         switch(a.readiness){case EditorRenderAssetReadiness::BoundsOnly:++s.boundsOnly;break;
         case EditorRenderAssetReadiness::StaticGeometryMetadataReady:++s.metadataReady;break;
         case EditorRenderAssetReadiness::StaticGeometryDecodeCandidate:++s.decodeCandidates;break;
+        case EditorRenderAssetReadiness::StaticGeometryDecoded:++s.decoded;break;
         case EditorRenderAssetReadiness::SkeletalDeferred:++s.skeletalDeferred;break;
         case EditorRenderAssetReadiness::Malformed:++s.malformed;break;default:++s.unsupported;break;}}
     return s;

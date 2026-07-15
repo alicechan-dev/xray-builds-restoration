@@ -17,5 +17,7 @@ face, VM-reference, surface-face, vmap, and smoothing-group records are walked
 only far enough to prove counts and layout. See
 [Build-1935 Object Mesh Format](wx-editor-object-mesh-format.md).
 
-Full vertex/index arrays, textures, shaders, motions, thumbnails, sounds, and
-renderer resources are not retained or loaded.
+The optional static geometry stage retains position/index arrays only after a
+visible, bounded cache request. Textures, UV binding, materials, shaders,
+motions, thumbnails, sounds, skeletal payloads, and GPU renderer resources are
+not retained or loaded.

@@ -7,6 +7,8 @@
 #include "editor_view/EditorMoveGizmo.h"
 #include "editor_app/EditorToolMode.h"
 #include "editor_assets/EditorAssetDescriptor.h"
+#include "editor_render/EditorRenderScene.h"
+#include "editor_render/EditorSoftwareWireframeRenderer.h"
 
 #include <memory>
 #include <functional>
@@ -15,6 +17,8 @@
 #include <wx/timer.h>
 
 class EditorTreeModel;
+class EditorRenderAssetRegistry;
+class EditorRenderGeometryCache;
 
 class wxEditorViewport final : public wxPanel
 {
@@ -28,12 +32,19 @@ public:
     void RebuildPreview(const EditorTreeModel& model,
         const std::string& selectedPath);
     void SetPreviewScene(EditorPreviewScene scene);
+    void SetRenderScene(EditorRenderScene scene,
+        EditorRenderAssetRegistry* assets,
+        EditorRenderGeometryCache* geometryCache);
     void TogglePreviewLabels();
     bool ArePreviewLabelsVisible() const;
     void ToggleObjectBounds();
     bool AreObjectBoundsVisible() const;
     void ToggleRenderAssetDiagnostics();
     bool AreRenderAssetDiagnosticsVisible() const;
+    void ToggleRealMeshWireframe();
+    bool IsRealMeshWireframeVisible() const { return wireframeVisible_; }
+    void ToggleBackfaceCulling();
+    bool IsBackfaceCullingEnabled() const { return backfaceCulling_; }
     bool FrameSelected();
     void ToggleMoveSnap();
     bool IsMoveSnapEnabled() const { return moveSnapEnabled_; }
@@ -66,7 +77,12 @@ private:
     void OnTimer(wxTimerEvent& event);
 
     EditorPreviewScene previewScene_;
+    EditorRenderScene renderScene_;
     EditorPreviewRenderer renderer_;
+    EditorSoftwareWireframeRenderer wireframeRenderer_;
+    EditorWireframeFrame wireframeFrame_;
+    EditorRenderAssetRegistry* renderAssets_ = nullptr;
+    EditorRenderGeometryCache* geometryCache_ = nullptr;
     EditorViewportController controller_;
     wxTimer timer_;
     std::function<void(const std::string&)> selectionHandler_;
@@ -83,6 +99,8 @@ private:
     EditorTransform placementDefaults_;
     EditorPreviewKind placementPreviewKind_ = EditorPreviewKind::Marker;
     bool moveSnapEnabled_ = false;
+    bool wireframeVisible_ = true;
+    bool backfaceCulling_ = false;
 };
 
 #endif
