@@ -93,3 +93,10 @@ Converted preview precedence is historical origin class first, then asset ID,
 then editable category. Consequently a category edit cannot erase the Glow,
 Light, Spawn Point, SceneObject box, or unsupported-placeholder diagnostic.
 New synthetic nodes continue to use asset/category behavior.
+
+Resolved historical SceneObjects now use a conservative rotation-safe display
+extent derived from real Object Library bounds and instance scale. The software
+preview still draws diagnostic boxes; no vertex/index payload is decoded or
+rendered. A parallel `EditorRenderScene` carries neutral instances for a future
+backend. See [Object Bounds Preview](wx-editor-object-bounds-preview.md) and
+[Render Scene Submission](wx-editor-render-scene-submission.md).

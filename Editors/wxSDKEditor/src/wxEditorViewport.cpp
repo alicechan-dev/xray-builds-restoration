@@ -112,6 +112,13 @@ bool wxEditorViewport::ArePreviewLabelsVisible() const
     return renderer_.LabelsVisible();
 }
 
+void wxEditorViewport::ToggleObjectBounds()
+{ renderer_.SetObjectBoundsVisible(!renderer_.ObjectBoundsVisible()); controller_.Render(); Refresh(false); }
+bool wxEditorViewport::AreObjectBoundsVisible() const { return renderer_.ObjectBoundsVisible(); }
+void wxEditorViewport::ToggleRenderAssetDiagnostics()
+{ renderer_.SetAssetDiagnosticsVisible(!renderer_.AssetDiagnosticsVisible()); controller_.Render(); Refresh(false); }
+bool wxEditorViewport::AreRenderAssetDiagnosticsVisible() const { return renderer_.AssetDiagnosticsVisible(); }
+
 bool wxEditorViewport::FrameSelected()
 {
     const EditorPreviewObject* selected =

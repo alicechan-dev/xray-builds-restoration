@@ -247,6 +247,9 @@ bool EditorTreePresenter::LoadObjectLibrary(const std::filesystem::path& root,
     EditorObjectLibraryLoader loader;
     if (!loader.Load(root, objectLibrary_, statistics, reason))
         return false;
+    if (!renderAssets_.Build(objectLibrary_, reason)) {
+        objectLibrary_.Clear(); return false;
+    }
     RefreshSelection();
     SetStatus("Loaded read-only Object Library metadata: " +
         std::to_string(statistics.entriesLoaded) + " entries.");
@@ -256,6 +259,7 @@ bool EditorTreePresenter::LoadObjectLibrary(const std::filesystem::path& root,
 void EditorTreePresenter::ClearObjectLibrary()
 {
     objectLibrary_.Clear();
+    renderAssets_.Clear();
     RefreshSelection();
     SetStatus("Cleared session-only Object Library metadata.");
 }
@@ -436,14 +440,17 @@ void EditorTreePresenter::RefreshSelection()
     }
     EditorObjectResolutionResult resolution;
     const EditorObjectResolutionResult* resolutionView = nullptr;
+    const EditorRenderObjectAsset* renderAsset = nullptr;
     if (node->HistoricalOrigin() &&
         !node->HistoricalOrigin()->referenceName.empty()) {
         resolution = ResolveObjectReference(objectLibrary_,
             node->HistoricalOrigin()->referenceName);
         resolutionView = &resolution;
+        if (resolution.state == EditorObjectResolutionState::Resolved)
+            renderAsset = renderAssets_.Find(resolution.matchedReferenceId);
     }
     properties_.ShowProperties(BuildEditorNodePropertySet(
-        *node, FindAsset(node->AssetId()), resolutionView));
+        *node, FindAsset(node->AssetId()), resolutionView, renderAsset));
 }
 
 void EditorTreePresenter::RefreshPreview() const
@@ -466,7 +473,7 @@ void EditorTreePresenter::RefreshPreview() const
         return;
     }
     previewChanged_(BuildEditorPreviewScene(
-        model, paths.empty() ? std::string() : paths.front()));
+        model, paths.empty() ? std::string() : paths.front(), &renderAssets_));
 }
 
 bool EditorTreePresenter::SelectLogicalPath(const std::string& logicalPath)

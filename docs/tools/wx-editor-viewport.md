@@ -61,3 +61,8 @@ snap defaults off. No real renderer or 3D gizmo is connected.
 The viewport overlay reports the current tool and prospective placement
 coordinates. Placement uses the inverse of the same wx-free projection used by
 drawing/picking; crosshair feedback is transient. Right drag remains camera-only.
+
+The View menu now exposes Object Bounds and Render Asset Diagnostics toggles.
+Projected bounds, picking, selection, and framing share the same conservative
+real-bounds extent when a reference resolves. This is still the wx software
+diagnostic renderer; no GPU backend or source mesh drawing is connected.

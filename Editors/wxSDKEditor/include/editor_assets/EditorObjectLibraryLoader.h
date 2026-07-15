@@ -17,6 +17,12 @@ struct EditorObjectLibraryLimits
     std::size_t maximumChunksPerFile = 100000;
     std::size_t maximumStringBytes = 16 * 1024;
     std::size_t maximumMetadataRecords = 100000;
+    std::size_t maximumMeshesPerObject = 4096;
+    std::size_t maximumVerticesPerMesh = 4000000;
+    std::size_t maximumFacesPerMesh = 4000000;
+    std::size_t maximumVMapsPerMesh = 65536;
+    std::size_t maximumVMReferencesPerMesh = 12000000;
+    std::size_t maximumVMapRecordsPerMesh = 12000000;
     std::size_t maximumRetainedReferences = 256;
     std::size_t maximumDiagnostics = 128;
 };

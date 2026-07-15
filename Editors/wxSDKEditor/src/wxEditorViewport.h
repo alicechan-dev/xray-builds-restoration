@@ -30,6 +30,10 @@ public:
     void SetPreviewScene(EditorPreviewScene scene);
     void TogglePreviewLabels();
     bool ArePreviewLabelsVisible() const;
+    void ToggleObjectBounds();
+    bool AreObjectBoundsVisible() const;
+    void ToggleRenderAssetDiagnostics();
+    bool AreRenderAssetDiagnosticsVisible() const;
     bool FrameSelected();
     void ToggleMoveSnap();
     bool IsMoveSnapEnabled() const { return moveSnapEnabled_; }

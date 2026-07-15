@@ -278,3 +278,7 @@ property controls.
 Conversion integrity/statistics and all new lifecycle tests remain below the
 same wx-free adapter boundary. They do not revive `TElTree`, `xrEProps`, VCL,
 or ElPack dependencies.
+
+The new mesh metadata, asset registry, render-scene submission, and real-bounds
+preview also remain below this boundary. They are wx-free value/model code and
+do not revive `TElTree`, `xrEProps`, VCL, ElPack, or the historical renderer.

@@ -81,8 +81,12 @@ private:
     void OnUpdateViewportGrid(wxUpdateUIEvent& event);
     void OnRebuildPreview(wxCommandEvent& event);
     void OnTogglePreviewLabels(wxCommandEvent& event);
+    void OnToggleObjectBounds(wxCommandEvent& event);
+    void OnToggleRenderAssetDiagnostics(wxCommandEvent& event);
     void OnFrameSelected(wxCommandEvent& event);
     void OnUpdatePreviewLabels(wxUpdateUIEvent& event);
+    void OnUpdateObjectBounds(wxUpdateUIEvent& event);
+    void OnUpdateRenderAssetDiagnostics(wxUpdateUIEvent& event);
     void OnToggleMoveSnap(wxCommandEvent& event);
     void OnUpdateMoveSnap(wxUpdateUIEvent& event);
     void OnSelectTool(wxCommandEvent& event);

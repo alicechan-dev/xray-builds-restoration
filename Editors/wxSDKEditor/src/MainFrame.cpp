@@ -61,6 +61,8 @@ enum
     IdFocusViewport,
     IdRebuildPreview,
     IdTogglePreviewLabels,
+    IdToggleObjectBounds,
+    IdToggleRenderAssetDiagnostics,
     IdFrameSelected,
     IdToggleMoveSnap,
     IdToolSelect,
@@ -145,6 +147,9 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendSeparator();
     viewMenu->Append(IdRebuildPreview, "&Rebuild Preview Scene");
     viewMenu->AppendCheckItem(IdTogglePreviewLabels, "Preview &Labels");
+    viewMenu->AppendCheckItem(IdToggleObjectBounds, "Object &Bounds");
+    viewMenu->AppendCheckItem(IdToggleRenderAssetDiagnostics,
+        "Render Asset &Diagnostics");
     viewMenu->Append(IdFrameSelected, "Frame &Selected");
     viewMenu->AppendCheckItem(IdToggleMoveSnap, "Snap Move To &Grid");
     menuBar->Append(viewMenu, "&View");
@@ -248,6 +253,14 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdFrameSelected);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdatePreviewLabels,
         this, IdTogglePreviewLabels);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleObjectBounds,
+        this, IdToggleObjectBounds);
+    Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleRenderAssetDiagnostics,
+        this, IdToggleRenderAssetDiagnostics);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateObjectBounds,
+        this, IdToggleObjectBounds);
+    Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateRenderAssetDiagnostics,
+        this, IdToggleRenderAssetDiagnostics);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleMoveSnap,
         this, IdToggleMoveSnap);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateMoveSnap,
@@ -702,6 +715,7 @@ void wxSDKEditorFrame::OnObjectLibrarySummary(wxCommandEvent&)
         dialogService_.Info("Object Library Summary", "No Object Library is loaded."); return;
     }
     const auto s = treePresenter_->ObjectLibraryStatistics();
+    const auto r = treePresenter_->RenderAssetStatistics();
     const std::string summary = "Entries: " + std::to_string(s.entries) +
         "\nSupported: " + std::to_string(s.supported) +
         "\nPartial: " + std::to_string(s.partial) +
@@ -709,7 +723,17 @@ void wxSDKEditorFrame::OnObjectLibrarySummary(wxCommandEvent&)
         "\nStatic: " + std::to_string(s.staticObjects) +
         "\nSkeletal: " + std::to_string(s.skeletalObjects) +
         "\nUnknown: " + std::to_string(s.unknownObjects) +
-        "\nDuplicate references: " + std::to_string(s.duplicateReferences);
+        "\nDuplicate references: " + std::to_string(s.duplicateReferences) +
+        "\n\nRender assets: " + std::to_string(r.assets) +
+        "\nBounds only: " + std::to_string(r.boundsOnly) +
+        "\nMetadata ready: " + std::to_string(r.metadataReady) +
+        "\nStatic decode candidates: " + std::to_string(r.decodeCandidates) +
+        "\nSkeletal deferred: " + std::to_string(r.skeletalDeferred) +
+        "\nUnsupported: " + std::to_string(r.unsupported) +
+        "\nMalformed: " + std::to_string(r.malformed) +
+        "\nMeshes: " + std::to_string(r.meshes) +
+        "\nVertices: " + std::to_string(r.vertices) +
+        "\nTriangles: " + std::to_string(r.triangles);
     dialogService_.Info("Object Library Summary", summary.c_str());
 }
 
@@ -976,6 +1000,11 @@ void wxSDKEditorFrame::OnTogglePreviewLabels(wxCommandEvent&)
     viewport_->TogglePreviewLabels();
 }
 
+void wxSDKEditorFrame::OnToggleObjectBounds(wxCommandEvent&)
+{ viewport_->ToggleObjectBounds(); }
+void wxSDKEditorFrame::OnToggleRenderAssetDiagnostics(wxCommandEvent&)
+{ viewport_->ToggleRenderAssetDiagnostics(); }
+
 void wxSDKEditorFrame::OnFrameSelected(wxCommandEvent&)
 {
     if (viewport_->FrameSelected())
@@ -988,6 +1017,11 @@ void wxSDKEditorFrame::OnUpdatePreviewLabels(wxUpdateUIEvent& event)
 {
     event.Check(viewport_ && viewport_->ArePreviewLabelsVisible());
 }
+
+void wxSDKEditorFrame::OnUpdateObjectBounds(wxUpdateUIEvent& event)
+{ event.Check(viewport_ && viewport_->AreObjectBoundsVisible()); }
+void wxSDKEditorFrame::OnUpdateRenderAssetDiagnostics(wxUpdateUIEvent& event)
+{ event.Check(viewport_ && viewport_->AreRenderAssetDiagnosticsVisible()); }
 
 void wxSDKEditorFrame::OnToggleMoveSnap(wxCommandEvent&)
 {

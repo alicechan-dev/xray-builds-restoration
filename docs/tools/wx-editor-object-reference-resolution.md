@@ -13,3 +13,8 @@ status. Loading or clearing a library changes only application-session state:
 it does not dirty the document, create command history, alter origin metadata,
 or modify snapshot v5.
 
+Resolved references now also index the session-only render asset registry.
+That lookup supplies renderer-neutral readiness and object bounds to properties
+and preview submission. The production audit resolved all 15,416 references;
+all had real bounds and none used fallback. Clearing the library clears this
+derived registry without changing the document.

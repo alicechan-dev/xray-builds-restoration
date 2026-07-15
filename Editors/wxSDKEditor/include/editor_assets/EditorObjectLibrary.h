@@ -8,6 +8,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include "editor_render/EditorRenderMeshMetadata.h"
 
 enum class EditorObjectKind { Static, Skeletal, Unknown };
 enum class EditorObjectParseStatus { Supported, Partial, Malformed };
@@ -25,6 +26,8 @@ struct EditorObjectLibraryEntry
     std::uint32_t flags = 0;
     EditorObjectKind kind = EditorObjectKind::Unknown;
     std::size_t meshCount = 0;
+    EditorRenderBounds bounds;
+    std::vector<EditorRenderMeshMetadata> meshes;
     std::size_t surfaceCount = 0;
     bool motionPresent = false;
     std::vector<std::string> textureReferences;

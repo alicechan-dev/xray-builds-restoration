@@ -7,6 +7,7 @@ class EditorTreeModel;
 class EditorTreeNode;
 struct EditorAssetDescriptor;
 struct EditorObjectResolutionResult;
+struct EditorRenderObjectAsset;
 
 class EditorPropertySet
 {
@@ -29,7 +30,8 @@ struct EditorPropertyApplyResult
 
 EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
     const EditorAssetDescriptor* resolvedAsset = nullptr,
-    const EditorObjectResolutionResult* objectResolution = nullptr);
+    const EditorObjectResolutionResult* objectResolution = nullptr,
+    const EditorRenderObjectAsset* renderAsset = nullptr);
 EditorPropertyApplyResult ApplyEditorNodeProperty(EditorTreeModel& model,
     EditorTreeNode& node, std::string_view key, std::string value);
 

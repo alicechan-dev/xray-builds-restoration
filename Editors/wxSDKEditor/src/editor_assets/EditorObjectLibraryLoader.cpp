@@ -6,6 +6,8 @@
 #include <fstream>
 #include <limits>
 #include <set>
+#include <cmath>
+#include <cstring>
 
 namespace
 {
@@ -56,6 +58,10 @@ public:
             (static_cast<std::uint32_t>(b[2]) << 16) |
             (static_cast<std::uint32_t>(b[3]) << 24); return true;
     }
+    bool U8(std::uint64_t offset, std::uint8_t& value)
+    { return ReadAt(offset, &value, 1); }
+    bool Float(std::uint64_t offset, float& value)
+    { std::uint32_t bits=0; if(!U32(offset,bits)) return false; std::memcpy(&value,&bits,4); return true; }
     bool CString(std::uint64_t& offset, std::uint64_t end, std::size_t limit,
         std::string& value)
     {
@@ -123,6 +129,83 @@ bool ParseSurfaces(FileReader& reader, const Chunk& chunk, bool version3,
     return true;
 }
 
+bool ParseMesh(FileReader& reader, const Chunk& wrapper, std::size_t meshIndex,
+    EditorRenderMeshMetadata& mesh, const EditorObjectLibraryLimits& limits)
+{
+    constexpr std::uint32_t VERSION=0x1000, NAME=0x1001, BBOX=0x1004,
+        VERTS=0x1005, FACES=0x1006, VMAPS0=0x1007, VMREFS=0x1008,
+        SFACE=0x1009, VMAPS1=0x1011, VMAPS2=0x1012, SG=0x1013;
+    mesh.meshIndex=meshIndex; mesh.meshId="mesh:"+std::to_string(meshIndex);
+    mesh.sourcePayloadSize=wrapper.size;
+    bool haveVersion=false,haveName=false,haveBounds=false,haveVerts=false,
+        haveFaces=false,haveVmrefs=false,haveSurface=false,haveVmaps=false;
+    std::uint64_t cursor=wrapper.begin,end=wrapper.begin+wrapper.size;
+    std::size_t chunkCount=0;
+    while(cursor<end){
+        if(++chunkCount>limits.maximumChunksPerFile){mesh.malformed=true;mesh.diagnostics.push_back("Mesh chunk limit exceeded.");return false;}
+        Chunk c;if(!ReadChunk(reader,cursor,end,c)){mesh.malformed=true;mesh.diagnostics.push_back("Truncated mesh chunk.");return false;}
+        const std::uint64_t ce=c.begin+c.size;
+        if(c.id==VERSION){haveVersion=c.size>=2&&reader.U16(c.begin,mesh.version);}
+        else if(c.id==NAME){std::uint64_t p=c.begin;haveName=reader.CString(p,ce,limits.maximumStringBytes,mesh.name);}
+        else if(c.id==BBOX){
+            haveBounds=c.size==24 && reader.Float(c.begin,mesh.bounds.minX)&&reader.Float(c.begin+4,mesh.bounds.minY)&&
+                reader.Float(c.begin+8,mesh.bounds.minZ)&&reader.Float(c.begin+12,mesh.bounds.maxX)&&
+                reader.Float(c.begin+16,mesh.bounds.maxY)&&reader.Float(c.begin+20,mesh.bounds.maxZ);
+            mesh.bounds.valid=haveBounds&&std::isfinite(mesh.bounds.minX)&&std::isfinite(mesh.bounds.minY)&&
+                std::isfinite(mesh.bounds.minZ)&&std::isfinite(mesh.bounds.maxX)&&std::isfinite(mesh.bounds.maxY)&&
+                std::isfinite(mesh.bounds.maxZ)&&mesh.bounds.minX<=mesh.bounds.maxX&&mesh.bounds.minY<=mesh.bounds.maxY&&mesh.bounds.minZ<=mesh.bounds.maxZ;
+            if(haveBounds&&!mesh.bounds.valid){mesh.malformed=true;mesh.diagnostics.push_back("Mesh bounds are non-finite or inverted.");}
+        }
+        else if(c.id==VERTS){
+            std::uint32_t count=0;haveVerts=c.size>=4&&reader.U32(c.begin,count)&&count<=limits.maximumVerticesPerMesh;
+            if(haveVerts){mesh.vertexCount=count;std::uint64_t p=c.begin+4;
+                const std::uint64_t points=static_cast<std::uint64_t>(count)*12;
+                if(points>ce-p){haveVerts=false;}else{p+=points;for(std::uint32_t i=0;i<count&&haveVerts;++i){std::uint8_t n=0;
+                    if(!reader.U8(p,n)){haveVerts=false;break;}++p;const std::uint64_t bytes=static_cast<std::uint64_t>(n)*4;
+                    if(bytes>ce-p){haveVerts=false;break;}p+=bytes;}haveVerts=haveVerts&&p==ce;}}
+        }
+        else if(c.id==FACES){std::uint32_t count=0;haveFaces=c.size>=4&&reader.U32(c.begin,count)&&count<=limits.maximumFacesPerMesh&&
+            c.size-4==static_cast<std::uint64_t>(count)*24;if(haveFaces)mesh.triangleCount=count;}
+        else if(c.id==VMREFS){std::uint32_t count=0;haveVmrefs=c.size>=4&&reader.U32(c.begin,count)&&count<=limits.maximumVMReferencesPerMesh;
+            std::uint64_t p=c.begin+4;for(std::uint32_t i=0;i<count&&haveVmrefs;++i){std::uint8_t n=0;haveVmrefs=reader.U8(p,n);p+=haveVmrefs?1:0;
+                const std::uint64_t bytes=static_cast<std::uint64_t>(n)*8;if(haveVmrefs&&bytes>ce-p)haveVmrefs=false;else p+=haveVmrefs?bytes:0;}haveVmrefs=haveVmrefs&&p==ce;}
+        else if(c.id==SFACE){std::uint16_t count=0;haveSurface=c.size>=2&&reader.U16(c.begin,count);std::uint64_t p=c.begin+2;
+            for(std::uint16_t i=0;i<count&&haveSurface;++i){std::string name;std::uint32_t faces=0;
+                haveSurface=reader.CString(p,ce,limits.maximumStringBytes,name)&&ce-p>=4&&reader.U32(p,faces);p+=haveSurface?4:0;
+                const std::uint64_t bytes=static_cast<std::uint64_t>(faces)*4;if(haveSurface&&(bytes>ce-p))haveSurface=false;else p+=haveSurface?bytes:0;}
+            haveSurface=haveSurface&&p==ce;if(haveSurface)mesh.surfaceSlotCount=count;}
+        else if(c.id==VMAPS2||c.id==VMAPS1||c.id==VMAPS0){std::uint32_t count=0;haveVmaps=c.size>=4&&reader.U32(c.begin,count)&&count<=limits.maximumVMapsPerMesh;
+            std::uint64_t p=c.begin+4;mesh.vmapCount=count;mesh.vmapFormat=c.id==VMAPS2?2:c.id==VMAPS1?1:0;
+            for(std::uint32_t i=0;i<count&&haveVmaps;++i){std::string name;std::uint8_t dim=2,poly=0,type=0;std::uint32_t records=0;
+                haveVmaps=reader.CString(p,ce,limits.maximumStringBytes,name);
+                if(c.id==VMAPS2){haveVmaps=haveVmaps&&ce-p>=7&&reader.U8(p,dim)&&reader.U8(p+1,poly)&&reader.U8(p+2,type)&&reader.U32(p+3,records);p+=haveVmaps?7:0;}
+                else if(c.id==VMAPS1){haveVmaps=haveVmaps&&ce-p>=6&&reader.U8(p,dim)&&reader.U8(p+1,type)&&reader.U32(p+2,records);p+=haveVmaps?6:0;}
+                else {haveVmaps=haveVmaps&&ce-p>=4&&reader.U32(p,records);p+=haveVmaps?4:0;}
+                if(!haveVmaps||dim==0||dim>4||records>limits.maximumVMapRecordsPerMesh){haveVmaps=false;break;}
+                if(type==0)++mesh.uvMapCount;else if(type==1)++mesh.weightMapCount;
+                std::uint64_t bytes=static_cast<std::uint64_t>(records)*dim*4;
+                if(c.id==VMAPS2)bytes+=static_cast<std::uint64_t>(records)*4+(poly?static_cast<std::uint64_t>(records)*4:0);
+                if(bytes>ce-p){haveVmaps=false;break;}p+=bytes;}
+            haveVmaps=haveVmaps&&p==ce;}
+        else if(c.id==SG){mesh.smoothingGroupsPresent=true; if(!haveFaces||c.size!=static_cast<std::uint64_t>(mesh.triangleCount)*4){mesh.malformed=true;mesh.diagnostics.push_back("Smoothing-group size does not match face count.");}}
+        else if(c.id!=0x1002&&c.id!=0x1003&&c.id!=0x1010){++mesh.unknownChunkCount;if(mesh.unknownChunkIds.size()<16)mesh.unknownChunkIds.push_back(c.id);}
+        cursor=ce;
+    }
+    mesh.countsValidated=haveVerts&&haveFaces&&haveVmrefs&&haveSurface&&haveVmaps;
+    mesh.supported=haveVersion&&mesh.version==0x0011&&haveName&&mesh.bounds.valid&&mesh.countsValidated;
+    if(!haveVersion)mesh.diagnostics.push_back("Missing mesh version metadata.");
+    else if(mesh.version!=0x0011)mesh.diagnostics.push_back("Unsupported mesh version.");
+    if(!haveName)mesh.diagnostics.push_back("Missing mesh name metadata.");
+    if(!mesh.bounds.valid)mesh.diagnostics.push_back("Missing or invalid mesh bounds metadata.");
+    if(!haveVerts)mesh.diagnostics.push_back("Invalid vertex metadata layout.");
+    if(!haveFaces)mesh.diagnostics.push_back("Invalid face metadata layout.");
+    if(!haveVmrefs)mesh.diagnostics.push_back("Invalid VM-reference metadata layout.");
+    if(!haveSurface)mesh.diagnostics.push_back("Invalid surface-face metadata layout.");
+    if(!haveVmaps)mesh.diagnostics.push_back("Invalid vertex-map metadata layout.");
+    if(!haveVerts||!haveFaces||!haveVmrefs||!haveSurface||!haveVmaps)mesh.malformed=true;
+    return !mesh.malformed;
+}
+
 bool ParseObject(const std::filesystem::path& path, std::uint64_t fileSize,
     EditorObjectLibraryEntry& entry, const EditorObjectLibraryLimits& limits,
     std::uint64_t& bytesRead)
@@ -181,7 +264,7 @@ bool ParseObject(const std::filesystem::path& path, std::uint64_t fileSize,
         case kMeshes: {
             std::uint64_t meshCursor = chunk.begin, meshEnd = chunk.begin + chunk.size;
             while (meshCursor < meshEnd) {
-                if (entry.meshCount >= limits.maximumMetadataRecords) {
+                if (entry.meshCount >= limits.maximumMeshesPerObject) {
                     AddDiagnostic(entry, "Mesh count exceeds the configured limit.", limits);
                     bytesRead += reader.BytesRead(); return false;
                 }
@@ -190,6 +273,10 @@ bool ParseObject(const std::filesystem::path& path, std::uint64_t fileSize,
                     AddDiagnostic(entry, "Malformed mesh container; mesh payload was not read.", limits);
                     bytesRead += reader.BytesRead(); return false;
                 }
+                EditorRenderMeshMetadata metadata;
+                ParseMesh(reader, mesh, entry.meshCount, metadata, limits);
+                MergeEditorRenderBounds(entry.bounds, metadata.bounds);
+                entry.meshes.push_back(std::move(metadata));
                 ++entry.meshCount; meshCursor = mesh.begin + mesh.size;
             }
             break; }
@@ -205,6 +292,8 @@ bool ParseObject(const std::filesystem::path& path, std::uint64_t fileSize,
     }
     entry.kind = (skeletal || (entry.flags & kDynamicFlag)) ?
         EditorObjectKind::Skeletal : EditorObjectKind::Static;
+    for (auto& mesh : entry.meshes) mesh.skeletal = entry.kind == EditorObjectKind::Skeletal;
+    for (const auto& mesh : entry.meshes) if (mesh.malformed) partial = true;
     entry.parseStatus = partial ? EditorObjectParseStatus::Partial :
         EditorObjectParseStatus::Supported;
     bytesRead += reader.BytesRead(); return true;

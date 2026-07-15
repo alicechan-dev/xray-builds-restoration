@@ -73,8 +73,10 @@ std::vector<EditorPreviewPickShape> BuildEditorPreviewPickShapes(
         shape.centerY = point.y;
         if (object.kind == EditorPreviewKind::Box)
         {
-            shape.halfWidth = 14.0f;
-            shape.halfHeight = 10.0f;
+            shape.halfWidth = object.realBounds ?
+                (std::clamp)(object.sizeX * context.scale * 0.5f, 4.0f, 240.0f) : 14.0f;
+            shape.halfHeight = object.realBounds ?
+                (std::clamp)(object.sizeZ * context.scale * 0.5f, 4.0f, 240.0f) : 10.0f;
         }
         else if (object.kind == EditorPreviewKind::Light ||
             object.kind == EditorPreviewKind::HistoricalLight ||

@@ -374,3 +374,12 @@ Headless tests include command-history corruption cases and a 20,000-node
 model. A read-only 17-scene conversion/reload audit passed all 22,767 records
 with zero integrity/reload/equivalence failures and zero source-file changes.
 Minor class decoders and `.level` export remain deferred.
+
+The opt-in wxSDKEditor now has a renderer-neutral asset checkpoint. Its bounded
+read-only decoder inventories 627 assets, 2,418 meshes, 7,686,510 vertices, and
+12,447,670 triangles. The registry classifies 583 static geometry decode
+candidates and defers 44 skeletal assets. All 15,416 audited SceneObject
+references receive real bounds in neutral scene submissions and the diagnostic
+preview. Real geometry rendering, textures, shaders, thumbnails, and GPU
+resources are not implemented. The next recommended step is a standalone
+software wireframe backend over a separately audited static geometry decoder.

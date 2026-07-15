@@ -14,6 +14,10 @@ public:
     void SetScene(const EditorPreviewScene* scene) { scene_ = scene; }
     void SetLabelsVisible(bool visible) { labelsVisible_ = visible; }
     bool LabelsVisible() const { return labelsVisible_; }
+    void SetObjectBoundsVisible(bool value) { objectBoundsVisible_ = value; }
+    bool ObjectBoundsVisible() const { return objectBoundsVisible_; }
+    void SetAssetDiagnosticsVisible(bool value) { assetDiagnosticsVisible_ = value; }
+    bool AssetDiagnosticsVisible() const { return assetDiagnosticsVisible_; }
     const EditorViewportDrawList& DrawList() const { return drawList_; }
     EditorPreviewPickResult Pick(float x, float y) const;
     EditorPreviewProjectedPoint SelectedPoint() const;
@@ -31,6 +35,8 @@ private:
     const EditorPreviewScene* scene_ = nullptr;
     EditorViewportDrawList drawList_;
     bool labelsVisible_ = true;
+    bool objectBoundsVisible_ = true;
+    bool assetDiagnosticsVisible_ = false;
     int width_ = 0;
     int height_ = 0;
     EditorPreviewProjectionContext projection_;

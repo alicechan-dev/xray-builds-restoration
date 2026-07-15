@@ -438,3 +438,11 @@ statistics, deterministic snapshot-v5 round trips, a 20,000-node stress test,
 origin-first preview semantics, read-only property grouping, and `Tools ->
 Historical Conversion Summary...`. No minor decoder, `.level` writer, runtime
 asset loading, or historical editor linkage was added.
+
+The renderer-asset boundary checkpoint decodes bounded build-1935 mesh metadata,
+builds a session-only registry, submits renderer-neutral instances, and uses
+real Object Library bounds in the diagnostic preview. The lawful inventory is
+627 assets, 2,418 meshes, 7,686,510 vertices, and 12,447,670 triangles: 583
+static decode candidates and 44 skeletal assets deferred. No source geometry,
+textures, shaders, thumbnails, GPU resources, runtime renderer, or `.level`
+writer was added. See [Render Asset Boundary](wx-editor-render-asset-boundary.md).

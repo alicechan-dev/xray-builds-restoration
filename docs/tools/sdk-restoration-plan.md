@@ -692,3 +692,11 @@ production round trip. Continue to keep conversion one-way: no `.level`
 writer, opaque payload copy, runtime asset/entity construction, or minor class
 decoder was introduced. A future stage may choose one separately audited minor
 class only after this checkpoint is committed and reviewed.
+
+The renderer-asset boundary is now ready for review: source-confirmed mesh
+metadata, transactional asset registry, renderer-neutral scene instances, and
+real-bounds diagnostic preview are covered by headless tests and lawful
+read-only production audits. Do not connect runtime renderers or decode skeletal
+geometry next. First add a bounded static position/index decoder and standalone
+software wireframe backend; keep textures, shaders, thumbnails, materials, and
+GPU ownership as later independent stages.

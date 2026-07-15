@@ -8,6 +8,7 @@
 #include "editor_assets/EditorAssetSelectionModel.h"
 #include "editor_assets/EditorObjectLibraryLoader.h"
 #include "editor_assets/EditorObjectLibraryResolver.h"
+#include "editor_render/EditorRenderAssetRegistry.h"
 #include "editor_scene/EditorHistoricalConversionPolicy.h"
 
 #include <cstddef>
@@ -92,6 +93,8 @@ public:
     const EditorObjectLibrary& ObjectLibrary() const { return objectLibrary_; }
     EditorObjectLibraryStatistics ObjectLibraryStatistics() const
     { return BuildEditorObjectLibraryStatistics(objectLibrary_); }
+    EditorRenderAssetStatistics RenderAssetStatistics() const
+    { return renderAssets_.Statistics(); }
     const EditorAssetCatalog& AssetCatalog() const { return assetCatalog_; }
     const EditorAssetDescriptor* SelectedAsset() const;
     std::string ResolvePlacementParentPath() const;
@@ -134,6 +137,7 @@ private:
     EditorAssetCatalog importedAssetCatalog_;
     EditorAssetSelectionModel assetSelection_;
     EditorObjectLibrary objectLibrary_;
+    EditorRenderAssetRegistry renderAssets_;
 };
 
 #endif

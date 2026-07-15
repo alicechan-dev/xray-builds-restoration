@@ -28,6 +28,8 @@ struct EditorPreviewObject
     EditorPreviewKind kind = EditorPreviewKind::Unknown;
     bool selected = false;
     bool visible = true;
+    bool realBounds = false;
+    std::string renderAssetDiagnostic;
 };
 
 class EditorPreviewScene

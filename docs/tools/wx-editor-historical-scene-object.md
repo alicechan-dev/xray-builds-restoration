@@ -59,5 +59,7 @@ records.
 The class-6 Spawn Point branch likewise leaves this class-2 result unchanged.
 
 Converted SceneObject provenance now survives editable command history and v5
-round trips. Preview remains a generic origin-class box/reference diagnostic;
-the object-library reference is never resolved.
+round trips. When a lawful Object Library is explicitly loaded, its normalized
+reference may resolve session-only to renderer-neutral metadata and real bounds.
+The preview remains a diagnostic box rather than source geometry, and clearing
+the library restores safe fallback behavior.

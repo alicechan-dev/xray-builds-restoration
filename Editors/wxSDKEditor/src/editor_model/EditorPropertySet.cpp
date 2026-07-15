@@ -3,6 +3,7 @@
 #include "editor_assets/EditorAssetDescriptor.h"
 #include "editor_assets/EditorImportedPrototype.h"
 #include "editor_assets/EditorObjectLibraryResolver.h"
+#include "editor_render/EditorRenderAsset.h"
 #include "editor_model/EditorItemType.h"
 #include "editor_model/EditorTreeModel.h"
 
@@ -66,7 +67,8 @@ const EditorProperty* EditorPropertySet::Find(std::string_view key) const
 
 EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
     const EditorAssetDescriptor* resolvedAsset,
-    const EditorObjectResolutionResult* objectResolution)
+    const EditorObjectResolutionResult* objectResolution,
+    const EditorRenderObjectAsset* renderAsset)
 {
     EditorPropertySet properties;
     properties.Add(MakeProperty("label", "Label", EditorPropertyType::String,
@@ -182,6 +184,27 @@ EditorPropertySet BuildEditorNodePropertySet(const EditorTreeNode& node,
                     properties.Add(MakeProperty("object_library.parse_status",
                         "Parse Status", EditorPropertyType::ReadOnlyText,
                         ToString(entry.parseStatus), true, "Bounded metadata parser status."));
+                    if (renderAsset) {
+                        properties.Add(MakeProperty("object_library.render_asset",
+                            "Render Asset", EditorPropertyType::ReadOnlyText,
+                            ToString(renderAsset->readiness), true,
+                            "Renderer-neutral readiness; no GPU resource exists."));
+                        properties.Add(MakeProperty("object_library.geometry_counts",
+                            "Vertices / Triangles", EditorPropertyType::ReadOnlyText,
+                            std::to_string(renderAsset->totalVertices) + " / " +
+                                std::to_string(renderAsset->totalTriangles), true,
+                            "Validated metadata counts; geometry payloads remain unloaded."));
+                        properties.Add(MakeProperty("object_library.real_bounds",
+                            "Object Bounds", EditorPropertyType::ReadOnlyText,
+                            renderAsset->bounds.valid ?
+                                std::to_string(renderAsset->bounds.minX)+", "+
+                                std::to_string(renderAsset->bounds.minY)+", "+
+                                std::to_string(renderAsset->bounds.minZ)+" -> "+
+                                std::to_string(renderAsset->bounds.maxX)+", "+
+                                std::to_string(renderAsset->bounds.maxY)+", "+
+                                std::to_string(renderAsset->bounds.maxZ) : "unavailable",
+                            true, "Union of source-confirmed mesh AABBs."));
+                    }
                 }
                 else if (!objectResolution->reason.empty())
                     properties.Add(MakeProperty("object_library.reason",

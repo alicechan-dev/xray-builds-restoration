@@ -118,3 +118,7 @@ Converted editable properties are visually grouped under `Editable` and
 the editable controls. Source scene filename, class, original name, index,
 offset, stable ID, status, disposition, references, and warnings are display
 only.
+
+Resolved SceneObjects also show render readiness, mesh/vertex/triangle totals,
+and finite object-space bounds from the session registry. These fields are
+read-only and disappear safely when the Object Library is cleared.

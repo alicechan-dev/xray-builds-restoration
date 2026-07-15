@@ -49,8 +49,14 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
 
         const EditorViewportStyle style = StyleFor(object.kind);
         if (object.kind == EditorPreviewKind::Box)
+        {
+            const float halfWidth = object.realBounds && objectBoundsVisible_ ?
+                (std::clamp)(object.sizeX * projection_.scale * 0.5f, 4.0f, 240.0f) : 14.0f;
+            const float halfHeight = object.realBounds && objectBoundsVisible_ ?
+                (std::clamp)(object.sizeZ * projection_.scale * 0.5f, 4.0f, 240.0f) : 10.0f;
             drawList_.Add({EditorViewportPrimitiveType::Rectangle, style,
-                x - 14.0f, y - 10.0f, x + 14.0f, y + 10.0f});
+                x - halfWidth, y - halfHeight, x + halfWidth, y + halfHeight});
+        }
         else if (object.kind == EditorPreviewKind::Light ||
             object.kind == EditorPreviewKind::HistoricalLight ||
             object.kind == EditorPreviewKind::Glow)
@@ -93,6 +99,10 @@ void EditorPreviewRenderer::Render(const EditorViewportState& state)
             drawList_.Add({EditorViewportPrimitiveType::Text,
                 EditorViewportStyle::Label, x + 18.0f, y - 8.0f,
                 0.0f, 0.0f, 0.0f, object.label});
+        if (assetDiagnosticsVisible_ && !object.renderAssetDiagnostic.empty())
+            drawList_.Add({EditorViewportPrimitiveType::Text,
+                EditorViewportStyle::Label, x + 18.0f, y + 9.0f,
+                0.0f, 0.0f, 0.0f, object.renderAssetDiagnostic});
     }
 
     if (placementPreview_.valid)

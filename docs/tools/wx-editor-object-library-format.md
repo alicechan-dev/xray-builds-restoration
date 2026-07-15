@@ -11,7 +11,11 @@ surface count, motion presence, static/skeletal classification, and inert
 texture/shader/material strings from confirmed surface layouts. Legacy v1
 surface records are retained as partial. Unknown chunks are counted.
 
-Object bounds are deliberately unavailable: build-1935 `UpdateBox()` derives
-them after loading mesh payloads. Vertex/index data, meshes, textures,
-shaders, motions, thumbnails, sounds, and renderer resources are never loaded.
+Mesh metadata is now decoded from the exact preserved `EditMeshIO.cpp` layout.
+Per-mesh `0x1004` boxes are validated and merged into object bounds; vertex,
+face, VM-reference, surface-face, vmap, and smoothing-group records are walked
+only far enough to prove counts and layout. See
+[Build-1935 Object Mesh Format](wx-editor-object-mesh-format.md).
 
+Full vertex/index arrays, textures, shaders, motions, thumbnails, sounds, and
+renderer resources are not retained or loaded.

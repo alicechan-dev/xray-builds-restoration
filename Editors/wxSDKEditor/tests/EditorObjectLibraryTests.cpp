@@ -4,12 +4,17 @@
 #include "editor_model/EditorPropertySet.h"
 #include "editor_model/EditorTreeModel.h"
 #include "editor_model/EditorTreeSnapshot.h"
+#include "editor_render/EditorRenderAssetRegistry.h"
+#include "editor_render/EditorRenderScene.h"
+#include "editor_view/EditorTreePreviewAdapter.h"
 
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <vector>
 
 namespace
@@ -17,6 +22,7 @@ namespace
 using Bytes = std::vector<unsigned char>;
 void U16(Bytes& out, std::uint16_t value) { out.push_back(value & 255); out.push_back(value >> 8); }
 void U32(Bytes& out, std::uint32_t value) { for (int i=0;i<4;++i) out.push_back((value >> (i*8)) & 255); }
+void F32(Bytes& out, float value) { std::uint32_t bits=0; std::memcpy(&bits,&value,4); U32(out,bits); }
 void Z(Bytes& out, const char* value) { while (*value) out.push_back(*value++); out.push_back(0); }
 void Chunk(Bytes& out, std::uint32_t id, const Bytes& payload)
 { U32(out,id); U32(out,static_cast<std::uint32_t>(payload.size())); out.insert(out.end(),payload.begin(),payload.end()); }
@@ -30,7 +36,20 @@ Bytes ValidObject()
     Z(payload,"default"); Z(payload,"materials\\default");
     Z(payload,"textures\\brick"); Z(payload,"Texture");
     U32(payload,0); U32(payload,0); U32(payload,1); Chunk(body,0x0907,payload); payload.clear();
-    Bytes mesh; Chunk(payload,0,mesh); Chunk(body,0x0910,payload);
+    Bytes mesh, meshPayload;
+    U16(meshPayload,0x0011); Chunk(mesh,0x1000,meshPayload); meshPayload.clear();
+    Z(meshPayload,"mesh"); Chunk(mesh,0x1001,meshPayload); meshPayload.clear();
+    F32(meshPayload,-1);F32(meshPayload,-2);F32(meshPayload,-3);
+    F32(meshPayload,1);F32(meshPayload,2);F32(meshPayload,3);
+    Chunk(mesh,0x1004,meshPayload);meshPayload.clear();
+    U32(meshPayload,3);for(int i=0;i<9;++i)F32(meshPayload,0);meshPayload.push_back(0);meshPayload.push_back(0);meshPayload.push_back(0);
+    Chunk(mesh,0x1005,meshPayload);meshPayload.clear();
+    U32(meshPayload,1);for(int i=0;i<6;++i)U32(meshPayload,0);Chunk(mesh,0x1006,meshPayload);meshPayload.clear();
+    U32(meshPayload,3);meshPayload.push_back(0);meshPayload.push_back(0);meshPayload.push_back(0);Chunk(mesh,0x1008,meshPayload);meshPayload.clear();
+    U16(meshPayload,1);Z(meshPayload,"surface");U32(meshPayload,1);U32(meshPayload,0);Chunk(mesh,0x1009,meshPayload);meshPayload.clear();
+    U32(meshPayload,1);Z(meshPayload,"Texture");meshPayload.push_back(2);meshPayload.push_back(0);meshPayload.push_back(0);U32(meshPayload,3);
+    for(int i=0;i<6;++i)F32(meshPayload,0);for(int i=0;i<3;++i)U32(meshPayload,i);Chunk(mesh,0x1012,meshPayload);
+    Chunk(payload,0,mesh); Chunk(body,0x0910,payload);
     Bytes file; Chunk(file,0x7777,body); return file;
 }
 bool Write(const std::filesystem::path& path, const Bytes& bytes)
@@ -74,6 +93,9 @@ int RunEditorObjectLibraryTests()
         failures += Check(entry.referenceId == "buildings\\house", "stable reference");
         failures += Check(entry.version == 0x0010 && entry.meshCount == 1 &&
             entry.surfaceCount == 1, "confirmed metadata");
+        failures += Check(entry.bounds.valid && entry.meshes.size()==1 &&
+            entry.meshes[0].vertexCount==3 && entry.meshes[0].triangleCount==1 &&
+            entry.meshes[0].supported, "mesh metadata and bounds");
         failures += Check(entry.textureReferences.size() == 1 &&
             entry.shaderReferences.size() == 2 && entry.materialReferences.size() == 1,
             "inert surface references");
@@ -85,6 +107,13 @@ int RunEditorObjectLibraryTests()
         EditorObjectResolutionState::Missing, "missing reference");
     failures += Check(ResolveObjectReference(library,"..\\bad").state ==
         EditorObjectResolutionState::Invalid, "invalid reference");
+    EditorRenderAssetRegistry registry;
+    failures += Check(registry.Build(library,&reason),"registry build");
+    const auto* renderAsset=registry.Find("buildings\\house");
+    failures += Check(renderAsset && renderAsset->readiness==
+        EditorRenderAssetReadiness::StaticGeometryDecodeCandidate &&
+        renderAsset->totalVertices==3 && renderAsset->totalTriangles==1,
+        "render asset readiness");
     EditorTreeModel model;
     auto& modelRoot = model.CreateRoot("Scene");
     auto& node = model.AddChild(modelRoot, "house", "historical",
@@ -107,9 +136,24 @@ int RunEditorObjectLibraryTests()
     const auto propertyResolution = ResolveObjectReference(library,
         node.HistoricalOrigin()->referenceName);
     const auto properties = BuildEditorNodePropertySet(node, nullptr,
-        &propertyResolution);
+        &propertyResolution, renderAsset);
     failures += Check(properties.Find("object_library.resolution") &&
         properties.Find("object_library.matched_id"), "resolution properties");
+    failures += Check(properties.Find("object_library.render_asset") &&
+        properties.Find("object_library.real_bounds"), "render asset properties");
+    const auto preview=BuildEditorPreviewScene(model,node.Path(),&registry);
+    const auto* previewObject=preview.FindByLogicalPath(node.Path());
+    failures += Check(previewObject&&previewObject->realBounds&&previewObject->sizeX>1.0f&&
+        previewObject->selected,"resolved asset preview bounds and selection");
+    const auto renderScene=BuildEditorRenderScene(model,registry,node.Path());
+    failures += Check(renderScene.Instances().size()==1&&
+        !renderScene.Instances()[0].fallback&&renderScene.Instances()[0].selected&&
+        renderScene.Instances()[0].logicalPath==node.Path(),"renderer-neutral submission");
+    registry.Clear();
+    const auto fallbackPreview=BuildEditorPreviewScene(model,node.Path(),&registry);
+    failures += Check(fallbackPreview.FindByLogicalPath(node.Path())&&
+        !fallbackPreview.FindByLogicalPath(node.Path())->realBounds,
+        "registry clear restores fallback preview");
     failures += Check(SerializeEditorTreeSnapshot(model, after, &reason) &&
         before == after, "session resolution leaves snapshot unchanged");
 #ifndef _WIN32
@@ -140,6 +184,26 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
     if (!EditorObjectLibraryLoader().Load(libraryRoot, library, load, &reason)) {
         std::cerr << "Object Library audit load failed: " << reason << '\n'; return 2;
     }
+    EditorRenderAssetRegistry registry;
+    if(!registry.Build(library,&reason)){std::cerr<<"Registry build failed: "<<reason<<'\n';return 2;}
+    const auto rs=registry.Statistics();
+    std::size_t staticObjects=0,skeletalObjects=0,totalMeshes=0,totalVertices=0,totalTriangles=0;
+    std::size_t minMeshes=library.Entries().empty()?0:static_cast<std::size_t>(-1),maxMeshes=0;
+    std::size_t minVertices=static_cast<std::size_t>(-1),maxVertices=0,minTriangles=static_cast<std::size_t>(-1),maxTriangles=0;
+    std::size_t malformedMeshes=0,unknownMeshChunks=0,sgMeshes=0,vmap0=0,vmap1=0,vmap2=0,uvMaps=0,weightMaps=0;
+    std::uint64_t largestMeshPayload=0;std::map<std::uint16_t,std::size_t> meshVersions;
+    std::map<std::string,std::size_t> meshDiagnostics;
+    std::map<std::uint32_t,std::size_t> unknownMeshIds;
+    for(const auto& e:library.Entries()){
+        staticObjects+=e.kind==EditorObjectKind::Static;skeletalObjects+=e.kind==EditorObjectKind::Skeletal;
+        minMeshes=(std::min)(minMeshes,e.meshes.size());maxMeshes=(std::max)(maxMeshes,e.meshes.size());totalMeshes+=e.meshes.size();
+        for(const auto& m:e.meshes){++meshVersions[m.version];totalVertices+=m.vertexCount;totalTriangles+=m.triangleCount;
+            minVertices=(std::min)(minVertices,m.vertexCount);maxVertices=(std::max)(maxVertices,m.vertexCount);
+            minTriangles=(std::min)(minTriangles,m.triangleCount);maxTriangles=(std::max)(maxTriangles,m.triangleCount);
+            malformedMeshes+=m.malformed;unknownMeshChunks+=m.unknownChunkCount;sgMeshes+=m.smoothingGroupsPresent;
+            vmap0+=m.vmapFormat==0;vmap1+=m.vmapFormat==1;vmap2+=m.vmapFormat==2;uvMaps+=m.uvMapCount;weightMaps+=m.weightMapCount;
+            largestMeshPayload=(std::max)(largestMeshPayload,m.sourcePayloadSize);
+            for(const auto& d:m.diagnostics)++meshDiagnostics[d];for(auto id:m.unknownChunkIds)++unknownMeshIds[id];}}
     std::vector<std::filesystem::path> scenes;
     std::error_code error;
     for (std::filesystem::recursive_directory_iterator it(sceneRoot, error), end;
@@ -153,6 +217,21 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
         << "\nsupported=" << load.supported << "\npartial=" << load.partial
         << "\nmalformed=" << load.malformed << "\nduplicates=" << load.duplicateReferences
         << "\nsource_bytes=" << load.sourceBytes << "\nmetadata_bytes_read=" << load.bytesRead << '\n';
+    std::cout<<"static_objects="<<staticObjects<<"\nskeletal_objects="<<skeletalObjects
+        <<"\ntotal_meshes="<<totalMeshes<<"\nmeshes_per_object_min="<<minMeshes<<"\nmeshes_per_object_max="<<maxMeshes
+        <<"\ntotal_vertices="<<totalVertices<<"\nvertices_min="<<(minVertices==static_cast<std::size_t>(-1)?0:minVertices)
+        <<"\nvertices_max="<<maxVertices<<"\ntotal_triangles="<<totalTriangles
+        <<"\ntriangles_min="<<(minTriangles==static_cast<std::size_t>(-1)?0:minTriangles)<<"\ntriangles_max="<<maxTriangles
+        <<"\nmalformed_meshes="<<malformedMeshes<<"\nunknown_mesh_chunks="<<unknownMeshChunks
+        <<"\nsmoothing_group_meshes="<<sgMeshes<<"\nvmap0_meshes="<<vmap0<<"\nvmap1_meshes="<<vmap1<<"\nvmap2_meshes="<<vmap2
+        <<"\nuv_maps="<<uvMaps<<"\nweight_maps="<<weightMaps<<"\nlargest_mesh_payload="<<largestMeshPayload<<'\n';
+    for(const auto& v:meshVersions)std::cout<<"mesh_version_"<<v.first<<'='<<v.second<<'\n';
+    for(const auto& d:meshDiagnostics)std::cout<<"mesh_diagnostic="<<d.first<<" count="<<d.second<<'\n';
+    for(const auto& id:unknownMeshIds)std::cout<<"unknown_mesh_chunk_0x"<<std::hex<<id.first<<std::dec<<'='<<id.second<<'\n';
+    std::cout<<"registry_assets="<<rs.assets<<"\nbounds_only="<<rs.boundsOnly<<"\nmetadata_ready="<<rs.metadataReady
+        <<"\ndecode_candidates="<<rs.decodeCandidates<<"\nskeletal_deferred="<<rs.skeletalDeferred
+        <<"\nasset_unsupported="<<rs.unsupported<<"\nasset_malformed="<<rs.malformed<<'\n';
+    std::size_t boundsInstances=0,fallbackInstances=0,partialReferences=0;
     for (const auto& scene : scenes) {
         EditorSceneManifest manifest;
         if (!EditorHistoricalSceneProbe().ProbeSceneFile(scene, manifest, &reason)) {
@@ -165,6 +244,9 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
             const auto result = ResolveObjectReference(
                 library, object.bodyDecode.sceneObject.referenceName);
             Accumulate(perScene, result.state); Accumulate(aggregate, result.state);
+            if(result.entry&&result.entry->parseStatus==EditorObjectParseStatus::Partial)++partialReferences;
+            const auto* asset=result.entry?registry.Find(result.entry->referenceId):nullptr;
+            if(asset&&asset->bounds.valid)++boundsInstances;else ++fallbackInstances;
         }
         std::cout << "scene=" << scene.filename().string() << " queried=" << perScene.queried
             << " resolved=" << perScene.resolved << " missing=" << perScene.missing
@@ -173,5 +255,7 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
     std::cout << "scenes=" << scenes.size() << "\nreferences_queried=" << aggregate.queried
         << "\nresolved=" << aggregate.resolved << "\nmissing=" << aggregate.missing
         << "\nambiguous=" << aggregate.ambiguous << "\ninvalid=" << aggregate.invalid << '\n';
+    std::cout<<"scene_instances_with_bounds="<<boundsInstances<<"\nscene_fallback_instances="<<fallbackInstances
+        <<"\npartial_entry_references="<<partialReferences<<'\n';
     return 0;
 }

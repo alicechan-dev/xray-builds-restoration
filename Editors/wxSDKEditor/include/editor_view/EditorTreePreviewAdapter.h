@@ -6,8 +6,10 @@
 #include <string>
 
 class EditorTreeModel;
+class EditorRenderAssetRegistry;
 
 EditorPreviewScene BuildEditorPreviewScene(const EditorTreeModel& model,
-    const std::string& selectedPath = {});
+    const std::string& selectedPath = {},
+    const EditorRenderAssetRegistry* assets = nullptr);
 
 #endif

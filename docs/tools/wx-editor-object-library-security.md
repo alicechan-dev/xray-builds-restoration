@@ -13,3 +13,8 @@ no filesystem access after loading.
 No object files, indexes, reports, snapshots, dumps, logs, or external assets
 belong in version control.
 
+Mesh-specific caps are 4,096 meshes per object, 4,000,000 vertices or faces
+per mesh, 65,536 vertex maps, and 12,000,000 VM-reference or vmap records per
+mesh. Single files are capped at 96 MiB, the selected library at 2 GiB, strings
+at 16 KiB, and diagnostics remain bounded. Count products and aggregate totals
+are overflow checked; bounds must be finite and ordered.
