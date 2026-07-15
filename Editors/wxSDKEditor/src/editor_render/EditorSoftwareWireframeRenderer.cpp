@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <unordered_set>
 
 namespace
@@ -132,35 +133,67 @@ bool ClipScreen(Point2& a, Point2& b, float width, float height)
     return true;
 }
 
-bool CoarselyVisible(const EditorRenderInstance& instance,
+struct VisibilityResult
+{
+    EditorWireframeWorldBounds worldBounds;
+    Point3 cameraCenter;
+    EditorWireframeCullReason reason = EditorWireframeCullReason::None;
+};
+
+VisibilityResult EvaluateVisibility(const EditorRenderInstance& instance,
     const EditorWireframeCamera& camera)
 {
-    if (!instance.visible || !instance.objectBounds.valid ||
-        !instance.transform.IsFinite())
-        return false;
-    const auto& bounds = instance.objectBounds;
-    const EditorGeometryPosition localCenter{
-        (bounds.minX + bounds.maxX) * 0.5f,
-        (bounds.minY + bounds.maxY) * 0.5f,
-        (bounds.minZ + bounds.maxZ) * 0.5f};
-    const Point3 center = ToView(TransformPosition(localCenter,
-        instance.transform), camera);
-    const float ex = (bounds.maxX - bounds.minX) * 0.5f *
-        std::fabs(instance.transform.sx);
-    const float ey = (bounds.maxY - bounds.minY) * 0.5f *
-        std::fabs(instance.transform.sy);
-    const float ez = (bounds.maxZ - bounds.minZ) * 0.5f *
-        std::fabs(instance.transform.sz);
-    const float radius = std::sqrt(ex * ex + ey * ey + ez * ez);
-    if (center.z + radius < camera.nearPlane ||
-        center.z - radius > camera.farPlane)
-        return false;
+    VisibilityResult result;
+    if (!instance.visible)
+    {
+        result.reason = EditorWireframeCullReason::Hidden;
+        return result;
+    }
+    if (!instance.objectBounds.valid)
+    {
+        result.reason = EditorWireframeCullReason::InvalidBounds;
+        return result;
+    }
+    if (!instance.transform.IsFinite())
+    {
+        result.reason = EditorWireframeCullReason::InvalidTransform;
+        return result;
+    }
+    result.worldBounds = ComputeEditorWireframeWorldBounds(instance);
+    if (!result.worldBounds.valid)
+    {
+        result.reason = EditorWireframeCullReason::InvalidBounds;
+        return result;
+    }
+    result.cameraCenter = ToView({result.worldBounds.center.x,
+        result.worldBounds.center.y, result.worldBounds.center.z}, camera);
+    if (result.cameraCenter.z + result.worldBounds.radius < camera.nearPlane)
+    {
+        result.reason = EditorWireframeCullReason::BehindNearPlane;
+        return result;
+    }
+    if (result.cameraCenter.z - result.worldBounds.radius > camera.farPlane)
+    {
+        result.reason = EditorWireframeCullReason::BeyondFarPlane;
+        return result;
+    }
     const float tanY = std::tan(DegreesToRadians(camera.verticalFovDegrees) * 0.5f);
     const float tanX = tanY * static_cast<float>(camera.viewportWidth) /
         static_cast<float>(camera.viewportHeight);
-    const float depth = (std::max)(center.z, camera.nearPlane);
-    return std::fabs(center.x) <= depth * tanX + radius &&
-        std::fabs(center.y) <= depth * tanY + radius;
+    const float depth = (std::max)(result.cameraCenter.z, camera.nearPlane);
+    if (std::fabs(result.cameraCenter.x) >
+        depth * tanX + result.worldBounds.radius)
+    {
+        result.reason = EditorWireframeCullReason::OutsideHorizontalFov;
+        return result;
+    }
+    if (std::fabs(result.cameraCenter.y) >
+        depth * tanY + result.worldBounds.radius)
+    {
+        result.reason = EditorWireframeCullReason::OutsideVerticalFov;
+        return result;
+    }
+    return result;
 }
 
 bool AddEdge(const Point3& first, const Point3& second,
@@ -180,6 +213,79 @@ bool AddEdge(const Point3& first, const Point3& second,
     frame.lines.push_back({p0.x, p0.y, p1.x, p1.y, selected});
     return true;
 }
+}
+
+const char* ToString(EditorWireframeCullReason reason)
+{
+    switch (reason)
+    {
+    case EditorWireframeCullReason::None: return "visible";
+    case EditorWireframeCullReason::Hidden: return "hidden";
+    case EditorWireframeCullReason::InvalidBounds: return "invalid-bounds";
+    case EditorWireframeCullReason::InvalidTransform: return "invalid-transform";
+    case EditorWireframeCullReason::BehindNearPlane: return "behind-near-plane";
+    case EditorWireframeCullReason::BeyondFarPlane: return "beyond-far-plane";
+    case EditorWireframeCullReason::OutsideHorizontalFov: return "outside-horizontal-fov";
+    case EditorWireframeCullReason::OutsideVerticalFov: return "outside-vertical-fov";
+    }
+    return "unknown";
+}
+
+EditorWireframeWorldBounds ComputeEditorWireframeWorldBounds(
+    const EditorRenderInstance& instance)
+{
+    EditorWireframeWorldBounds result;
+    if (!instance.objectBounds.valid || !instance.transform.IsFinite())
+        return result;
+    const auto& bounds = instance.objectBounds;
+    result.minimum = {std::numeric_limits<float>::max(),
+        std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    result.maximum = {std::numeric_limits<float>::lowest(),
+        std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest()};
+    std::array<Point3, 8> corners;
+    std::size_t index = 0;
+    for (float x : {bounds.minX, bounds.maxX})
+        for (float y : {bounds.minY, bounds.maxY})
+            for (float z : {bounds.minZ, bounds.maxZ})
+            {
+                const Point3 world = TransformPosition({x, y, z},
+                    instance.transform);
+                corners[index++] = world;
+                result.minimum.x = (std::min)(result.minimum.x, world.x);
+                result.minimum.y = (std::min)(result.minimum.y, world.y);
+                result.minimum.z = (std::min)(result.minimum.z, world.z);
+                result.maximum.x = (std::max)(result.maximum.x, world.x);
+                result.maximum.y = (std::max)(result.maximum.y, world.y);
+                result.maximum.z = (std::max)(result.maximum.z, world.z);
+            }
+    result.center = {(result.minimum.x + result.maximum.x) * 0.5f,
+        (result.minimum.y + result.maximum.y) * 0.5f,
+        (result.minimum.z + result.maximum.z) * 0.5f};
+    for (const Point3& corner : corners)
+    {
+        const float dx = corner.x - result.center.x;
+        const float dy = corner.y - result.center.y;
+        const float dz = corner.z - result.center.z;
+        result.radius = (std::max)(result.radius,
+            std::sqrt(dx * dx + dy * dy + dz * dz));
+    }
+    result.valid = std::isfinite(result.center.x) &&
+        std::isfinite(result.center.y) && std::isfinite(result.center.z) &&
+        std::isfinite(result.radius);
+    return result;
+}
+
+EditorWireframeCameraBasis ComputeEditorWireframeCameraBasis(
+    const EditorWireframeCamera& camera)
+{
+    const float yaw = DegreesToRadians(camera.yawDegrees);
+    const float pitch = DegreesToRadians(camera.pitchDegrees);
+    const float cy = std::cos(yaw);
+    const float sy = std::sin(yaw);
+    const float cp = std::cos(pitch);
+    const float sp = std::sin(pitch);
+    return {{cy, 0.0f, -sy}, {-sp * sy, cp, -sp * cy},
+        {cp * sy, sp, cp * cy}};
 }
 
 bool EditorWireframeCamera::IsValid() const
@@ -228,7 +334,28 @@ EditorWireframeFrame EditorSoftwareWireframeRenderer::Render(
     for (const auto* instance : ordered)
     {
         ++frame.statistics.consideredInstances;
-        if (!CoarselyVisible(*instance, camera))
+        const VisibilityResult visibility = EvaluateVisibility(*instance, camera);
+        if (instance->selected)
+        {
+            EditorWireframeSelectedDiagnostic& diagnostic =
+                frame.selectedDiagnostic;
+            diagnostic.present = true;
+            diagnostic.logicalPath = instance->logicalPath;
+            diagnostic.assetId = instance->assetId;
+            diagnostic.transform = instance->transform;
+            diagnostic.objectBounds = instance->objectBounds;
+            diagnostic.worldBounds = visibility.worldBounds;
+            diagnostic.cameraBasis = ComputeEditorWireframeCameraBasis(camera);
+            diagnostic.cameraSpaceCenter = {visibility.cameraCenter.x,
+                visibility.cameraCenter.y, visibility.cameraCenter.z};
+            diagnostic.cullReason = visibility.reason;
+            if (const EditorRenderObjectAsset* asset = assets.Find(instance->assetId))
+            {
+                diagnostic.assetResolved = true;
+                diagnostic.readiness = asset->readiness;
+            }
+        }
+        if (visibility.reason != EditorWireframeCullReason::None)
         {
             ++frame.statistics.culledInstances;
             continue;
@@ -249,6 +376,8 @@ EditorWireframeFrame EditorSoftwareWireframeRenderer::Render(
         std::string decodeReason;
         const EditorStaticAssetGeometry* geometry =
             cache.Request(*asset, &decodeReason);
+        if (instance->selected)
+            frame.selectedDiagnostic.readiness = asset->readiness;
         if (!geometry)
         {
             ++frame.statistics.decodeFailures;

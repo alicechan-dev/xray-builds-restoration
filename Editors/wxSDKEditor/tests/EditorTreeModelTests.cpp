@@ -855,9 +855,13 @@ int RunEditorObjectLibraryTests();
 int RunEditorStaticMeshTests();
 int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
     const std::filesystem::path& sceneRoot);
+int DiagnoseFramedObject(const std::filesystem::path& libraryRoot,
+    const std::filesystem::path& sceneFile, const std::string& objectName);
 
 int main(int argc, char** argv)
 {
+    if (argc == 5 && std::string(argv[1]) == "--diagnose-framed-object")
+        return DiagnoseFramedObject(argv[2], argv[3], argv[4]);
     if (argc == 4 && std::string(argv[1]) == "--audit-object-library")
         return AuditEditorObjectLibrary(argv[2], argv[3]);
     if (argc == 3 && std::string(argv[1]) == "--audit-scenes")

@@ -3,6 +3,7 @@
 #include "editor_view/IEditorViewportRenderer.h"
 
 #include <algorithm>
+#include <cmath>
 
 EditorViewportController::EditorViewportController(
     IEditorViewportRenderer* renderer) : renderer_(renderer)
@@ -115,10 +116,20 @@ void EditorViewportController::ResetCamera()
     ClearInput();
 }
 
-void EditorViewportController::FrameCameraOn(float x, float, float z)
+void EditorViewportController::FrameCameraOn(
+    float x, float y, float z, float radius)
 {
+    constexpr float halfVerticalFovRadians = 0.52359877559829887308f;
+    const float safeRadius = std::isfinite(radius) && radius > 0.0f
+        ? radius : 1.0f;
+    const float distance = (std::max)(2.0f,
+        safeRadius / std::tan(halfVerticalFovRadians) + safeRadius);
     state_.camera.x = x;
-    state_.camera.z = z;
+    state_.camera.y = y;
+    state_.camera.z = z - distance;
+    state_.camera.yaw = 0.0f;
+    state_.camera.pitch = 0.0f;
+    ClearInput();
 }
 
 std::string EditorViewportController::OnPrimaryClick(int x, int y) const

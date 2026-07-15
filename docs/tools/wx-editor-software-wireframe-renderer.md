@@ -14,7 +14,11 @@ on; `View -> Wireframe Backface Culling` is independent. Existing Object Bounds
 remain the fallback for missing, unsupported, skeletal, failed, or budgeted
 assets.
 
+The overlay includes one bounded selected-instance diagnostic block with the
+logical path, asset/readiness, local and transformed bounds, camera basis,
+camera-space center, depth range, and exact coarse-culling result. It does not
+write per-frame log output.
+
 Picking remains the stable projected-bounds policy. Triangle and face picking,
 filled rasterization, depth buffers, textures, materials, normals, shaders,
 skeletal meshes, and GPU resources are deferred.
-

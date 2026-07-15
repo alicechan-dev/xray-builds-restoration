@@ -6,6 +6,7 @@
 #include "editor_render/EditorRenderGeometryCache.h"
 #include "editor_render/EditorRenderScene.h"
 #include "editor_render/EditorSoftwareWireframeRenderer.h"
+#include "editor_view/EditorViewportController.h"
 
 #include <chrono>
 #include <cmath>
@@ -256,6 +257,39 @@ int RunEditorStaticMeshTests()
     failures += Check(frame.validCamera && frame.statistics.trianglesSubmitted == 1 &&
         frame.lines.size() == 3 && frame.lines[0].selected,
         "triangle emits three selected semantic segments");
+    const EditorWireframeCameraBasis zeroYawBasis =
+        ComputeEditorWireframeCameraBasis(Camera());
+    failures += Check(zeroYawBasis.right.x == 1.0f &&
+        zeroYawBasis.up.y == 1.0f && zeroYawBasis.forward.z == 1.0f,
+        "X-Ray editor mapping is Y-up with yaw zero looking along positive Z");
+
+    const EditorWireframeWorldBounds framedBounds =
+        ComputeEditorWireframeWorldBounds(instance);
+    EditorViewportController framedController;
+    framedController.OnResize(800, 600);
+    framedController.FrameCameraOn(framedBounds.center.x,
+        framedBounds.center.y, framedBounds.center.z, framedBounds.radius);
+    const EditorWireframeCamera framedCamera =
+        MakeEditorWireframeCamera(framedController.State());
+    const auto framed = renderer.Render(scene, registry, cache,
+        framedCamera, false);
+    failures += Check(framed.selectedDiagnostic.present &&
+        framed.selectedDiagnostic.cameraSpaceCenter.z > framedCamera.nearPlane &&
+        framed.selectedDiagnostic.cullReason == EditorWireframeCullReason::None &&
+        framed.statistics.visibleInstances == 1 &&
+        framed.statistics.decodedAssets == 1 && !framed.lines.empty(),
+        "framed selected target is in front, survives culling, and renders");
+
+    EditorRenderScene behindScene;
+    EditorRenderInstance behind = instance;
+    behind.transform.z = -7.0f;
+    behindScene.Add(behind);
+    const auto behindFrame = renderer.Render(behindScene, registry, cache,
+        Camera(), false);
+    failures += Check(behindFrame.statistics.culledInstances == 1 &&
+        behindFrame.selectedDiagnostic.cullReason ==
+            EditorWireframeCullReason::BehindNearPlane,
+        "object wholly behind camera is coarsely culled with a reason");
     const float originalX = frame.lines[0].x1;
     EditorRenderScene translatedScene;
     instance.transform.x = 1.0f;
@@ -272,7 +306,9 @@ int RunEditorStaticMeshTests()
     const auto transformed = renderer.Render(transformedScene, registry, cache,
         Camera(), false);
     failures += Check(!transformed.lines.empty() &&
-        transformed.lines[0].x1 != originalX, "rotation and scale affect projection");
+        transformed.lines[0].x1 != originalX &&
+        transformed.statistics.visibleInstances == 1,
+        "rotated and scaled bounds remain visible and affect projection");
 
     auto* quadAsset = registry.Find("quad");
     EditorRenderScene quadScene;
@@ -330,6 +366,15 @@ int RunEditorStaticMeshTests()
     missingScene.Add(missing);
     failures += Check(renderer.Render(missingScene, registry, cache, Camera(), false)
         .statistics.fallbackBounds == 1, "missing asset keeps bounds fallback");
+    EditorRenderScene partialScene;
+    partialScene.Add(Instance(*registeredTriangle));
+    partialScene.Add(missing);
+    const auto partialFrame = renderer.Render(partialScene, registry, cache,
+        Camera(), false);
+    failures += Check(!partialFrame.lines.empty() &&
+        partialFrame.statistics.decodedAssets == 1 &&
+        partialFrame.statistics.fallbackBounds == 1,
+        "partial Object Library renders matching references and falls back for missing ones");
     auto* skeletalAsset = registry.Find("skeletal");
     EditorRenderScene skeletalScene; skeletalScene.Add(Instance(*skeletalAsset));
     failures += Check(renderer.Render(skeletalScene, registry, cache, Camera(), false)

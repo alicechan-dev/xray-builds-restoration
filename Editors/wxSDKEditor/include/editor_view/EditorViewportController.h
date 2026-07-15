@@ -43,7 +43,7 @@ public:
     void Render();
     void ToggleGrid();
     void ResetCamera();
-    void FrameCameraOn(float x, float y, float z);
+    void FrameCameraOn(float x, float y, float z, float radius);
     void SetPickHandler(std::function<std::string(int, int)> handler)
     { pickHandler_ = std::move(handler); }
     std::string OnPrimaryClick(int x, int y) const;

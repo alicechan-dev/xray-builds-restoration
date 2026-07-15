@@ -366,7 +366,8 @@ The presenter now rebuilds a flat wx-free preview from current model paths and
 selection. Stable pre-order produces deterministic synthetic grid positions;
 the wx-free software renderer emits semantic draw-list primitives, and the wx
 surface paints them over the existing grid. Labels can be toggled and Frame
-Selected centers the placeholder camera. Preview data is derived only and does
+Selected frames the transformed asset bounds with a Y-up, positive-Z
+perspective camera. Preview data is derived only and does
 not alter snapshots or document dirtiness. See [wxSDKEditor Preview
 Scene](wx-editor-preview-scene.md).
 

@@ -5,6 +5,7 @@
 #include "editor_render/EditorRenderAssetRegistry.h"
 #include "editor_render/EditorRenderGeometryCache.h"
 
+#include <algorithm>
 #include <utility>
 #include <wx/dcbuffer.h>
 
@@ -141,7 +142,22 @@ bool wxEditorViewport::FrameSelected()
         previewScene_.FindByLogicalPath(previewScene_.SelectedPath());
     if (!selected)
         return false;
-    controller_.FrameCameraOn(selected->x, selected->y, selected->z);
+    const EditorRenderInstance* renderInstance = nullptr;
+    for (const EditorRenderInstance& candidate : renderScene_.Instances())
+        if (candidate.logicalPath == previewScene_.SelectedPath())
+        {
+            renderInstance = &candidate;
+            break;
+        }
+    const EditorWireframeWorldBounds bounds = renderInstance
+        ? ComputeEditorWireframeWorldBounds(*renderInstance)
+        : EditorWireframeWorldBounds{};
+    if (bounds.valid)
+        controller_.FrameCameraOn(bounds.center.x, bounds.center.y,
+            bounds.center.z, bounds.radius);
+    else
+        controller_.FrameCameraOn(selected->x, selected->y, selected->z,
+            (std::max)({selected->sizeX, selected->sizeY, selected->sizeZ}) * 0.5f);
     Refresh(false);
     return true;
 }
@@ -303,15 +319,52 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
             wireframeFrame_.statistics.fallbackBounds,
             wireframeFrame_.statistics.budgetSkippedObjects,
             wireframeFrame_.statistics.decodeFailures), 12, 114);
+    if (wireframeVisible_ && wireframeFrame_.selectedDiagnostic.present)
+    {
+        const auto& diagnostic = wireframeFrame_.selectedDiagnostic;
+        const auto& camera = MakeEditorWireframeCamera(state);
+        dc.DrawText(wxString::Format(
+            "Selected: %s asset=%s resolved=%d ready=%s cull=%s",
+            wxString::FromUTF8(diagnostic.logicalPath),
+            wxString::FromUTF8(diagnostic.assetId), diagnostic.assetResolved,
+            ToString(diagnostic.readiness), ToString(diagnostic.cullReason)),
+            12, 134);
+        dc.DrawText(wxString::Format(
+            "Object pos=(%.2f,%.2f,%.2f) local=[(%.2f,%.2f,%.2f)-(%.2f,%.2f,%.2f)]",
+            diagnostic.transform.x, diagnostic.transform.y, diagnostic.transform.z,
+            diagnostic.objectBounds.minX, diagnostic.objectBounds.minY,
+            diagnostic.objectBounds.minZ, diagnostic.objectBounds.maxX,
+            diagnostic.objectBounds.maxY, diagnostic.objectBounds.maxZ), 12, 154);
+        dc.DrawText(wxString::Format(
+            "World center=(%.2f,%.2f,%.2f) bounds=[(%.2f,%.2f,%.2f)-(%.2f,%.2f,%.2f)]",
+            diagnostic.worldBounds.center.x, diagnostic.worldBounds.center.y,
+            diagnostic.worldBounds.center.z, diagnostic.worldBounds.minimum.x,
+            diagnostic.worldBounds.minimum.y, diagnostic.worldBounds.minimum.z,
+            diagnostic.worldBounds.maximum.x, diagnostic.worldBounds.maximum.y,
+            diagnostic.worldBounds.maximum.z), 12, 174);
+        dc.DrawText(wxString::Format(
+            "Camera=(%.2f,%.2f,%.2f) yaw=%.1f pitch=%.1f view-center=(%.2f,%.2f,%.2f) near/far=%.2f/%.0f",
+            camera.x, camera.y, camera.z, camera.yawDegrees,
+            camera.pitchDegrees, diagnostic.cameraSpaceCenter.x,
+            diagnostic.cameraSpaceCenter.y, diagnostic.cameraSpaceCenter.z,
+            camera.nearPlane, camera.farPlane), 12, 194);
+        dc.DrawText(wxString::Format(
+            "Basis R=(%.2f,%.2f,%.2f) U=(%.2f,%.2f,%.2f) F=(%.2f,%.2f,%.2f)",
+            diagnostic.cameraBasis.right.x, diagnostic.cameraBasis.right.y,
+            diagnostic.cameraBasis.right.z, diagnostic.cameraBasis.up.x,
+            diagnostic.cameraBasis.up.y, diagnostic.cameraBasis.up.z,
+            diagnostic.cameraBasis.forward.x, diagnostic.cameraBasis.forward.y,
+            diagnostic.cameraBasis.forward.z), 12, 214);
+    }
     if (placementPreview_.valid)
     {
         dc.DrawText(wxString::Format("Place: %.2f, %.2f, %.2f",
             placementPreview_.x, placementPreview_.y, placementPreview_.z),
-            12, wireframeVisible_ ? 134 : 114);
+            12, wireframeVisible_ ? 234 : 114);
         if (!placementAssetName_.empty())
             dc.DrawText("Asset: " + wxString::FromUTF8(placementAssetName_ +
                 " (" + placementAssetId_ + ")"), 12,
-                wireframeVisible_ ? 154 : 134);
+                wireframeVisible_ ? 254 : 134);
     }
 }
 

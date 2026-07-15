@@ -1,6 +1,7 @@
 #include "editor_assets/EditorObjectLibraryLoader.h"
 #include "editor_assets/EditorObjectLibraryResolver.h"
 #include "editor_scene/EditorHistoricalSceneProbe.h"
+#include "editor_scene/EditorHistoricalSceneDocument.h"
 #include "editor_model/EditorPropertySet.h"
 #include "editor_model/EditorTreeModel.h"
 #include "editor_model/EditorTreeSnapshot.h"
@@ -10,6 +11,7 @@
 #include "editor_render/EditorRenderGeometryCache.h"
 #include "editor_render/EditorSoftwareWireframeRenderer.h"
 #include "editor_view/EditorTreePreviewAdapter.h"
+#include "editor_view/EditorViewportController.h"
 
 #include <algorithm>
 #include <chrono>
@@ -152,6 +154,37 @@ int RunEditorObjectLibraryTests()
     failures += Check(renderScene.Instances().size()==1&&
         !renderScene.Instances()[0].fallback&&renderScene.Instances()[0].selected&&
         renderScene.Instances()[0].logicalPath==node.Path(),"renderer-neutral submission");
+    EditorSceneManifest historicalManifest;
+    historicalManifest.hasVersion = true;
+    historicalManifest.version = 5;
+    historicalManifest.sourceFile = "fixture.level";
+    EditorSceneObjectRecord historicalObject;
+    historicalObject.recordIndex = 7;
+    historicalObject.sourceOffset = 100;
+    historicalObject.hasClassId = true;
+    historicalObject.classId = 2;
+    historicalObject.hasName = true;
+    historicalObject.name = "house_0000";
+    historicalObject.hasTransform = true;
+    historicalObject.scale = {1.0f, 1.0f, 1.0f};
+    historicalObject.bodyDecode.status =
+        EditorHistoricalObjectDecodeStatus::Supported;
+    historicalObject.bodyDecode.hasSceneObject = true;
+    historicalObject.bodyDecode.sceneObject.referenceName = "Buildings/House";
+    historicalManifest.objects.push_back(historicalObject);
+    EditorHistoricalSceneDocument historicalDocument;
+    failures += Check(historicalDocument.BuildFromManifest(
+        std::move(historicalManifest), &reason), "read-only historical document");
+    const std::string stableId = historicalDocument.Objects().front().stableRecordId;
+    const auto historicalRenderScene = BuildHistoricalRenderScene(
+        historicalDocument, registry, stableId);
+    failures += Check(historicalRenderScene.Instances().size() == 1 &&
+        historicalRenderScene.Instances()[0].logicalPath == stableId &&
+        historicalRenderScene.Instances()[0].selected &&
+        historicalRenderScene.Instances()[0].assetId == "buildings\\house" &&
+        historicalRenderScene.Instances()[0].objectBounds.valid &&
+        !historicalRenderScene.Instances()[0].fallback,
+        "read-only historical scene submits resolved render asset bounds");
     registry.Clear();
     const auto fallbackPreview=BuildEditorPreviewScene(model,node.Path(),&registry);
     failures += Check(fallbackPreview.FindByLogicalPath(node.Path())&&
@@ -319,4 +352,134 @@ int AuditEditorObjectLibrary(const std::filesystem::path& libraryRoot,
         <<"\nwireframe_sample_budget_skipped="<<sampleBudgetSkipped
         <<"\nwireframe_sample_decode_failures="<<sampleFailures<<'\n';
     return 0;
+}
+
+int DiagnoseFramedObject(const std::filesystem::path& libraryRoot,
+    const std::filesystem::path& sceneFile, const std::string& objectName)
+{
+    EditorObjectLibrary library;
+    EditorObjectLibraryLoadStatistics load;
+    std::string reason;
+    if (!EditorObjectLibraryLoader().Load(libraryRoot, library, load, &reason))
+    {
+        std::cerr << "Object Library load failed: " << reason << '\n';
+        return 2;
+    }
+    EditorRenderAssetRegistry registry;
+    if (!registry.Build(library, &reason))
+    {
+        std::cerr << "Registry build failed: " << reason << '\n';
+        return 2;
+    }
+    EditorSceneManifest manifest;
+    if (!EditorHistoricalSceneProbe().ProbeSceneFile(sceneFile, manifest, &reason))
+    {
+        std::cerr << "Scene probe failed: " << reason << '\n';
+        return 2;
+    }
+    const EditorSceneObjectRecord* selected = nullptr;
+    for (const EditorSceneObjectRecord& object : manifest.objects)
+        if (object.hasName && object.name == objectName)
+        {
+            selected = &object;
+            break;
+        }
+    if (!selected || !selected->hasTransform ||
+        !selected->bodyDecode.hasSceneObject)
+    {
+        std::cerr << "Named transformed SceneObject was not found.\n";
+        return 2;
+    }
+    const auto resolution = ResolveObjectReference(library,
+        selected->bodyDecode.sceneObject.referenceName);
+    const EditorRenderObjectAsset* asset = resolution.entry
+        ? registry.Find(resolution.entry->referenceId) : nullptr;
+    if (!asset || !asset->bounds.valid)
+    {
+        std::cerr << "Selected reference did not resolve to valid bounds.\n";
+        return 2;
+    }
+    EditorRenderInstance instance;
+    instance.logicalPath = selected->name;
+    instance.assetId = asset->assetId;
+    instance.objectBounds = asset->bounds;
+    instance.readiness = asset->readiness;
+    instance.fallback = false;
+    instance.selected = true;
+    instance.transform.x = selected->position[0];
+    instance.transform.y = selected->position[1];
+    instance.transform.z = selected->position[2];
+    instance.transform.pitch = selected->rotation[0];
+    instance.transform.yaw = selected->rotation[1];
+    instance.transform.roll = selected->rotation[2];
+    instance.transform.sx = selected->scale[0];
+    instance.transform.sy = selected->scale[1];
+    instance.transform.sz = selected->scale[2];
+    EditorRenderScene scene;
+    scene.Add(instance);
+    EditorRenderGeometryCache cache;
+    cache.Bind(library.Root(), &registry);
+    EditorSoftwareWireframeRenderer renderer;
+    EditorWireframeCamera before;
+    before.viewportWidth = 557;
+    before.viewportHeight = 774;
+    before.x = instance.transform.x;
+    before.y = 1.0f;
+    before.z = instance.transform.z;
+    const EditorWireframeFrame beforeFrame = renderer.Render(scene, registry,
+        cache, before, false);
+    const EditorWireframeWorldBounds worldBounds =
+        ComputeEditorWireframeWorldBounds(instance);
+    EditorViewportController controller;
+    controller.OnResize(557, 774);
+    controller.FrameCameraOn(worldBounds.center.x, worldBounds.center.y,
+        worldBounds.center.z, worldBounds.radius);
+    const EditorWireframeCamera after =
+        MakeEditorWireframeCamera(controller.State());
+    const EditorWireframeFrame afterFrame = renderer.Render(scene, registry,
+        cache, after, false);
+    const auto print = [](const char* prefix, const EditorWireframeCamera& camera,
+        const EditorWireframeFrame& frame)
+    {
+        const auto& d = frame.selectedDiagnostic;
+        std::cout << prefix << "_logical_path=" << d.logicalPath
+            << '\n' << prefix << "_asset_id=" << d.assetId
+            << '\n' << prefix << "_resolved=" << d.assetResolved
+            << '\n' << prefix << "_readiness=" << ToString(d.readiness)
+            << '\n' << prefix << "_transform=" << d.transform.x << ','
+            << d.transform.y << ',' << d.transform.z
+            << '\n' << prefix << "_object_bounds=" << d.objectBounds.minX << ','
+            << d.objectBounds.minY << ',' << d.objectBounds.minZ << ':'
+            << d.objectBounds.maxX << ',' << d.objectBounds.maxY << ','
+            << d.objectBounds.maxZ
+            << '\n' << prefix << "_world_bounds=" << d.worldBounds.minimum.x << ','
+            << d.worldBounds.minimum.y << ',' << d.worldBounds.minimum.z << ':'
+            << d.worldBounds.maximum.x << ',' << d.worldBounds.maximum.y << ','
+            << d.worldBounds.maximum.z
+            << '\n' << prefix << "_world_center=" << d.worldBounds.center.x << ','
+            << d.worldBounds.center.y << ',' << d.worldBounds.center.z
+            << '\n' << prefix << "_camera=" << camera.x << ',' << camera.y << ','
+            << camera.z << ',' << camera.yawDegrees << ',' << camera.pitchDegrees
+            << '\n' << prefix << "_basis_right=" << d.cameraBasis.right.x << ','
+            << d.cameraBasis.right.y << ',' << d.cameraBasis.right.z
+            << '\n' << prefix << "_basis_up=" << d.cameraBasis.up.x << ','
+            << d.cameraBasis.up.y << ',' << d.cameraBasis.up.z
+            << '\n' << prefix << "_basis_forward=" << d.cameraBasis.forward.x << ','
+            << d.cameraBasis.forward.y << ',' << d.cameraBasis.forward.z
+            << '\n' << prefix << "_camera_center=" << d.cameraSpaceCenter.x << ','
+            << d.cameraSpaceCenter.y << ',' << d.cameraSpaceCenter.z
+            << '\n' << prefix << "_near_far=" << camera.nearPlane << ','
+            << camera.farPlane
+            << '\n' << prefix << "_cull=" << ToString(d.cullReason)
+            << '\n' << prefix << "_visible=" << frame.statistics.visibleInstances
+            << '\n' << prefix << "_decoded=" << frame.statistics.decodedAssets
+            << '\n' << prefix << "_triangles=" << frame.statistics.trianglesSubmitted
+            << '\n' << prefix << "_lines=" << frame.statistics.linesDrawn << '\n';
+    };
+    print("before", before, beforeFrame);
+    print("after", after, afterFrame);
+    return afterFrame.statistics.visibleInstances > 0 &&
+        afterFrame.statistics.decodedAssets > 0 &&
+        afterFrame.statistics.trianglesSubmitted > 0 &&
+        afterFrame.statistics.linesDrawn > 0 ? 0 : 3;
 }

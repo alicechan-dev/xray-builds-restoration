@@ -2,8 +2,11 @@
 #define XR_WX_SDK_EDITOR_EDITOR_SOFTWARE_WIREFRAME_RENDERER_H
 
 #include "editor_render/EditorGeometryBuffer.h"
+#include "editor_render/EditorRenderAsset.h"
+#include "editor_model/EditorTransform.h"
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 class EditorRenderAssetRegistry;
@@ -35,6 +38,59 @@ struct EditorWireframeBudget
     std::size_t maximumLines = 450000;
 };
 
+struct EditorWireframeVector3
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+};
+
+struct EditorWireframeWorldBounds
+{
+    EditorWireframeVector3 minimum;
+    EditorWireframeVector3 maximum;
+    EditorWireframeVector3 center;
+    float radius = 0.0f;
+    bool valid = false;
+};
+
+struct EditorWireframeCameraBasis
+{
+    EditorWireframeVector3 right;
+    EditorWireframeVector3 up;
+    EditorWireframeVector3 forward;
+};
+
+enum class EditorWireframeCullReason
+{
+    None,
+    Hidden,
+    InvalidBounds,
+    InvalidTransform,
+    BehindNearPlane,
+    BeyondFarPlane,
+    OutsideHorizontalFov,
+    OutsideVerticalFov
+};
+
+const char* ToString(EditorWireframeCullReason reason);
+
+struct EditorWireframeSelectedDiagnostic
+{
+    bool present = false;
+    bool assetResolved = false;
+    std::string logicalPath;
+    std::string assetId;
+    EditorRenderAssetReadiness readiness =
+        EditorRenderAssetReadiness::Unsupported;
+    EditorTransform transform;
+    EditorRenderBounds objectBounds;
+    EditorWireframeWorldBounds worldBounds;
+    EditorWireframeCameraBasis cameraBasis;
+    EditorWireframeVector3 cameraSpaceCenter;
+    EditorWireframeCullReason cullReason = EditorWireframeCullReason::None;
+};
+
 struct EditorWireframeLine
 {
     float x1 = 0.0f;
@@ -63,10 +119,15 @@ struct EditorWireframeFrame
     EditorWireframeStatistics statistics;
     bool validCamera = false;
     bool budgetExceeded = false;
+    EditorWireframeSelectedDiagnostic selectedDiagnostic;
 };
 
 EditorWireframeCamera MakeEditorWireframeCamera(
     const EditorViewportState& state);
+EditorWireframeWorldBounds ComputeEditorWireframeWorldBounds(
+    const EditorRenderInstance& instance);
+EditorWireframeCameraBasis ComputeEditorWireframeCameraBasis(
+    const EditorWireframeCamera& camera);
 
 class EditorSoftwareWireframeRenderer
 {
