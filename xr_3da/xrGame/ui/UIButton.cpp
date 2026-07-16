@@ -44,6 +44,7 @@ CUIButton:: CUIButton()
 
 	m_iShadowOffsetX			= 0;
 	m_iShadowOffsetY			= 0;
+	m_uTextCanvasAlign			= alNone;
 }
 
  CUIButton::~ CUIButton()
@@ -252,35 +253,35 @@ void  CUIButton::Draw()
 		if(IsHighlightText() && m_str && xr_strlen(m_str)>0 && m_bEnableTextHighlighting)
 		{
 			GetFont()->SetColor(m_HighlightColor);
-			HUD().OutText(GetFont(), GetClipRect(), 
+			DrawText(
 				(float)rect.left + right_offset + 1 +m_iTextOffsetX + m_iShadowOffsetX, 
 				(float)rect.top + down_offset + 1  +m_iTextOffsetY + m_iShadowOffsetY,
 				m_str);
-			HUD().OutText(GetFont(), GetClipRect(), 
+			DrawText(
 				(float)rect.left + right_offset - 1 +m_iTextOffsetX + m_iShadowOffsetX, 
 				(float)rect.top + down_offset - 1 +m_iTextOffsetY + m_iShadowOffsetY,
 				m_str);
-			HUD().OutText(GetFont(), GetClipRect(),
+			DrawText(
 				(float)rect.left + right_offset - 1 +m_iTextOffsetX + m_iShadowOffsetX, 
 				(float)rect.top + down_offset + 1 +m_iTextOffsetY + m_iShadowOffsetY,
 				m_str);
-			HUD().OutText(GetFont(), GetClipRect(), 
+			DrawText(
 				(float)rect.left + right_offset + 1 +m_iTextOffsetX + m_iShadowOffsetX, 
 				(float)rect.top + down_offset - 1 +m_iTextOffsetY + m_iShadowOffsetY,
 				m_str);
-			HUD().OutText(GetFont(), GetClipRect(),
+			DrawText(
 				(float)rect.left + right_offset + 1 +m_iTextOffsetX + m_iShadowOffsetX, 
 				(float)rect.top + down_offset + 0 +m_iTextOffsetY + m_iShadowOffsetY,
 				m_str);
-			HUD().OutText(GetFont(), GetClipRect(),
+			DrawText(
 				(float)rect.left + right_offset - 1 +m_iTextOffsetX + m_iShadowOffsetX, 
 				(float)rect.top + down_offset - 0 +m_iTextOffsetY + m_iShadowOffsetY,
 				m_str);
-			HUD().OutText(GetFont(), GetClipRect(),
+			DrawText(
 				(float)rect.left + right_offset - 0 +m_iTextOffsetX + m_iShadowOffsetX, 
 				(float)rect.top + down_offset + 1 +m_iTextOffsetY + m_iShadowOffsetY,
 				m_str);
-			HUD().OutText(GetFont(), GetClipRect(),
+			DrawText(
 				(float)rect.left + right_offset + 0 +m_iTextOffsetX + m_iShadowOffsetX,  
 				(float)rect.top + down_offset - 1 +m_iTextOffsetY + m_iShadowOffsetY,
 				m_str);
@@ -295,7 +296,7 @@ void  CUIButton::Draw()
 		if (!m_bNewRenderMethod)
 		{
 			if(m_str && xr_strlen(m_str)>0)
-				HUD().OutText(GetFont(), GetClipRect(), 
+				DrawText(
 				(float)rect.left + right_offset  +  m_iTextOffsetX, 
 				(float)rect.top + down_offset  + m_iTextOffsetY,
 				m_str);
@@ -311,6 +312,14 @@ void  CUIButton::Draw()
 	}
 }
 
+
+void CUIButton::DrawText(float x, float y, LPCSTR text)
+{
+	if (m_uTextCanvasAlign == alNone)
+		HUD().OutText(GetFont(), GetClipRect(), x, y, text);
+	else
+		HUD().OutTextAligned(GetFont(), GetClipRect(), x, y, text, m_uTextCanvasAlign);
+}
 
 bool CUIButton::IsHighlightText()
 {

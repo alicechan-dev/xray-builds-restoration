@@ -97,7 +97,7 @@ void CUITextBanner::Out(float x, float y, const char *fmt, ...)
 		x *= HUD().GetScale();
 		y *= HUD().GetScale();
 	}
-	m_pFont->Out(x, y, buf.c_str());
+	m_pFont->OutScaled(x, y, HUD().GetScale(), buf.c_str());
 	if (m_bNewRenderMethod)
 		m_pFont->OnRender();
 }

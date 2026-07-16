@@ -295,6 +295,22 @@ void CHUDManager::OutText(CGameFont *pFont, Irect r, float x, float y, LPCSTR fm
 			y *= GetScale();
 		}
 
-		pFont->Out(x, y, str.c_str());
+		pFont->OutScaled(x, y, GetScale(), str.c_str());
 	}
+}
+
+
+void CHUDManager::OutTextAligned(CGameFont *pFont, Irect r, float x, float y, LPCSTR text, u32 horizontal_align)
+{
+	if (!r.in(static_cast<int>(x), static_cast<int>(y)))
+		return;
+
+	R_ASSERT(pFont);
+	if (x >= 1.0f && y >= 1.0f)
+	{
+		x = static_cast<float>(ClientToScreenScaledX(iFloor(x), horizontal_align));
+		y *= GetScale();
+	}
+
+	pFont->OutScaled(x, y, GetScale(), text);
 }

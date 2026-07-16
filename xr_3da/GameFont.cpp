@@ -208,6 +208,22 @@ void __cdecl CGameFont::Out(float _x, float _y, LPCSTR fmt,...)
 	if (vs_sz)	strings.push_back(rs);
 }
 
+void __cdecl CGameFont::OutScaled(float _x, float _y, float scale, LPCSTR fmt,...)
+{
+	String		rs;
+	rs.x		=_x;
+	rs.y		=_y;
+	rs.c		=dwCurrentColor;
+	rs.size		=fCurrentSize*scale;
+	rs.align	=eCurrentAlignment;
+
+	va_list		 p;
+	va_start	(p,fmt);
+	int vs_sz	= _vsnprintf(rs.string,sizeof(rs.string)-1,fmt,p); rs.string[sizeof(rs.string)-1]=0;
+	va_end		(p);
+	if (vs_sz)	strings.push_back(rs);
+}
+
 void __cdecl CGameFont::OutNext(LPCSTR fmt,...)
 {
 	String rs;

@@ -54,6 +54,7 @@ public:
 	CGameFont*				pFontLetterica25;
 
 	void					OutText(CGameFont *pFont, Irect r, float x, float y, LPCSTR fmt, ...);
+	void					OutTextAligned(CGameFont *pFont, Irect r, float x, float y, LPCSTR text, u32 horizontal_align);
 
 public:
 							CHUDManager			();

@@ -56,6 +56,7 @@ public:
 	int				GetPushOffsetY() {return m_iPushOffsetY;}
 
 	virtual	void	UpdateTextAlign();
+	void			SetTextCanvasAlign(u32 align) {m_uTextCanvasAlign = align;}
 
 	//подсвечен ли текст на кнопке
 	virtual bool	IsHighlightText();
@@ -119,6 +120,8 @@ protected:
 	// Смещение подсветки текста
 	int				m_iShadowOffsetX;
 	int				m_iShadowOffsetY;
+	u32				m_uTextCanvasAlign;
+	void			DrawText(float x, float y, LPCSTR text);
 	DECLARE_SCRIPT_REGISTER_FUNCTION
 };
 

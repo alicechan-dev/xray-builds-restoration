@@ -78,6 +78,7 @@ public:
 	void __cdecl            OutNext			(LPCSTR fmt, ...);
 	void __cdecl            OutPrev			(LPCSTR fmt, ...);
 	void __cdecl 			Out				(float _x, float _y, LPCSTR fmt, ...);
+	void __cdecl 			OutScaled			(float _x, float _y, float scale, LPCSTR fmt, ...);
 	void					OutSkip			(float val=1.f);
 
 	virtual void			OnRender		();

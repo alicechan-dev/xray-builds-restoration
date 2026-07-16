@@ -181,6 +181,7 @@ void CUIMainIngameWnd::Init()
 	xml_init.InitStatic(uiXml, "quick_info", 0, &UIStaticQuickHelp);
 	UIStaticQuickHelp.SetTextColor(0xffffffff);
 	UIStaticQuickHelp.SetTextAlign(CGameFont::alCenter);
+	UIStaticQuickHelp.SetTextCanvasAlign(alCenter);
 
 	uiXml.SetLocalRoot(uiXml.GetRoot());
 
