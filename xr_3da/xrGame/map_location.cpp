@@ -19,6 +19,8 @@ SMapLocation::SMapLocation()
 	text						= NULL;
 	attached_to_object			= false;
 	object_id					= 0xffff;
+	icon_x						= icon_y = 0;
+	icon_width					= icon_height = 0;
 	marker_show					= false;
 	icon_color					= 0xffffffff;
 	type_flags.zero				();

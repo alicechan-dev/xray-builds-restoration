@@ -50,23 +50,10 @@ void CUIMapBackground::Init(int x, int y, int width, int height)
 	m_iMapViewWidthPixels = width;
 	m_iMapViewHeightPixels = height;
 	
-	//вычислить ширину одной клеточки тумана в пикселях
-	Fvector cell_world_pos;
-	Ivector2 screen_pos, screen_pos1;
-	Level().FogOfWar().GetFogCellWorldPos(0,0,cell_world_pos);
-	ConvertToLocal(cell_world_pos, screen_pos);
-	Level().FogOfWar().GetFogCellWorldPos(1,1,cell_world_pos);
-	ConvertToLocal(cell_world_pos, screen_pos1);
-	
-	int fog_cell_size = _max(_abs(screen_pos1.x - screen_pos.x),
-							 _abs(screen_pos1.y - screen_pos.y));
-
 	AttachChild(&m_fogOfWarCell);
-	m_fogOfWarCell.Init(FOG_OF_WAR_TEXTURE, 0, 0, fog_cell_size, fog_cell_size);
+	m_fogOfWarCell.Init(FOG_OF_WAR_TEXTURE, 0, 0, 1, 1);
 	m_fogOfWarCell.Show(false);
 	m_fogOfWarCell.Enable(false);
-	
-	m_fogOfWarCell.SetTextureScale((float)fog_cell_size/(FOG_TEX_SIZE-2));
 }
 
 //-----------------------------------------------------------------------------/
@@ -85,6 +72,27 @@ void CUIMapBackground::InitMapBackground(const ref_shader &sh)
 	m_fMapLeftMeters	= m_LevelBox.x1;
 	m_fMapTopMeters		= m_LevelBox.z2;
 	m_fMapBottomMeters	= m_LevelBox.z1;
+
+	const float configured_view_width = pSettings->r_float("game_map", "local_map_width_meters");
+	const float max_view_width_for_height = m_fMapHeightMeters *
+		float(m_iMapViewWidthPixels) / float(m_iMapViewHeightPixels);
+	m_fMapViewWidthMeters = _min(configured_view_width,
+		_min(m_fMapWidthMeters, max_view_width_for_height));
+	m_fMapViewHeightMeters = m_fMapViewWidthMeters *
+		float(m_iMapViewHeightPixels) / float(m_iMapViewWidthPixels);
+
+	Fvector cell_world_pos;
+	Ivector2 screen_pos, screen_pos1;
+	Level().FogOfWar().GetFogCellWorldPos(0, 0, cell_world_pos);
+	ConvertToLocal(cell_world_pos, screen_pos);
+	Level().FogOfWar().GetFogCellWorldPos(1, 1, cell_world_pos);
+	ConvertToLocal(cell_world_pos, screen_pos1);
+
+	const int fog_cell_size = _max(_abs(screen_pos1.x - screen_pos.x),
+		_abs(screen_pos1.y - screen_pos.y));
+	m_fogOfWarCell.SetWidth(fog_cell_size);
+	m_fogOfWarCell.SetHeight(fog_cell_size);
+	m_fogOfWarCell.SetTextureScale((float)fog_cell_size / (FOG_TEX_SIZE - 2));
 
 	if (!m_bNoActorFocus)
 	{
@@ -543,13 +551,10 @@ void CUIMapBackground::UpdateActivePos()
 	m_fMapY = m_fMapHeightMeters - (m_vActivePos.z - m_fMapBottomMeters)
 		- m_fMapViewHeightMeters/2.f;
 
-	if(m_fMapX<0) m_fMapX = 0;
-	if(m_fMapX>m_fMapWidthMeters - m_fMapViewWidthMeters) 
-		m_fMapX = m_fMapWidthMeters - m_fMapViewWidthMeters;
-
-	if(m_fMapY<0) m_fMapY = 0;
-	if(m_fMapY>m_fMapHeightMeters - m_fMapViewHeightMeters) 
-		m_fMapY = m_fMapHeightMeters - m_fMapViewHeightMeters;
+	const float max_map_x = _max(0.f, m_fMapWidthMeters - m_fMapViewWidthMeters);
+	const float max_map_y = _max(0.f, m_fMapHeightMeters - m_fMapViewHeightMeters);
+	clamp(m_fMapX, 0.f, max_map_x);
+	clamp(m_fMapY, 0.f, max_map_y);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -562,13 +567,10 @@ void CUIMapBackground::MoveMap(const int deltaX, const int deltaY)
 	m_fMapX -= dest.x;
 	m_fMapY -= dest.y;
 
-	if(m_fMapX<0) m_fMapX = 0;
-	if(m_fMapX>m_fMapWidthMeters - m_fMapViewWidthMeters) 
-		m_fMapX = m_fMapWidthMeters - m_fMapViewWidthMeters;
-
-	if(m_fMapY<0) m_fMapY = 0;
-	if(m_fMapY>m_fMapHeightMeters - m_fMapViewHeightMeters) 
-		m_fMapY = m_fMapHeightMeters - m_fMapViewHeightMeters;
+	const float max_map_x = _max(0.f, m_fMapWidthMeters - m_fMapViewWidthMeters);
+	const float max_map_y = _max(0.f, m_fMapHeightMeters - m_fMapViewHeightMeters);
+	clamp(m_fMapX, 0.f, max_map_x);
+	clamp(m_fMapY, 0.f, max_map_y);
 }
 
 //////////////////////////////////////////////////////////////////////////
