@@ -3,7 +3,7 @@
 <xml>
 	<specific_character id="escape_trader" team_default = "1">
 		<name>Сидорович</name>
-		<icon x="0" y="9"></icon>
+		<icon x="2" y="0"></icon>
 		<map_icon x="0" y="4"></map_icon>
 		<bio>Промышлял торговлей с малых лет. В детском садике продавал цветные карандаши.
 		В школе торговал жевательной резинкой.
