@@ -34,6 +34,8 @@ endif()
 
 include(cmake/XRay2571Dependencies.cmake)
 
+add_subdirectory(xrCore)
+
 set(XRAY2571_RESTORATION_BUILD_ORDER
   xrCore
   xrCDB
@@ -64,4 +66,4 @@ add_custom_target(xray2571_build_order
 )
 
 message(STATUS "2571 candidate CMake scaffold configured.")
-message(STATUS "No engine targets are enabled yet; restore targets incrementally from the legacy project files.")
+message(STATUS "Enabled restored targets: xrCore. Restore additional targets incrementally from the legacy project files.")

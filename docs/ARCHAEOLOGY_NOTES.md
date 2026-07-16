@@ -49,3 +49,43 @@ The 2571 candidate also contains a larger mix of old plugin and experimental pro
 - Legacy `.dsp` files are Visual C++ 6 project files.
 - The main runtime project uses `ENGINE_BUILD` and `SECURE_GAMEDATA` preprocessor definitions.
 - The checked-in projects strongly indicate Win32/x86 as the original platform.
+
+## xrCore Audit
+
+Original project files inspected:
+
+- `xrCore/xrCore.vcproj`
+- `xrCore/xrCore.sln`
+- `xrPlugins/xrCore/xrCoreStatic.vcproj`
+
+`xrCore/xrCore.vcproj` was selected as the historical source of truth because it is the runtime DLL project referenced by the engine solution and emits `xrCore.dll`/`xrCore.lib`. `xrPlugins/xrCore/xrCoreStatic.vcproj` shares the project GUID but is a plugin-side static-library variant with `XRCORE_STATIC`; it was not used for the runtime target.
+
+Key original settings reproduced:
+
+- Visual Studio C++ 7.10 project.
+- `Win32` platform only.
+- Configuration type `2` shared library.
+- `CharacterSet="2"` Multi-Byte.
+- Debug definitions: `WIN32`, `_DEBUG`, `_WINDOWS`, `_USRDLL`, `XRCORE_EXPORTS`.
+- Release definitions: `WIN32`, `NDEBUG`, `_WINDOWS`, `_USRDLL`, `XRCORE_EXPORTS`.
+- Debug runtime: multi-threaded debug DLL.
+- Release runtime: multi-threaded DLL.
+- Warning level 4.
+- RTTI enabled.
+- Default calling convention stdcall (`/Gz`).
+- Debug exceptions enabled; Release exceptions disabled.
+- PCH through `stdafx.h`, created by `stdafx.cpp` in the original project and represented through CMake target precompiled headers.
+- Historical output path `x:\` replaced by the repository output convention `build/bin`, `build/lib`, and `build/pdb`.
+
+Compatibility fixes applied for modern MSVC:
+
+- Local `typeinfo.h` shim includes modern `<typeinfo>`.
+- Local `dxerr9.h` shim lets `xrDebug.cpp` use its existing `FormatMessage` fallback without requiring legacy `dxerr9.lib`.
+- Local `afxres.h` shim includes Windows SDK `winres.h` for the resource script.
+- `xray_msvc_compat.hpp` is included through the target PCH to make old STL adapter declarations available.
+- `xrMemory.h` global new/delete overrides now explicitly use `__cdecl`, matching modern CRT declarations while preserving the intended allocator path.
+- `_stl_extensions.h` no longer depends on removed private `std::_Construct`/`std::_Destroy` helpers.
+- `_USE_32BIT_TIME_T` keeps `_finddata_t`, `time_t`, and `FS_File::size` aligned with the Win32-era project assumptions.
+- `LocatorAPI_defs.h` includes `<io.h>` before selecting `_FINDDATA_T`, matching the UCRT's mapped `_finddata_t`.
+- `xrMemory_subst_msvc.h` const `xr_delete` overload now actually calls the selected `xr_special_free` functor with a const-cast pointer, matching the 1935 restoration fix.
+- `xrDebug.cpp` uses `<new.h>` for modern `_set_new_mode` and `_set_new_handler` declarations instead of hand-written old CRT prototypes.

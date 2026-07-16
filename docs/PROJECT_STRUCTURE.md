@@ -61,3 +61,20 @@ Several solution references are stale or machine-specific, including `X:\gamedat
 - `xr_3da/xrGame/xrD3D9-Null` - null Direct3D test/stub project in the game subtree.
 
 No Vulkan renderer exists in this baseline.
+
+## Restored CMake Targets
+
+### xrCore
+
+- Historical source of truth: `xrCore/xrCore.vcproj`.
+- Companion solution: `xrCore/xrCore.sln`.
+- Related but not selected for runtime restoration: `xrPlugins/xrCore/xrCoreStatic.vcproj`, a plugin-side static-library variant with `XRCORE_STATIC`.
+- Target type: shared library.
+- Output name: `xrCore.dll` with import library `xrCore.lib`.
+- Character set: Multi-Byte.
+- Source directory: `xrCore`.
+- CMake file: `xrCore/CMakeLists.txt`.
+
+The CMake target uses an explicit source list from the historical project. `LocatorAPI_Notifications.cpp` remains excluded because it is excluded in all `xrCore.vcproj` configurations.
+
+The target links only `winmm`, matching the in-source `#pragma comment(lib,"winmm.lib")`. The old `dxerr9.lib` pragma from `xrDebug.cpp` is ignored and replaced with a local `dxerr9.h` compatibility fallback because the legacy `dxerr9.h`/`dxerr9.lib` pair is not present in the candidate tree and `xrDebug.cpp` already falls back to `FormatMessage`.

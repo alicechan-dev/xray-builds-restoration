@@ -1,6 +1,10 @@
 #ifndef LocatorAPI_defsH
 #define LocatorAPI_defsH
 
+#pragma warning(disable:4995)
+#include <io.h>
+#pragma warning(default:4995)
+
 enum FS_List
 {
 	FS_ListFiles	=(1<<0),

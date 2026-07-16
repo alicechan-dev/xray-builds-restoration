@@ -24,7 +24,7 @@ These tracks must stay separate. A CMake target recovery commit should not also 
 
 ## Proposed Build Order
 
-1. `xrCore` - foundational runtime library and hardcoded path cleanup.
+1. `xrCore` - foundational runtime library and hardcoded path cleanup. Initial Debug/Release CMake build is complete.
 2. `xr_3da/xrCDB` - collision database library used broadly by runtime/editor code.
 3. `xrLUA` and `xrLUA_JIT` audit - determine which scripting runtime the candidate revision expects.
 4. `xrXMLParser` - small dependency with limited surface area.
@@ -51,3 +51,9 @@ These tracks must stay separate. A CMake target recovery commit should not also 
 - Renderer work.
 
 Each category should be reviewable independently.
+
+## M2 Progress
+
+`xrCore` is the first restored M2 target. The target is now represented by `xrCore/CMakeLists.txt`, builds as a Win32 shared library, preserves Multi-Byte output naming, uses the original source directory, and keeps compatibility fixes scoped to `xrCore`.
+
+Next M2 work should begin with `xr_3da/xrCDB` only after reviewing the `xrCore` changes.

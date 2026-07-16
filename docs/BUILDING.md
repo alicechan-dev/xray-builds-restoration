@@ -1,6 +1,6 @@
 # Building
 
-The 2571 candidate revision is not yet expected to compile with the new CMake scaffold. The current build layer is a safe foundation for later target-by-target restoration.
+The 2571 candidate revision now has an initial CMake target for `xrCore`. Other engine, renderer, game, editor, and tool targets are not yet restored.
 
 ## Required Shape
 
@@ -36,7 +36,34 @@ cmake -S . -B build -G "Visual Studio 17 2022" -A Win32 ^
 cmake --build build --config Debug --target xray2571_build_order
 ```
 
-This target prints the documented restoration order. It does not compile engine source yet.
+This target prints the documented restoration order.
+
+## xrCore
+
+`xrCore` is enabled by the normal `vs2022-win32` configure preset. It builds the historical runtime DLL target from `xrCore/xrCore.vcproj`.
+
+Tested commands:
+
+```bat
+cmake --preset vs2022-win32
+cmake --build build --config Debug --target xrCore -- /m:1 /v:minimal /clp:ErrorsOnly
+cmake --build build --config Release --target xrCore -- /m:1 /v:minimal /clp:ErrorsOnly
+```
+
+Debug and Release both compile and link with VS2022 Win32. The output files are written to:
+
+- `build/bin/xrCore.dll`
+- `build/lib/xrCore.lib`
+- `build/pdb`
+
+Warning inventory was checked with:
+
+```bat
+cmake --build build --config Debug --target xrCore -- /m:1 /v:minimal /t:Rebuild
+cmake --build build --config Release --target xrCore -- /m:1 /v:minimal /t:Rebuild
+```
+
+Current warnings are mostly historical CRT/POSIX deprecation warnings (`strcpy`, `strcat`, `sprintf`, `stricmp`, `strlwr`, `fopen`, etc.), C4595 for inline global new/delete overrides in `xrMemory.h`, C4456/C4459 local hiding warnings in old memory/compression code, and MSVC D9035 for the required deprecated `/Zc:forScope-` compatibility switch. Release also reports D9025 because CMake's default exception flag is overridden by the historical Release no-exceptions setting.
 
 ## Future Target Rules
 
