@@ -1,0 +1,35 @@
+# Local build outputs
+/build*/
+/out/
+/bin/
+/lib/
+/pdb/
+
+# Visual Studio and compiler outputs
+/.vs/
+*.user
+*.suo
+*.ncb
+*.aps
+*.plg
+*.opt
+*.obj
+*.pch
+*.pdb
+*.idb
+*.ilk
+*.lib
+*.exp
+*.dll
+*.exe
+*.map
+*.tlog
+
+# Runtime data and local diagnostics
+gamedata/
+gamedata.xp*
+savedgames/
+*.log
+log*.txt
+*.dmp
+*.tmp

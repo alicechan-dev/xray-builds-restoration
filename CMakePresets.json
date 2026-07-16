@@ -1,0 +1,22 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "vs2022-win32",
+      "displayName": "Visual Studio 2022 Win32",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "Win32",
+      "binaryDir": "${sourceDir}/build"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug-build-order",
+      "configurePreset": "vs2022-win32",
+      "configuration": "Debug",
+      "targets": [
+        "xray2571_build_order"
+      ]
+    }
+  ]
+}
