@@ -38,6 +38,10 @@ public:
     void ResetCamera();
     void FocusViewport();
     bool IsGridVisible() const;
+    void SetMouseLookSettings(EditorMouseLookSettings settings)
+    { controller_.SetMouseLookSettings(settings); }
+    const EditorMouseLookSettings& MouseLookSettings() const
+    { return controller_.MouseLookSettings(); }
     void RebuildPreview(const EditorTreeModel& model,
         const std::string& selectedPath);
     void SetPreviewScene(EditorPreviewScene scene);
@@ -71,6 +75,10 @@ public:
     bool IsDirect3D11Available() const { return d3dAvailable_; }
     void ToggleFilledMeshes();
     bool AreFilledMeshesVisible() const { return d3dOptions_.filledMeshes; }
+    void ToggleShadedMeshes();
+    bool AreShadedMeshesEnabled() const { return d3dOptions_.shadedMeshes; }
+    void ToggleShadows();
+    bool AreShadowsEnabled() const { return d3dOptions_.shadows; }
     void ToggleWireframeOverlay();
     bool IsWireframeOverlayVisible() const { return d3dOptions_.wireframeOverlay; }
     void ToggleIsolateSelected();
@@ -143,6 +151,7 @@ private:
     bool d3dAvailable_ = false;
     std::size_t renderAssetGeneration_ = 0;
     std::string d3dFailure_;
+    bool mouseLookCursorHidden_ = false;
 };
 
 #endif

@@ -71,6 +71,8 @@ wxEditorViewport::wxEditorViewport(wxWindow* parent) :
 wxEditorViewport::~wxEditorViewport()
 {
     timer_.Stop();
+    if (HasCapture())
+        ReleaseMouse();
     d3dRenderer_.Shutdown();
 }
 
@@ -192,6 +194,10 @@ void wxEditorViewport::SetBackend(EditorViewportBackend backend)
 
 void wxEditorViewport::ToggleFilledMeshes()
 { d3dOptions_.filledMeshes = !d3dOptions_.filledMeshes; Refresh(false); }
+void wxEditorViewport::ToggleShadedMeshes()
+{ d3dOptions_.shadedMeshes = !d3dOptions_.shadedMeshes; Refresh(false); }
+void wxEditorViewport::ToggleShadows()
+{ d3dOptions_.shadows = !d3dOptions_.shadows; Refresh(false); }
 void wxEditorViewport::ToggleWireframeOverlay()
 { d3dOptions_.wireframeOverlay = !d3dOptions_.wireframeOverlay; Refresh(false); }
 void wxEditorViewport::ToggleIsolateSelected()
@@ -428,11 +434,13 @@ void wxEditorViewport::OnPaint(wxPaintEvent&)
     {
         const auto& value = d3dRenderer_.Diagnostics();
         dc.DrawText(wxString::Format(
-            "D3D11: %s frame=%.2fms workset=%zu resident=%zu uploads=%zu draws=%zu instances=%zu triangles=%zu fallback=%zu",
+            "D3D11: %s frame=%.2fms workset=%zu resident=%zu uploads=%zu draws=%zu shaded=%zu triangles=%zu shadow=%zu/%zu@%zu fallback=%zu",
             wxString::FromUTF8(value.status), value.cpuFrameMilliseconds,
             value.workingSetAssets, value.residentAssets,
-            value.uploadsThisFrame, value.drawCalls, value.instancesDrawn,
-            value.trianglesSubmitted, value.fallbackBounds), 12, 114);
+            value.uploadsThisFrame, value.drawCalls, value.shadedInstances,
+            value.trianglesSubmitted, value.shadowCasters,
+            value.shadowDrawCalls, value.shadowMapSize,
+            value.fallbackBounds), 12, 114);
     }
     else if (wireframeVisible_)
         dc.DrawText(wxString::Format(
@@ -521,13 +529,26 @@ void wxEditorViewport::OnEraseBackground(wxEraseEvent&)
 void wxEditorViewport::OnDestroy(wxWindowDestroyEvent& event)
 {
     timer_.Stop();
+    if (HasCapture())
+        ReleaseMouse();
     d3dRenderer_.Shutdown();
     event.Skip();
 }
 
 void wxEditorViewport::OnFocus(wxFocusEvent& event)
 {
-    controller_.OnFocusChanged(event.GetEventType() == wxEVT_SET_FOCUS);
+    const bool focused = event.GetEventType() == wxEVT_SET_FOCUS;
+    controller_.OnFocusChanged(focused);
+    if (!focused)
+    {
+        if (HasCapture())
+            ReleaseMouse();
+        if (mouseLookCursorHidden_)
+        {
+            SetCursor(wxNullCursor);
+            mouseLookCursorHidden_ = false;
+        }
+    }
     Refresh(false);
     event.Skip();
 }
@@ -540,7 +561,8 @@ void wxEditorViewport::OnMouseEnter(wxMouseEvent& event)
 
 void wxEditorViewport::OnMouseLeave(wxMouseEvent& event)
 {
-    controller_.OnMouseLeave();
+    if (!HasCapture())
+        controller_.OnMouseLeave();
     Refresh(false);
     event.Skip();
 }
@@ -658,6 +680,19 @@ void wxEditorViewport::OnMouseButton(wxMouseEvent& event)
     else if (!event.LeftIsDown() && !event.RightIsDown() &&
         !event.MiddleIsDown() && HasCapture())
         ReleaseMouse();
+    if (event.GetButton() == wxMOUSE_BTN_RIGHT)
+    {
+        if (pressed && !mouseLookCursorHidden_)
+        {
+            SetCursor(wxCursor(wxCURSOR_BLANK));
+            mouseLookCursorHidden_ = true;
+        }
+        else if (!pressed && mouseLookCursorHidden_)
+        {
+            SetCursor(wxNullCursor);
+            mouseLookCursorHidden_ = false;
+        }
+    }
     Refresh(false);
     event.Skip();
 }

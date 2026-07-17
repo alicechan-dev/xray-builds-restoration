@@ -1,5 +1,10 @@
 # wxSDKEditor Direct3D 11 Renderer
 
+The wx-only backend now consumes position-plus-generated-normal streams,
+renders neutral directional shading, and optionally performs one directional
+shadow-map pass before the main pass. It remains independent of every
+historical renderer/runtime class and preserves Software Diagnostic fallback.
+
 The opt-in Win32 `wxSDKEditor` now owns a standalone Direct3D 11 viewport
 backend. It uses Windows SDK `d3d11`, `dxgi`, and `d3dcompiler` only; it does
 not link or instantiate `xrRender_R1`, `xrRender_R2`, `XR_3DA`, or `xrGame`.

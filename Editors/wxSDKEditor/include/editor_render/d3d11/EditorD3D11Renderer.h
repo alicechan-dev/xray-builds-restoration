@@ -16,6 +16,8 @@ struct EditorViewportState;
 struct EditorD3D11RenderOptions
 {
     bool filledMeshes = true;
+    bool shadedMeshes = true;
+    bool shadows = true;
     bool wireframeOverlay = false;
     bool backfaceCulling = true;
     bool isolateSelected = false;
@@ -35,6 +37,12 @@ struct EditorD3D11Diagnostics
     std::size_t trianglesSubmitted = 0;
     std::size_t drawCalls = 0;
     std::size_t fallbackBounds = 0;
+    std::size_t shadedInstances = 0;
+    std::size_t shadowCasters = 0;
+    std::size_t shadowDrawCalls = 0;
+    std::size_t shadowMapSize = 0;
+    std::size_t generatedNormalAssets = 0;
+    std::size_t failedNormalAssets = 0;
     std::size_t culledInstances = 0;
     std::size_t overlayPrimitives = 0;
     std::size_t labelsDrawn = 0;

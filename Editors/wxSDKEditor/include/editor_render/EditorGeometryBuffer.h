@@ -19,12 +19,34 @@ struct EditorGeometryTriangle
     std::uint32_t c = 0;
 };
 
+struct EditorGeometryNormal
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+};
+
+enum class EditorGeometryNormalStatus
+{
+    PositionsAndIndices,
+    NormalsAvailable,
+    NormalsGenerated,
+    NormalGenerationFailed
+};
+
 struct EditorGeometryBuffer
 {
     std::vector<EditorGeometryPosition> positions;
+    std::vector<EditorGeometryNormal> normals;
     std::vector<EditorGeometryTriangle> triangles;
+    EditorGeometryNormalStatus normalStatus =
+        EditorGeometryNormalStatus::PositionsAndIndices;
 
     std::size_t MemoryBytes() const;
 };
+
+bool GenerateEditorGeometryNormals(EditorGeometryBuffer& buffer,
+    std::size_t* ignoredZeroAreaTriangles = nullptr);
+const char* ToString(EditorGeometryNormalStatus value);
 
 #endif

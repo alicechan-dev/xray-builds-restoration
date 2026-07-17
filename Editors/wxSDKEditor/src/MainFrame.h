@@ -73,6 +73,10 @@ private:
     void OnLoadObjectLibrary();
     void OnClearObjectLibrary();
     void OnObjectLibrarySummary(wxCommandEvent& event);
+    bool ConfigureObjectLibraryRoot(const std::filesystem::path& dataRoot,
+        bool persist, bool reportErrors = true);
+    void RestoreObjectLibraryConfiguration();
+    void EnsureObjectLibraryForScene(const std::filesystem::path& scenePath);
     void OnLoadMetadata();
     void OnClearImportedMetadata();
     void OnToggleViewportGrid(wxCommandEvent& event);

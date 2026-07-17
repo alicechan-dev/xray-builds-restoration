@@ -1,5 +1,10 @@
 # Object Library Browser
 
+The former Load action is now `Configure...`; the SDK data root persists in the
+user profile and its index restores automatically. Scope filters show all
+indexed entries, assets used by the current scene, or unresolved current-scene
+references. `Clear Session Cache` does not modify source assets.
+
 The dockable **Object Library** pane is separate from the spawn-metadata Asset
 Browser. It offers explicit Load/Clear actions, filtering, a read-only entry
 list, source-relative provenance, confirmed counts/flags/references, parser

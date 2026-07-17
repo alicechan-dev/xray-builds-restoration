@@ -190,6 +190,31 @@ int RunEditorStaticMeshTests()
         geometry.meshes[0].buffer.triangles[0].b == 1 &&
         geometry.meshes[0].buffer.triangles[0].c == 2,
         "positions, direct indices, and winding are exact");
+    failures += Check(geometry.normalsGeneratedMeshes == 1 &&
+        geometry.meshes[0].buffer.normalStatus ==
+            EditorGeometryNormalStatus::NormalsGenerated &&
+        geometry.meshes[0].buffer.normals.size() == 3 &&
+        geometry.meshes[0].buffer.normals[0].z > 0.99f,
+        "single triangle receives deterministic generated normals");
+    EditorGeometryBuffer flatQuad;
+    flatQuad.positions = {{0,0,0},{1,0,0},{1,1,0},{0,1,0}};
+    flatQuad.triangles = {{0,1,2},{0,2,3}};
+    failures += Check(GenerateEditorGeometryNormals(flatQuad) &&
+        flatQuad.normals.size() == 4 && flatQuad.normals[2].z > 0.99f,
+        "flat quad shares a stable area-weighted normal");
+    EditorGeometryBuffer degenerate;
+    degenerate.positions = {{0,0,0},{1,0,0},{2,0,0}};
+    degenerate.triangles = {{0,1,2}};
+    std::size_t ignored = 0;
+    failures += Check(!GenerateEditorGeometryNormals(degenerate, &ignored) &&
+        ignored == 1 && degenerate.normalStatus ==
+            EditorGeometryNormalStatus::NormalGenerationFailed,
+        "zero-area-only geometry fails normals safely");
+    EditorGeometryBuffer invalidNormals;
+    invalidNormals.positions = {{0,0,0}};
+    invalidNormals.triangles = {{0,1,2}};
+    failures += Check(!GenerateEditorGeometryNormals(invalidNormals),
+        "normal generation rejects invalid indices");
     auto multipleAsset = Asset("multiple", "multiple.object", {triangle, second});
     failures += Check(decoder.Decode(root, multipleAsset, geometry, &reason) ==
         EditorStaticGeometryDecodeStatus::Decoded && geometry.meshes.size() == 2 &&

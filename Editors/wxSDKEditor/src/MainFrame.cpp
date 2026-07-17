@@ -77,6 +77,8 @@ enum
     IdBackendDirect3D11,
     IdBackendSoftwareDiagnostic,
     IdToggleFilledMeshes,
+    IdToggleShadedMeshes,
+    IdToggleShadows,
     IdToggleWireframeOverlay,
     IdToggleIsolateSelected,
     IdFrameSelected,
@@ -86,6 +88,9 @@ enum
     IdToolPlaceObject,
     IdToolPlaceLight,
     IdObjectLibrarySummary
+    ,IdInvertHorizontalLook
+    ,IdInvertVerticalLook
+    ,IdMouseLookSensitivity
 };
 
 const char* SceneTreePane = "scene_tree";
@@ -96,6 +101,10 @@ const char* ObjectLibraryPane = "object_library";
 const char* SceneInspectorPane = "scene_inspector";
 const char* ViewportPane = "viewport";
 const char* PerspectiveKey = "/layout/aui_perspective";
+const char* InvertHorizontalKey = "/camera/invert_horizontal";
+const char* InvertVerticalKey = "/camera/invert_vertical";
+const char* MouseSensitivityKey = "/camera/mouse_sensitivity";
+const char* SdkDataRootKey = "/object_library/sdk_data_root";
 
 const char* SnapshotWildcard =
     "wxSDKEditor snapshots (*.wx_tree_snapshot)|*.wx_tree_snapshot|All files (*.*)|*.*";
@@ -160,6 +169,13 @@ void wxSDKEditorFrame::CreateMenus()
     viewMenu->AppendCheckItem(IdToggleViewportGrid, "Viewport &Grid");
     viewMenu->Append(IdResetViewportCamera, "Reset Viewport &Camera");
     viewMenu->Append(IdFocusViewport, "&Focus Viewport");
+    auto* cameraMenu = new wxMenu();
+    cameraMenu->AppendCheckItem(IdInvertHorizontalLook,
+        "Invert &Horizontal Look");
+    cameraMenu->AppendCheckItem(IdInvertVerticalLook,
+        "Invert &Vertical Look");
+    cameraMenu->Append(IdMouseLookSensitivity, "Mouse Look &Sensitivity...");
+    viewMenu->AppendSubMenu(cameraMenu, "Camera &Controls");
     viewMenu->AppendSeparator();
     viewMenu->Append(IdRebuildPreview, "&Rebuild Preview Scene");
     auto* labelsMenu=new wxMenu();
@@ -186,6 +202,8 @@ void wxSDKEditorFrame::CreateMenus()
         "&Software Diagnostic");
     viewMenu->AppendSubMenu(backendMenu, "Renderer &Backend");
     viewMenu->AppendCheckItem(IdToggleFilledMeshes, "&Filled Mesh Preview");
+    viewMenu->AppendCheckItem(IdToggleShadedMeshes, "&Shaded Mesh Preview");
+    viewMenu->AppendCheckItem(IdToggleShadows, "&Shadows");
     viewMenu->AppendCheckItem(IdToggleWireframeOverlay, "Wireframe &Overlay");
     viewMenu->AppendCheckItem(IdToggleIsolateSelected, "&Isolate Selected");
     viewMenu->Append(IdFrameSelected, "Frame &Selected");
@@ -337,12 +355,49 @@ void wxSDKEditorFrame::CreateMenus()
         this, IdBackendDirect3D11, IdBackendSoftwareDiagnostic);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleFilledMeshes,
         this, IdToggleFilledMeshes);
+    Bind(wxEVT_MENU,[this](wxCommandEvent&){viewport_->ToggleShadedMeshes();},
+        IdToggleShadedMeshes);
+    Bind(wxEVT_MENU,[this](wxCommandEvent&){viewport_->ToggleShadows();},
+        IdToggleShadows);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleWireframeOverlay,
         this, IdToggleWireframeOverlay);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleIsolateSelected,
         this, IdToggleIsolateSelected);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateD3DViewOption,
         this, IdToggleFilledMeshes, IdToggleIsolateSelected);
+    Bind(wxEVT_UPDATE_UI,[this](wxUpdateUIEvent& event){
+        event.Check(event.GetId()==IdToggleShadedMeshes
+            ? viewport_->AreShadedMeshesEnabled() : viewport_->AreShadowsEnabled());
+    },IdToggleShadedMeshes,IdToggleShadows);
+    Bind(wxEVT_MENU,[this](wxCommandEvent& event){
+        EditorMouseLookSettings settings=viewport_->MouseLookSettings();
+        if(event.GetId()==IdInvertHorizontalLook)
+            settings.invertHorizontal=!settings.invertHorizontal;
+        else settings.invertVertical=!settings.invertVertical;
+        viewport_->SetMouseLookSettings(settings);
+        wxConfig config("wxSDKEditor");
+        config.Write(InvertHorizontalKey,settings.invertHorizontal);
+        config.Write(InvertVerticalKey,settings.invertVertical);
+        config.Flush();
+    },IdInvertHorizontalLook,IdInvertVerticalLook);
+    Bind(wxEVT_UPDATE_UI,[this](wxUpdateUIEvent& event){
+        const auto& settings=viewport_->MouseLookSettings();
+        event.Check(event.GetId()==IdInvertHorizontalLook
+            ? settings.invertHorizontal : settings.invertVertical);
+    },IdInvertHorizontalLook,IdInvertVerticalLook);
+    Bind(wxEVT_MENU,[this](wxCommandEvent&){
+        const auto current=viewport_->MouseLookSettings();
+        wxTextEntryDialog dialog(this,"Sensitivity in degrees per pixel (0.01 to 5.0):",
+            "Mouse Look Sensitivity",wxString::Format("%.3f",current.sensitivity));
+        if(dialog.ShowModal()!=wxID_OK) return;
+        double value=0.0;
+        if(!dialog.GetValue().ToDouble(&value) || value<0.01 || value>5.0)
+        { dialogService_.Warning("Invalid sensitivity","Enter a value from 0.01 through 5.0."); return; }
+        EditorMouseLookSettings settings=current;
+        settings.sensitivity=static_cast<float>(value);
+        viewport_->SetMouseLookSettings(settings);
+        wxConfig config("wxSDKEditor");config.Write(MouseSensitivityKey,value);config.Flush();
+    },IdMouseLookSensitivity);
     Bind(wxEVT_MENU, &wxSDKEditorFrame::OnToggleMoveSnap,
         this, IdToggleMoveSnap);
     Bind(wxEVT_UPDATE_UI, &wxSDKEditorFrame::OnUpdateMoveSnap,
@@ -453,6 +508,17 @@ void wxSDKEditorFrame::CreateWorkspace()
     treePanel->SetSizer(treeSizer);
 
     viewport_ = new wxEditorViewport(this);
+    {
+        wxConfig config("wxSDKEditor");
+        EditorMouseLookSettings settings;
+        config.Read(InvertHorizontalKey, &settings.invertHorizontal, false);
+        config.Read(InvertVerticalKey, &settings.invertVertical, false);
+        double sensitivity = settings.sensitivity;
+        config.Read(MouseSensitivityKey, &sensitivity,
+            static_cast<double>(settings.sensitivity));
+        settings.sensitivity = static_cast<float>(sensitivity);
+        viewport_->SetMouseLookSettings(settings);
+    }
     viewport_->SetSelectionHandler([this](const std::string& logicalPath) {
         treePresenter_->SelectLogicalPath(logicalPath);
     });
@@ -507,6 +573,13 @@ void wxSDKEditorFrame::CreateWorkspace()
         [this](const EditorPreviewScene& scene) {
             viewport_->SetPreviewScene(scene);
         }, [this](const EditorRenderScene& scene) {
+            std::vector<std::string> sceneAssets;
+            for (const auto& instance : scene.Instances())
+                if (!instance.assetId.empty()) sceneAssets.push_back(instance.assetId);
+            std::sort(sceneAssets.begin(), sceneAssets.end());
+            sceneAssets.erase(std::unique(sceneAssets.begin(), sceneAssets.end()),
+                sceneAssets.end());
+            objectLibraryBrowser_->SetCurrentSceneAssets(sceneAssets);
             viewport_->SetRenderScene(scene,
                 &treePresenter_->RenderAssets(),
                 &treePresenter_->GeometryCache());
@@ -539,6 +612,7 @@ void wxSDKEditorFrame::CreateWorkspace()
         output_->AppendText("\n" + wxString::FromUTF8(message) + "\n");
     });
     treePresenter_->InitializeDemo();
+    RestoreObjectLibraryConfiguration();
     SetToolMode(EditorToolMode::Select);
 }
 
@@ -660,6 +734,8 @@ void wxSDKEditorFrame::OnOpenHistoricalScene(wxCommandEvent&)
         return;
     }
 
+    EnsureObjectLibraryForScene(historicalDocument_.GetSourcePath());
+
     SetToolMode(EditorToolMode::Select);
     const EditorSceneManifest& source = historicalDocument_.GetManifest();
     const std::string summary = "Historical scene opened read-only: file=" +
@@ -772,14 +848,51 @@ void wxSDKEditorFrame::OnUpdateHistoricalConversionSummary(
 
 void wxSDKEditorFrame::OnLoadObjectLibrary()
 {
-    wxDirDialog dialog(this, "Choose historical Object Library root",
+    wxDirDialog dialog(this, "Choose SDK data root containing _objects_ (or objects)",
         wxEmptyString, wxDD_DIR_MUST_EXIST);
     if (dialog.ShowModal() != wxID_OK) return;
+    ConfigureObjectLibraryRoot(
+        std::filesystem::path(dialog.GetPath().ToStdWstring()), true);
+}
+
+bool wxSDKEditorFrame::ConfigureObjectLibraryRoot(
+    const std::filesystem::path& dataRoot, bool persist, bool reportErrors)
+{
+    std::error_code error;
+    const std::filesystem::path canonical =
+        std::filesystem::weakly_canonical(dataRoot, error);
+    if (error || !std::filesystem::is_directory(canonical, error))
+    {
+        if (reportErrors) dialogService_.Error("Object Library configuration failed",
+            "The selected SDK data root is not a readable directory.");
+        return false;
+    }
+    std::filesystem::path libraryRoot;
+    const std::string leaf = canonical.filename().string();
+    if (leaf == "_objects_" || leaf == "objects")
+        libraryRoot = canonical;
+    else if (std::filesystem::is_directory(canonical / "_objects_", error))
+        libraryRoot = canonical / "_objects_";
+    else if (std::filesystem::is_directory(canonical / "objects", error))
+        libraryRoot = canonical / "objects";
+    else
+    {
+        if (reportErrors) dialogService_.Error("Object Library configuration failed",
+            "No canonical _objects_ directory was found under the selected root.");
+        return false;
+    }
     EditorObjectLibraryLoadStatistics statistics;
     std::string reason;
     if (!treePresenter_->LoadObjectLibrary(
-        std::filesystem::path(dialog.GetPath().ToStdWstring()), statistics, &reason)) {
-        dialogService_.Error("Object Library load failed", reason.c_str()); return;
+        libraryRoot, statistics, &reason)) {
+        if (reportErrors) dialogService_.Error("Object Library index failed", reason.c_str());
+        return false;
+    }
+    if (persist)
+    {
+        wxConfig config("wxSDKEditor");
+        config.Write(SdkDataRootKey, wxString(canonical.wstring()));
+        config.Flush();
     }
     objectLibraryBrowser_->SetLibrary(&treePresenter_->ObjectLibrary());
     output_->AppendText(wxString::Format(
@@ -787,6 +900,64 @@ void wxSDKEditorFrame::OnLoadObjectLibrary()
         statistics.filesScanned, statistics.entriesLoaded, statistics.supported,
         statistics.partial, statistics.malformed, statistics.duplicateReferences,
         static_cast<unsigned long long>(statistics.bytesRead)));
+    SetStatusText(wxString::Format("Object Library configured: %zu entries",
+        statistics.entriesLoaded));
+    return true;
+}
+
+void wxSDKEditorFrame::RestoreObjectLibraryConfiguration()
+{
+    wxConfig config("wxSDKEditor");
+    wxString root;
+    if (!config.Read(SdkDataRootKey, &root) || root.empty() ||
+        !ConfigureObjectLibraryRoot(std::filesystem::path(root.ToStdWstring()),
+            false, false))
+        SetStatusText("Object Library root not configured");
+}
+
+void wxSDKEditorFrame::EnsureObjectLibraryForScene(
+    const std::filesystem::path& scenePath)
+{
+    if (treePresenter_->ObjectLibrary().IsLoaded())
+        return;
+    std::vector<std::filesystem::path> candidates;
+    std::error_code error;
+    std::filesystem::path cursor = scenePath.parent_path();
+    for (int depth = 0; depth < 5 && !cursor.empty(); ++depth)
+    {
+        for (const char* name : {"_objects_", "objects"})
+        {
+            const auto candidate = cursor / name;
+            if (std::filesystem::is_directory(candidate, error))
+                candidates.push_back(cursor);
+            error.clear();
+        }
+        if (cursor == cursor.parent_path()) break;
+        cursor = cursor.parent_path();
+    }
+    std::sort(candidates.begin(), candidates.end());
+    candidates.erase(std::unique(candidates.begin(), candidates.end()),
+        candidates.end());
+    if (candidates.size() == 1)
+    {
+        const wxString question = "A nearby Object Library was found at:\n" +
+            wxString(candidates.front().wstring()) +
+            "\n\nUse this Object Library for future levels?";
+        if (wxMessageBox(question, "Configure Object Library",
+                wxYES_NO | wxICON_QUESTION, this) == wxYES)
+            ConfigureObjectLibraryRoot(candidates.front(), true);
+        return;
+    }
+    if (candidates.empty())
+    {
+        if (wxMessageBox("This level references Object Library assets, but no SDK data root is configured. Configure it now?",
+                "Object Library required", wxYES_NO | wxICON_INFORMATION,
+                this) == wxYES)
+            OnLoadObjectLibrary();
+    }
+    else
+        dialogService_.Warning("Object Library configuration",
+            "More than one nearby Object Library candidate was found. Use Configure to choose the SDK data root.");
 }
 
 void wxSDKEditorFrame::OnClearObjectLibrary()

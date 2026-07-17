@@ -62,10 +62,27 @@ int RunEditorViewportControllerTests()
         controller.State().mouseY == 20,
         "mouse enter and movement update state");
     controller.OnMouseButton(EditorViewportMouseButton::Right, true);
+    controller.OnMouseMove(10, 20);
     controller.OnMouseMove(30, 12);
     check(Near(controller.State().camera.yaw, 5.0f) &&
-        Near(controller.State().camera.pitch, -2.0f),
-        "right drag updates placeholder orientation");
+        Near(controller.State().camera.pitch, 2.0f),
+        "right drag looks right and up conventionally");
+    const float anchoredYaw = controller.State().camera.yaw;
+    controller.OnMouseButton(EditorViewportMouseButton::Right, false);
+    controller.OnMouseMove(900, 700);
+    controller.OnMouseButton(EditorViewportMouseButton::Right, true);
+    controller.OnMouseMove(900, 700);
+    check(Near(controller.State().camera.yaw, anchoredYaw),
+        "first captured motion anchors without a jump");
+    EditorMouseLookSettings look;
+    look.invertHorizontal = true;
+    look.invertVertical = true;
+    look.sensitivity = 0.5f;
+    controller.SetMouseLookSettings(look);
+    controller.OnMouseMove(910, 710);
+    check(Near(controller.State().camera.yaw, anchoredYaw - 5.0f) &&
+        Near(controller.State().camera.pitch, 7.0f),
+        "mouse inversion and sensitivity apply independently");
     controller.OnMouseLeave();
     check(!controller.State().mouseInside && !controller.State().rightButton,
         "mouse leave clears pointer button state");
@@ -87,6 +104,17 @@ int RunEditorViewportControllerTests()
     check(controller.State().camera.z > initialZ &&
         controller.State().camera.x > 0.0f,
         "focused keys move placeholder camera deterministically");
+    EditorViewportController rotated;
+    rotated.OnFocusChanged(true);
+    rotated.OnMouseButton(EditorViewportMouseButton::Right, true);
+    rotated.OnMouseMove(0, 0);
+    rotated.OnMouseMove(360, 0);
+    rotated.OnMouseButton(EditorViewportMouseButton::Right, false);
+    rotated.OnKeyDown(EditorViewportKey::Forward);
+    rotated.Tick(1.0);
+    check(rotated.State().camera.x > 4.9f &&
+        Near(rotated.State().camera.z, -5.0f),
+        "forward movement follows camera yaw");
     const std::uint64_t frameAfterMove = controller.State().frameCount;
     controller.OnFocusChanged(false);
     const float stoppedZ = controller.State().camera.z;

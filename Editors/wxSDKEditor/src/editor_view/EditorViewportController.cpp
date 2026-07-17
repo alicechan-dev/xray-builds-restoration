@@ -22,7 +22,11 @@ void EditorViewportController::OnFocusChanged(bool focused)
 {
     state_.focused = focused;
     if (!focused)
+    {
         ClearInput();
+        state_.leftButton = state_.rightButton = state_.middleButton = false;
+        haveMousePosition_ = false;
+    }
 }
 
 void EditorViewportController::OnMouseEnter()
@@ -43,9 +47,18 @@ void EditorViewportController::OnMouseMove(int x, int y)
 {
     if (haveMousePosition_ && state_.rightButton)
     {
-        state_.camera.yaw += static_cast<float>(x - state_.mouseX) * 0.25f;
+        const float horizontalSign = mouseLookSettings_.invertHorizontal
+            ? -1.0f : 1.0f;
+        const float verticalSign = mouseLookSettings_.invertVertical
+            ? 1.0f : -1.0f;
+        state_.camera.yaw += static_cast<float>(x - state_.mouseX) *
+            mouseLookSettings_.sensitivity * horizontalSign;
         state_.camera.pitch = (std::clamp)(state_.camera.pitch +
-            static_cast<float>(y - state_.mouseY) * 0.25f, -89.0f, 89.0f);
+            static_cast<float>(y - state_.mouseY) *
+                mouseLookSettings_.sensitivity * verticalSign,
+            -89.0f, 89.0f);
+        if (state_.camera.yaw >= 180.0f || state_.camera.yaw < -180.0f)
+            state_.camera.yaw = std::remainder(state_.camera.yaw, 360.0f);
     }
     state_.mouseX = x;
     state_.mouseY = y;
@@ -58,7 +71,10 @@ void EditorViewportController::OnMouseButton(
     switch (button)
     {
     case EditorViewportMouseButton::Left: state_.leftButton = pressed; break;
-    case EditorViewportMouseButton::Right: state_.rightButton = pressed; break;
+    case EditorViewportMouseButton::Right:
+        state_.rightButton = pressed;
+        haveMousePosition_ = false;
+        break;
     case EditorViewportMouseButton::Middle: state_.middleButton = pressed; break;
     }
 }
@@ -91,12 +107,29 @@ void EditorViewportController::Tick(double deltaSeconds)
 
     const float movement = state_.camera.movementSpeed *
         static_cast<float>(delta);
-    if (forward_) state_.camera.z += movement;
-    if (backward_) state_.camera.z -= movement;
-    if (left_) state_.camera.x -= movement;
-    if (right_) state_.camera.x += movement;
+    constexpr float degreesToRadians = 0.01745329251994329577f;
+    const float yaw = state_.camera.yaw * degreesToRadians;
+    const float forwardX = std::sin(yaw);
+    const float forwardZ = std::cos(yaw);
+    const float rightX = std::cos(yaw);
+    const float rightZ = -std::sin(yaw);
+    const float forwardAmount = (forward_ ? movement : 0.0f) -
+        (backward_ ? movement : 0.0f);
+    const float rightAmount = (right_ ? movement : 0.0f) -
+        (left_ ? movement : 0.0f);
+    state_.camera.x += forwardX * forwardAmount + rightX * rightAmount;
+    state_.camera.z += forwardZ * forwardAmount + rightZ * rightAmount;
     if (up_) state_.camera.y += movement;
     if (down_) state_.camera.y -= movement;
+}
+
+void EditorViewportController::SetMouseLookSettings(
+    EditorMouseLookSettings settings)
+{
+    if (!std::isfinite(settings.sensitivity))
+        settings.sensitivity = 0.25f;
+    settings.sensitivity = (std::clamp)(settings.sensitivity, 0.01f, 5.0f);
+    mouseLookSettings_ = settings;
 }
 
 void EditorViewportController::Render()

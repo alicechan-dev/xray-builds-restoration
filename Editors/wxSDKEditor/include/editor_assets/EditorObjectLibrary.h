@@ -21,6 +21,7 @@ struct EditorObjectLibraryEntry
     std::string category;
     std::string sourceRelativeFile;
     std::uintmax_t sourceFileSize = 0;
+    std::int64_t sourceLastWriteTime = 0;
     std::uint16_t version = 0;
     std::int32_t libraryVersion = 0;
     std::uint32_t flags = 0;

@@ -365,6 +365,10 @@ bool EditorObjectLibraryLoader::Load(const std::filesystem::path& root,
         entry.originalReference = RelativeReference(referencePath);
         entry.sourceRelativeFile = RelativeReference(relative);
         entry.sourceFileSize = size;
+        const auto writeTime = iterator->last_write_time(error);
+        if (error) { if (reason) *reason = "Object Library timestamp could not be read."; return false; }
+        entry.sourceLastWriteTime = static_cast<std::int64_t>(
+            writeTime.time_since_epoch().count());
         entry.displayName = relative.stem().string();
         entry.category = RelativeReference(relative.parent_path());
         std::string normalizeReason;

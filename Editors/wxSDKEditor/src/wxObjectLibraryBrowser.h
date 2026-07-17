@@ -5,18 +5,21 @@
 
 #include <functional>
 #include <vector>
+#include <unordered_set>
 #include <wx/panel.h>
 
 class wxButton;
 class wxCommandEvent;
 class wxListBox;
 class wxTextCtrl;
+class wxChoice;
 
 class wxObjectLibraryBrowser final : public wxPanel
 {
 public:
     explicit wxObjectLibraryBrowser(wxWindow* parent);
     void SetLibrary(const EditorObjectLibrary* library);
+    void SetCurrentSceneAssets(const std::vector<std::string>& assetIds);
     void SetLoadHandler(std::function<void()> handler) { load_ = std::move(handler); }
     void SetClearHandler(std::function<void()> handler) { clear_ = std::move(handler); }
 
@@ -32,6 +35,8 @@ private:
     wxTextCtrl* search_ = nullptr;
     wxListBox* entries_ = nullptr;
     wxTextCtrl* details_ = nullptr;
+    wxChoice* scope_ = nullptr;
+    std::unordered_set<std::string> currentSceneAssets_;
     std::function<void()> load_;
     std::function<void()> clear_;
 };

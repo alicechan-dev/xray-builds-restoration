@@ -1,5 +1,11 @@
 # Tools and SDK Status
 
+The standalone wxSDKEditor viewport now has conventional configurable
+mouse-look, yaw-relative movement, generated-normal Lambert shading,
+directional PCF shadows, persistent SDK data-root configuration, and automatic
+current-level asset working sets. Historical engine/editor sources remain
+untouched.
+
 ## Read-Only Historical Object Library Bridge
 
 wxSDKEditor now inventories explicit build-1935 `.object` roots, resolves

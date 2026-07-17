@@ -33,23 +33,57 @@ constexpr std::size_t MaximumAssetBytes = 128ull * 1024ull * 1024ull;
 constexpr std::size_t MaximumUploadsPerFrame = 4;
 constexpr std::size_t MaximumDrawCalls = 8192;
 constexpr std::size_t MaximumOverlayVertices = 131072;
+constexpr UINT ShadowMapSize = 1024;
 constexpr float Pi = 3.14159265358979323846f;
 
 const char* ShaderSource = R"(
-cbuffer FrameConstants : register(b0) { row_major float4x4 viewProjection; };
-cbuffer ObjectConstants : register(b1) { row_major float4x4 world; float4 color; };
-struct VSInput { float3 position : POSITION; };
-struct VSOutput { float4 position : SV_POSITION; };
+cbuffer FrameConstants : register(b0) {
+    row_major float4x4 viewProjection;
+    row_major float4x4 lightViewProjection;
+    float4 lightDirectionAmbient;
+    float4 lightingAndShadow;
+};
+cbuffer ObjectConstants : register(b1) {
+    row_major float4x4 world;
+    row_major float4x4 normalMatrix;
+    float4 color;
+};
+struct VSInput { float3 position : POSITION; float3 normal : NORMAL; };
+struct VSOutput { float4 position : SV_POSITION; float3 normal : NORMAL; float4 shadowPosition : TEXCOORD0; };
 struct OverlayInput { float3 position : POSITION; float4 color : COLOR; };
 struct OverlayOutput { float4 position : SV_POSITION; float4 color : COLOR; };
 struct ScreenInput { float2 position : POSITION; float2 uv : TEXCOORD; };
 struct ScreenOutput { float4 position : SV_POSITION; float2 uv : TEXCOORD; };
 VSOutput VSMain(VSInput value) {
     VSOutput output;
-    output.position = mul(mul(float4(value.position, 1.0), world), viewProjection);
+    float4 worldPosition = mul(float4(value.position, 1.0), world);
+    output.position = mul(worldPosition, viewProjection);
+    output.normal = normalize(mul(float4(value.normal, 0.0), normalMatrix).xyz);
+    output.shadowPosition = mul(worldPosition, lightViewProjection);
     return output;
 }
-float4 PSMain(VSOutput value) : SV_TARGET { return color; }
+Texture2D shadowMap : register(t1);
+SamplerComparisonState shadowSampler : register(s1);
+float ShadowFactor(float4 position) {
+    float3 projected = position.xyz / max(position.w, 0.00001);
+    float2 uv = float2(projected.x * 0.5 + 0.5, -projected.y * 0.5 + 0.5);
+    if (projected.z <= 0.0 || projected.z >= 1.0 || any(uv < 0.0) || any(uv > 1.0)) return 1.0;
+    float result = 0.0;
+    [unroll] for (int y=-1;y<=1;++y) [unroll] for (int x=-1;x<=1;++x)
+        result += shadowMap.SampleCmpLevelZero(shadowSampler,
+            uv + float2(x,y) * lightingAndShadow.z, projected.z - lightingAndShadow.w);
+    return result / 9.0;
+}
+float4 PSMain(VSOutput value) : SV_TARGET {
+    float diffuse = saturate(dot(normalize(value.normal), -lightDirectionAmbient.xyz));
+    float shadow = lightingAndShadow.y > 0.5 ? ShadowFactor(value.shadowPosition) : 1.0;
+    float light = lightDirectionAmbient.w + lightingAndShadow.x * diffuse * lerp(0.35, 1.0, shadow);
+    return float4(color.rgb * saturate(light), color.a);
+}
+float4 FlatPS(VSOutput value) : SV_TARGET { return color; }
+float4 ShadowVS(VSInput value) : SV_POSITION {
+    return mul(mul(float4(value.position, 1.0), world), lightViewProjection);
+}
 OverlayOutput OverlayVS(OverlayInput value) {
     OverlayOutput output;
     output.position = mul(float4(value.position, 1.0), viewProjection);
@@ -68,8 +102,20 @@ float4 ScreenPS(ScreenOutput value) : SV_TARGET {
 }
 )";
 
-struct FrameConstants { XMFLOAT4X4 viewProjection; };
-struct ObjectConstants { XMFLOAT4X4 world; XMFLOAT4 color; };
+struct FrameConstants
+{
+    XMFLOAT4X4 viewProjection;
+    XMFLOAT4X4 lightViewProjection;
+    XMFLOAT4 lightDirectionAmbient;
+    XMFLOAT4 lightingAndShadow;
+};
+struct ObjectConstants
+{
+    XMFLOAT4X4 world;
+    XMFLOAT4X4 normalMatrix;
+    XMFLOAT4 color;
+};
+struct MeshVertex { EditorGeometryPosition position; EditorGeometryNormal normal; };
 struct OverlayVertex { XMFLOAT3 position; XMFLOAT4 color; };
 struct ScreenVertex { XMFLOAT2 position; XMFLOAT2 uv; };
 
@@ -186,9 +232,12 @@ public:
     bool CreatePipeline(std::string* reason)
     {
         std::string compileReason;
-        ComPtr<ID3DBlob> vs, ps, overlayVs, overlayPs, screenVs, screenPs;
+        ComPtr<ID3DBlob> vs, ps, flatPs, shadowVs, overlayVs, overlayPs,
+            screenVs, screenPs;
         if (!Compile("VSMain", "vs_4_0", vs, compileReason) ||
             !Compile("PSMain", "ps_4_0", ps, compileReason) ||
+            !Compile("FlatPS", "ps_4_0", flatPs, compileReason) ||
+            !Compile("ShadowVS", "vs_4_0", shadowVs, compileReason) ||
             !Compile("OverlayVS", "vs_4_0", overlayVs, compileReason) ||
             !Compile("OverlayPS", "ps_4_0", overlayPs, compileReason) ||
             !Compile("ScreenVS", "vs_4_0", screenVs, compileReason) ||
@@ -199,6 +248,11 @@ public:
             FAILED(device->CreatePixelShader(ps->GetBufferPointer(),
                 ps->GetBufferSize(), nullptr, &pixelShader)))
             return Fail("D3D11 shader creation failed.", reason);
+        if (FAILED(device->CreatePixelShader(flatPs->GetBufferPointer(),
+                flatPs->GetBufferSize(), nullptr, &flatPixelShader)) ||
+            FAILED(device->CreateVertexShader(shadowVs->GetBufferPointer(),
+                shadowVs->GetBufferSize(), nullptr, &shadowVertexShader)))
+            return Fail("D3D11 lighting/shadow shader creation failed.", reason);
         if (FAILED(device->CreateVertexShader(overlayVs->GetBufferPointer(),
                 overlayVs->GetBufferSize(), nullptr, &overlayVertexShader)) ||
             FAILED(device->CreatePixelShader(overlayPs->GetBufferPointer(),
@@ -211,8 +265,10 @@ public:
             return Fail("D3D11 label shader creation failed.",reason);
         const D3D11_INPUT_ELEMENT_DESC input[] = {{"POSITION", 0,
             DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
+            D3D11_INPUT_PER_VERTEX_DATA, 0}, {"NORMAL", 0,
+            DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
             D3D11_INPUT_PER_VERTEX_DATA, 0}};
-        if (FAILED(device->CreateInputLayout(input, 1, vs->GetBufferPointer(),
+        if (FAILED(device->CreateInputLayout(input, 2, vs->GetBufferPointer(),
                 vs->GetBufferSize(), &inputLayout)))
             return Fail("D3D11 input-layout creation failed.", reason);
         const D3D11_INPUT_ELEMENT_DESC overlayInput[] = {
@@ -282,10 +338,55 @@ public:
         sampler.MaxLOD=D3D11_FLOAT32_MAX;
         if(FAILED(device->CreateSamplerState(&sampler,&labelSampler)))
             return Fail("D3D11 label sampler creation failed.",reason);
+        D3D11_SAMPLER_DESC shadowSamplerDescriptor{};
+        shadowSamplerDescriptor.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+        shadowSamplerDescriptor.AddressU = shadowSamplerDescriptor.AddressV =
+            shadowSamplerDescriptor.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+        shadowSamplerDescriptor.BorderColor[0] = shadowSamplerDescriptor.BorderColor[1] =
+            shadowSamplerDescriptor.BorderColor[2] = shadowSamplerDescriptor.BorderColor[3] = 1.0f;
+        shadowSamplerDescriptor.ComparisonFunc = D3D11_COMPARISON_LESS_EQUAL;
+        shadowSamplerDescriptor.MaxLOD = D3D11_FLOAT32_MAX;
+        if (FAILED(device->CreateSamplerState(&shadowSamplerDescriptor,
+                &shadowSampler)))
+            return Fail("D3D11 shadow sampler creation failed.", reason);
         if (!CreateRasterizer(D3D11_FILL_SOLID, D3D11_CULL_BACK, solidCull) ||
             !CreateRasterizer(D3D11_FILL_SOLID, D3D11_CULL_NONE, solidNoCull) ||
             !CreateRasterizer(D3D11_FILL_WIREFRAME, D3D11_CULL_NONE, wireNoCull))
             return Fail("D3D11 rasterizer-state creation failed.", reason);
+        D3D11_RASTERIZER_DESC shadowRasterizerDescriptor{};
+        shadowRasterizerDescriptor.FillMode = D3D11_FILL_SOLID;
+        shadowRasterizerDescriptor.CullMode = D3D11_CULL_BACK;
+        shadowRasterizerDescriptor.DepthClipEnable = TRUE;
+        shadowRasterizerDescriptor.DepthBias = 1200;
+        shadowRasterizerDescriptor.SlopeScaledDepthBias = 1.5f;
+        shadowRasterizerDescriptor.DepthBiasClamp = 0.01f;
+        if (FAILED(device->CreateRasterizerState(&shadowRasterizerDescriptor,
+                &shadowRasterizer)))
+            return Fail("D3D11 shadow rasterizer creation failed.", reason);
+        D3D11_TEXTURE2D_DESC shadowTextureDescriptor{};
+        shadowTextureDescriptor.Width = ShadowMapSize;
+        shadowTextureDescriptor.Height = ShadowMapSize;
+        shadowTextureDescriptor.MipLevels = shadowTextureDescriptor.ArraySize = 1;
+        shadowTextureDescriptor.Format = DXGI_FORMAT_R32_TYPELESS;
+        shadowTextureDescriptor.SampleDesc.Count = 1;
+        shadowTextureDescriptor.BindFlags = D3D11_BIND_DEPTH_STENCIL |
+            D3D11_BIND_SHADER_RESOURCE;
+        if (FAILED(device->CreateTexture2D(&shadowTextureDescriptor, nullptr,
+                &shadowTexture)))
+            return Fail("D3D11 shadow texture creation failed.", reason);
+        D3D11_DEPTH_STENCIL_VIEW_DESC shadowDepthDescriptor{};
+        shadowDepthDescriptor.Format = DXGI_FORMAT_D32_FLOAT;
+        shadowDepthDescriptor.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+        if (FAILED(device->CreateDepthStencilView(shadowTexture.Get(),
+                &shadowDepthDescriptor, &shadowDepthView)))
+            return Fail("D3D11 shadow depth view creation failed.", reason);
+        D3D11_SHADER_RESOURCE_VIEW_DESC shadowResourceDescriptor{};
+        shadowResourceDescriptor.Format = DXGI_FORMAT_R32_FLOAT;
+        shadowResourceDescriptor.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+        shadowResourceDescriptor.Texture2D.MipLevels = 1;
+        if (FAILED(device->CreateShaderResourceView(shadowTexture.Get(),
+                &shadowResourceDescriptor, &shadowResourceView)))
+            return Fail("D3D11 shadow resource view creation failed.", reason);
         return true;
     }
 
@@ -345,6 +446,8 @@ public:
     {
         geometry.clear(); gpuBytes = 0;
         if (context) context->ClearState();
+        shadowResourceView.Reset(); shadowDepthView.Reset(); shadowTexture.Reset();
+        shadowSampler.Reset(); shadowRasterizer.Reset();
         wireNoCull.Reset(); solidNoCull.Reset(); solidCull.Reset();
         labelView.Reset(); labelTexture.Reset(); labelSampler.Reset();
         alphaBlend.Reset(); depthOffState.Reset(); depthReadState.Reset(); depthState.Reset();
@@ -352,6 +455,7 @@ public:
         screenInputLayout.Reset(); overlayInputLayout.Reset(); inputLayout.Reset();
         screenPixelShader.Reset();screenVertexShader.Reset();
         overlayPixelShader.Reset(); overlayVertexShader.Reset();
+        flatPixelShader.Reset(); shadowVertexShader.Reset();
         pixelShader.Reset(); vertexShader.Reset();
         depthView.Reset(); depthTexture.Reset(); renderTarget.Reset();
         swapChain.Reset(); context.Reset(); device.Reset();
@@ -377,15 +481,23 @@ public:
 
     bool Upload(const std::string& assetId, const EditorStaticAssetGeometry& source)
     {
-        std::vector<EditorGeometryPosition> vertices;
+        if (source.normalsGeneratedMeshes != 0)
+            ++diagnostics.generatedNormalAssets;
+        if (source.normalGenerationFailures != 0)
+            ++diagnostics.failedNormalAssets;
+        std::vector<MeshVertex> vertices;
         std::vector<std::uint32_t> indices;
         vertices.reserve(source.totalVertices);
         indices.reserve(source.totalTriangles * 3);
         for (const auto& mesh : source.meshes)
         {
             const std::uint32_t base = static_cast<std::uint32_t>(vertices.size());
-            vertices.insert(vertices.end(), mesh.buffer.positions.begin(),
-                mesh.buffer.positions.end());
+            for (std::size_t i = 0; i < mesh.buffer.positions.size(); ++i)
+            {
+                const EditorGeometryNormal normal = i < mesh.buffer.normals.size()
+                    ? mesh.buffer.normals[i] : EditorGeometryNormal{0.0f, 1.0f, 0.0f};
+                vertices.push_back({mesh.buffer.positions[i], normal});
+            }
             for (const auto& triangle : mesh.buffer.triangles)
             {
                 indices.push_back(base + triangle.a);
@@ -570,10 +682,6 @@ public:
             static_cast<float>(state.height), 0.0f, 1.0f};
         context->RSSetViewports(1, &viewport);
         context->OMSetDepthStencilState(depthState.Get(), 0);
-        context->IASetInputLayout(inputLayout.Get());
-        context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        context->VSSetShader(vertexShader.Get(), nullptr, 0);
-        context->PSSetShader(pixelShader.Get(), nullptr, 0);
         ID3D11Buffer* frameBuffers[] = {frameConstants.Get()};
         ID3D11Buffer* objectBuffers[] = {objectConstants.Get()};
         context->VSSetConstantBuffers(0, 1, frameBuffers);
@@ -583,6 +691,68 @@ public:
         const auto matrix=BuildEditorViewProjectionMatrix(
             MakeEditorRenderFrameContext(state));
         std::memcpy(&frameData.viewProjection,matrix.data(),sizeof(matrix));
+        EditorRenderPoint3D boundsMinimum{}, boundsMaximum{};
+        bool haveShadowBounds = false;
+        for (const auto& instance : scene.Instances())
+        {
+            if (!instance.visible) continue;
+            const EditorWireframeWorldBounds bounds =
+                ComputeEditorWireframeWorldBounds(instance);
+            if (!bounds.valid || !std::isfinite(bounds.radius) ||
+                bounds.radius <= 0.0f || bounds.radius > 4096.0f) continue;
+            const EditorRenderPoint3D minimum{bounds.center.x - bounds.radius,
+                bounds.center.y - bounds.radius, bounds.center.z - bounds.radius};
+            const EditorRenderPoint3D maximum{bounds.center.x + bounds.radius,
+                bounds.center.y + bounds.radius, bounds.center.z + bounds.radius};
+            if (!haveShadowBounds)
+            {
+                boundsMinimum = minimum; boundsMaximum = maximum;
+                haveShadowBounds = true;
+            }
+            else
+            {
+                boundsMinimum.x = (std::min)(boundsMinimum.x, minimum.x);
+                boundsMinimum.y = (std::min)(boundsMinimum.y, minimum.y);
+                boundsMinimum.z = (std::min)(boundsMinimum.z, minimum.z);
+                boundsMaximum.x = (std::max)(boundsMaximum.x, maximum.x);
+                boundsMaximum.y = (std::max)(boundsMaximum.y, maximum.y);
+                boundsMaximum.z = (std::max)(boundsMaximum.z, maximum.z);
+            }
+        }
+        const XMVECTOR lightDirection = XMVector3Normalize(
+            XMVectorSet(0.35f, -1.0f, 0.25f, 0.0f));
+        XMMATRIX lightViewProjection = XMMatrixIdentity();
+        if (haveShadowBounds)
+        {
+            XMFLOAT3 lightDirectionValue;
+            XMStoreFloat3(&lightDirectionValue, lightDirection);
+            XMFLOAT3 center{
+                (boundsMinimum.x + boundsMaximum.x) * 0.5f,
+                (boundsMinimum.y + boundsMaximum.y) * 0.5f,
+                (boundsMinimum.z + boundsMaximum.z) * 0.5f};
+            const float extent = (std::min)(4096.0f, (std::max)(8.0f,
+                (std::max)({boundsMaximum.x - boundsMinimum.x,
+                    boundsMaximum.y - boundsMinimum.y,
+                    boundsMaximum.z - boundsMinimum.z}) * 0.6f));
+            const float texel = (extent * 2.0f) / static_cast<float>(ShadowMapSize);
+            center.x = std::floor(center.x / texel + 0.5f) * texel;
+            center.z = std::floor(center.z / texel + 0.5f) * texel;
+            const XMVECTOR target = XMLoadFloat3(&center);
+            const XMVECTOR eye = XMVectorSubtract(target,
+                XMVectorScale(lightDirection, extent * 2.0f));
+            const XMMATRIX lightView = XMMatrixLookAtLH(eye, target,
+                XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
+            lightViewProjection = lightView * XMMatrixOrthographicLH(
+                extent * 2.0f, extent * 2.0f, 0.1f, extent * 4.0f);
+            frameData.lightDirectionAmbient = {lightDirectionValue.x,
+                lightDirectionValue.y, lightDirectionValue.z, 0.32f};
+        }
+        else
+            frameData.lightDirectionAmbient = {0.321f, -0.918f, 0.229f, 0.32f};
+        XMStoreFloat4x4(&frameData.lightViewProjection, lightViewProjection);
+        frameData.lightingAndShadow = {0.82f,
+            options.shadows && haveShadowBounds ? 1.0f : 0.0f,
+            1.0f / static_cast<float>(ShadowMapSize), 0.0015f};
         D3D11_MAPPED_SUBRESOURCE mapped{};
         if (FAILED(context->Map(frameConstants.Get(), 0,
                 D3D11_MAP_WRITE_DISCARD, 0, &mapped))) return false;
@@ -603,6 +773,71 @@ public:
         std::stable_sort(visible.begin(), visible.end(), [](const Item& a, const Item& b)
         { if (a.instance->selected != b.instance->selected) return a.instance->selected;
           return a.distance < b.distance; });
+
+        for (const Item& item : visible)
+        {
+            if (diagnostics.uploadsThisFrame >= MaximumUploadsPerFrame) break;
+            if (geometry.find(item.instance->assetId) != geometry.end()) continue;
+            const auto* cpu = cpuCache ? cpuCache->Find(item.instance->assetId) : nullptr;
+            if (cpu && Upload(item.instance->assetId, *cpu))
+                ++diagnostics.uploadsThisFrame;
+        }
+
+        if (options.shadows && haveShadowBounds && shadowDepthView)
+        {
+            ID3D11ShaderResourceView* nullShadow = nullptr;
+            context->PSSetShaderResources(1, 1, &nullShadow);
+            context->OMSetRenderTargets(0, nullptr, shadowDepthView.Get());
+            context->ClearDepthStencilView(shadowDepthView.Get(),
+                D3D11_CLEAR_DEPTH, 1.0f, 0);
+            D3D11_VIEWPORT shadowViewport{0, 0,
+                static_cast<float>(ShadowMapSize),
+                static_cast<float>(ShadowMapSize), 0.0f, 1.0f};
+            context->RSSetViewports(1, &shadowViewport);
+            context->RSSetState(shadowRasterizer.Get());
+            context->OMSetDepthStencilState(depthState.Get(), 0);
+            context->IASetInputLayout(inputLayout.Get());
+            context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+            context->VSSetShader(shadowVertexShader.Get(), nullptr, 0);
+            context->PSSetShader(nullptr, nullptr, 0);
+            for (const Item& item : visible)
+            {
+                const auto found = geometry.find(item.instance->assetId);
+                if (found == geometry.end()) continue;
+                const Geometry& resource = found->second;
+                const UINT stride = sizeof(MeshVertex), offset = 0;
+                ID3D11Buffer* vertex = resource.vertices.Get();
+                context->IASetVertexBuffers(0, 1, &vertex, &stride, &offset);
+                context->IASetIndexBuffer(resource.indices.Get(),
+                    DXGI_FORMAT_R32_UINT, 0);
+                ObjectConstants objectData{};
+                const XMMATRIX world = WorldMatrix(item.instance->transform);
+                XMStoreFloat4x4(&objectData.world, world);
+                XMStoreFloat4x4(&objectData.normalMatrix,
+                    XMMatrixTranspose(XMMatrixInverse(nullptr, world)));
+                if (FAILED(context->Map(objectConstants.Get(), 0,
+                        D3D11_MAP_WRITE_DISCARD, 0, &mapped))) continue;
+                *static_cast<ObjectConstants*>(mapped.pData) = objectData;
+                context->Unmap(objectConstants.Get(), 0);
+                context->DrawIndexed(resource.indexCount, 0, 0);
+                ++diagnostics.shadowDrawCalls;
+                ++diagnostics.shadowCasters;
+            }
+            diagnostics.shadowMapSize = ShadowMapSize;
+        }
+
+        context->OMSetRenderTargets(1, renderTarget.GetAddressOf(), depthView.Get());
+        context->RSSetViewports(1, &viewport);
+        context->OMSetDepthStencilState(depthState.Get(), 0);
+        context->IASetInputLayout(inputLayout.Get());
+        context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        context->VSSetShader(vertexShader.Get(), nullptr, 0);
+        context->PSSetShader(options.shadedMeshes ? pixelShader.Get() :
+            flatPixelShader.Get(), nullptr, 0);
+        ID3D11ShaderResourceView* shadowView = shadowResourceView.Get();
+        ID3D11SamplerState* shadowState = shadowSampler.Get();
+        context->PSSetShaderResources(1, 1, &shadowView);
+        context->PSSetSamplers(1, 1, &shadowState);
 
         auto drawPass = [&](bool wireframe)
         {
@@ -626,13 +861,16 @@ public:
                 }
                 else ++diagnostics.cacheHits;
                 const Geometry& resource = found->second;
-                const UINT stride = sizeof(EditorGeometryPosition), offset = 0;
+                const UINT stride = sizeof(MeshVertex), offset = 0;
                 ID3D11Buffer* vertex = resource.vertices.Get();
                 context->IASetVertexBuffers(0, 1, &vertex, &stride, &offset);
                 context->IASetIndexBuffer(resource.indices.Get(),
                     DXGI_FORMAT_R32_UINT, 0);
-                ObjectConstants objectData;
-                XMStoreFloat4x4(&objectData.world, WorldMatrix(item.instance->transform));
+                ObjectConstants objectData{};
+                const XMMATRIX world = WorldMatrix(item.instance->transform);
+                XMStoreFloat4x4(&objectData.world, world);
+                XMStoreFloat4x4(&objectData.normalMatrix,
+                    XMMatrixTranspose(XMMatrixInverse(nullptr, world)));
                 objectData.color = item.instance->selected
                     ? XMFLOAT4(1.0f, 0.42f, 0.08f, 1.0f)
                     : (wireframe ? XMFLOAT4(0.18f,0.75f,0.82f,1.0f)
@@ -646,6 +884,7 @@ public:
                 if (!wireframe)
                 {
                     ++diagnostics.instancesDrawn;
+                    if (options.shadedMeshes) ++diagnostics.shadedInstances;
                     diagnostics.trianglesSubmitted += resource.indexCount / 3;
                 }
             }
@@ -655,6 +894,8 @@ public:
         DrawOverlayLines(overlay,true);
         DrawOverlayLines(overlay,false);
         DrawLabels(overlay);
+        ID3D11ShaderResourceView* nullShadow = nullptr;
+        context->PSSetShaderResources(1, 1, &nullShadow);
         diagnostics.labelsDrawn=overlay.labels.size();
         const HRESULT present = swapChain->Present(1, 0);
         diagnostics.presentSucceeded = SUCCEEDED(present);
@@ -672,16 +913,23 @@ public:
     ComPtr<ID3D11Device> device; ComPtr<ID3D11DeviceContext> context;
     ComPtr<IDXGISwapChain> swapChain; ComPtr<ID3D11RenderTargetView> renderTarget;
     ComPtr<ID3D11Texture2D> depthTexture; ComPtr<ID3D11DepthStencilView> depthView;
-    ComPtr<ID3D11VertexShader> vertexShader,overlayVertexShader,screenVertexShader;
-    ComPtr<ID3D11PixelShader> pixelShader,overlayPixelShader,screenPixelShader;
+    ComPtr<ID3D11VertexShader> vertexShader,shadowVertexShader,
+        overlayVertexShader,screenVertexShader;
+    ComPtr<ID3D11PixelShader> pixelShader,flatPixelShader,
+        overlayPixelShader,screenPixelShader;
     ComPtr<ID3D11InputLayout> inputLayout,overlayInputLayout,screenInputLayout;
     ComPtr<ID3D11Buffer> frameConstants, objectConstants,overlayVertices,screenVertices;
     ComPtr<ID3D11DepthStencilState> depthState,depthReadState,depthOffState;
     ComPtr<ID3D11BlendState> alphaBlend;
     ComPtr<ID3D11SamplerState> labelSampler;
+    ComPtr<ID3D11SamplerState> shadowSampler;
     ComPtr<ID3D11Texture2D> labelTexture;
     ComPtr<ID3D11ShaderResourceView> labelView;
-    ComPtr<ID3D11RasterizerState> solidCull, solidNoCull, wireNoCull;
+    ComPtr<ID3D11Texture2D> shadowTexture;
+    ComPtr<ID3D11DepthStencilView> shadowDepthView;
+    ComPtr<ID3D11ShaderResourceView> shadowResourceView;
+    ComPtr<ID3D11RasterizerState> solidCull, solidNoCull, wireNoCull,
+        shadowRasterizer;
     EditorRenderAssetRegistry* assets = nullptr;
     EditorRenderGeometryCache* cpuCache = nullptr;
     EditorRenderScene scene; EditorRenderAssetWorkingSet workingSet;

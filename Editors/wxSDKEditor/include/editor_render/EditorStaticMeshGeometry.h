@@ -38,6 +38,9 @@ struct EditorStaticAssetGeometry
     std::size_t degenerateTriangles = 0;
     std::size_t zeroAreaTriangles = 0;
     std::size_t boundsMismatches = 0;
+    std::size_t normalsAvailableMeshes = 0;
+    std::size_t normalsGeneratedMeshes = 0;
+    std::size_t normalGenerationFailures = 0;
     std::vector<std::string> diagnostics;
 
     std::size_t MemoryBytes() const;

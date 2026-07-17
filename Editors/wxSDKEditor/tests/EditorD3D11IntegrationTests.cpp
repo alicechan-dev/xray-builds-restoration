@@ -50,9 +50,11 @@ int main()
     ok &= Check(SUCCEEDED(result), "WARP device and swap chain creation");
 
     const char* shader =
-        "struct O{float4 p:SV_POSITION;};"
-        "O VS(float3 p:POSITION){O o;o.p=float4(p,1);return o;}"
-        "float4 PS(O o):SV_TARGET{return o.p.z<0.5?float4(0.1,0.8,0.2,1):float4(0.9,0.1,0.1,1);}";
+        "struct I{float3 p:POSITION;float3 n:NORMAL;};"
+        "struct O{float4 p:SV_POSITION;float3 n:NORMAL;};"
+        "O VS(I i){O o;o.p=float4(i.p,1);o.n=i.n;return o;}"
+        "float4 PS(O o):SV_TARGET{float l=0.2+0.8*saturate(dot(normalize(o.n),float3(0,0,1)));"
+        "return o.p.z<0.5?float4(0.1,l,0.2,1):float4(l,0.1,0.1,1);}";
     ComPtr<ID3DBlob> vsCode, psCode, errors;
     result = D3DCompile(shader, std::strlen(shader), "test", nullptr, nullptr,
         "VS", "vs_4_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &vsCode, &errors);
@@ -68,16 +70,21 @@ int main()
             vsCode->GetBufferSize(), nullptr, &vertexShader)), "vertex shader creation");
         ok &= Check(SUCCEEDED(device->CreatePixelShader(psCode->GetBufferPointer(),
             psCode->GetBufferSize(), nullptr, &pixelShader)), "pixel shader creation");
-        D3D11_INPUT_ELEMENT_DESC input{"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,
-            0,0,D3D11_INPUT_PER_VERTEX_DATA,0};
-        ok &= Check(SUCCEEDED(device->CreateInputLayout(&input,1,
+        const D3D11_INPUT_ELEMENT_DESC input[] = {
+            {"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,0,
+                D3D11_INPUT_PER_VERTEX_DATA,0},
+            {"NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,12,
+                D3D11_INPUT_PER_VERTEX_DATA,0}};
+        ok &= Check(SUCCEEDED(device->CreateInputLayout(input,2,
             vsCode->GetBufferPointer(),vsCode->GetBufferSize(),&layout)),
-            "input layout creation");
+            "position/normal input layout creation");
     }
 
-    const std::array<float,18> vertices{
-        -0.7f,-0.7f,0.2f, 0.0f,0.7f,0.2f, 0.7f,-0.7f,0.2f,
-        -0.7f,-0.7f,0.8f, 0.0f,0.7f,0.8f, 0.7f,-0.7f,0.8f};
+    const std::array<float,36> vertices{
+        -0.7f,-0.7f,0.2f, 0,0,1, 0.0f,0.7f,0.2f, 0,0,1,
+         0.7f,-0.7f,0.2f, 0,0,1,
+        -0.7f,-0.7f,0.8f, 0,0,-1, 0.0f,0.7f,0.8f, 0,0,-1,
+         0.7f,-0.7f,0.8f, 0,0,-1};
     const std::array<std::uint32_t,6> indices{0,1,2,3,4,5};
     ComPtr<ID3D11Buffer> vertexBuffer, indexBuffer;
     if (device)
@@ -91,6 +98,33 @@ int main()
         data.pSysMem=indices.data();
         ok &= Check(SUCCEEDED(device->CreateBuffer(&description,&data,&indexBuffer)),
             "immutable 32-bit index buffer creation");
+
+        D3D11_TEXTURE2D_DESC shadow{};
+        shadow.Width=shadow.Height=64;shadow.MipLevels=shadow.ArraySize=1;
+        shadow.Format=DXGI_FORMAT_R32_TYPELESS;shadow.SampleDesc.Count=1;
+        shadow.BindFlags=D3D11_BIND_DEPTH_STENCIL|D3D11_BIND_SHADER_RESOURCE;
+        ComPtr<ID3D11Texture2D> shadowTexture;
+        ComPtr<ID3D11DepthStencilView> shadowDepth;
+        ComPtr<ID3D11ShaderResourceView> shadowView;
+        ok &= Check(SUCCEEDED(device->CreateTexture2D(&shadow,nullptr,&shadowTexture)),
+            "directional shadow texture creation");
+        D3D11_DEPTH_STENCIL_VIEW_DESC dsv{};dsv.Format=DXGI_FORMAT_D32_FLOAT;
+        dsv.ViewDimension=D3D11_DSV_DIMENSION_TEXTURE2D;
+        D3D11_SHADER_RESOURCE_VIEW_DESC srv{};srv.Format=DXGI_FORMAT_R32_FLOAT;
+        srv.ViewDimension=D3D11_SRV_DIMENSION_TEXTURE2D;srv.Texture2D.MipLevels=1;
+        ok &= Check(shadowTexture &&
+            SUCCEEDED(device->CreateDepthStencilView(shadowTexture.Get(),&dsv,&shadowDepth)) &&
+            SUCCEEDED(device->CreateShaderResourceView(shadowTexture.Get(),&srv,&shadowView)),
+            "shadow depth and sampling views creation");
+        D3D11_SAMPLER_DESC comparison{};
+        comparison.Filter=D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+        comparison.AddressU=comparison.AddressV=comparison.AddressW=
+            D3D11_TEXTURE_ADDRESS_BORDER;
+        comparison.ComparisonFunc=D3D11_COMPARISON_LESS_EQUAL;
+        comparison.MaxLOD=D3D11_FLOAT32_MAX;
+        ComPtr<ID3D11SamplerState> comparisonSampler;
+        ok &= Check(SUCCEEDED(device->CreateSamplerState(&comparison,
+            &comparisonSampler)),"shadow comparison sampler creation");
     }
 
     if (context && swapChain && vertexBuffer && indexBuffer)
@@ -117,7 +151,7 @@ int main()
         const float clear[4]{0,0,0,1};context->ClearRenderTargetView(target.Get(),clear);
         context->ClearDepthStencilView(depthView.Get(),D3D11_CLEAR_DEPTH,1,0);
         D3D11_VIEWPORT viewport{0,0,64,64,0,1};context->RSSetViewports(1,&viewport);
-        UINT stride=12,offset=0;ID3D11Buffer* vb=vertexBuffer.Get();
+        UINT stride=24,offset=0;ID3D11Buffer* vb=vertexBuffer.Get();
         context->IASetVertexBuffers(0,1,&vb,&stride,&offset);
         context->IASetIndexBuffer(indexBuffer.Get(),DXGI_FORMAT_R32_UINT,0);
         context->IASetInputLayout(layout.Get());
@@ -138,7 +172,7 @@ int main()
             const auto* center=static_cast<const std::uint8_t*>(pixels.pData)+
                 32*pixels.RowPitch+32*4;
             ok &= Check(center[1] > center[0],
-                "near green triangle occludes later far red triangle");
+                "lit near triangle occludes later unlit far triangle");
             context->Unmap(staging.Get(),0);
         }
         else ok &= Check(false,"render-target readback");
@@ -153,6 +187,6 @@ int main()
     if (window) DestroyWindow(window);
     UnregisterClassW(windowClass.lpszClassName, windowClass.hInstance);
     if (!ok) return 1;
-    std::cout << "PASS: wxSDKEditor D3D11 device, shader, buffer, depth, present, and resize smoke\n";
+    std::cout << "PASS: wxSDKEditor D3D11 normal shader, shadow resources, depth, present, and resize smoke\n";
     return 0;
 }

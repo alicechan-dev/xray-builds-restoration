@@ -219,7 +219,8 @@ EditorStaticGeometryDecodeStatus EditorStaticMeshDecoder::Decode(
 
     std::size_t expectedBytes = 0;
     if (!AddSize(expectedBytes, asset.totalVertices,
-            sizeof(EditorGeometryPosition), limits_.maximumDecodedBytes) ||
+            sizeof(EditorGeometryPosition) + sizeof(EditorGeometryNormal),
+            limits_.maximumDecodedBytes) ||
         !AddSize(expectedBytes, asset.totalTriangles,
             sizeof(EditorGeometryTriangle), limits_.maximumDecodedBytes))
         return Fail(EditorStaticGeometryDecodeStatus::Unsupported,
@@ -402,6 +403,15 @@ EditorStaticGeometryDecodeStatus EditorStaticMeshDecoder::Decode(
                 "Required static vertex or face chunk is absent.", reason);
         mesh.boundsMismatch = serializedBounds.valid &&
             !BoundsMatch(serializedBounds, mesh.bounds);
+        std::size_t ignoredZeroArea = 0;
+        if (GenerateEditorGeometryNormals(mesh.buffer, &ignoredZeroArea))
+            ++candidate.normalsGeneratedMeshes;
+        else
+        {
+            ++candidate.normalGenerationFailures;
+            candidate.diagnostics.push_back(
+                "Normal generation failed for " + mesh.meshId + ".");
+        }
         candidate.totalVertices += mesh.buffer.positions.size();
         candidate.totalTriangles += mesh.buffer.triangles.size();
         candidate.degenerateTriangles += mesh.degenerateTriangles;

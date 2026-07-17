@@ -1,5 +1,10 @@
 # SDK Restoration Plan
 
+Current wx-only milestone: automatic per-level Object Library resolution and
+bounded decode/upload, modern camera controls, and basic standalone D3D11
+lighting/shadows. Historical textures/materials, skeletal rendering, animation,
+xrLC, and `.level` save/export remain explicitly deferred.
+
 ## Object Library Bridge Checkpoint
 
 The first read-only library stage is complete: canonical root/file ownership,

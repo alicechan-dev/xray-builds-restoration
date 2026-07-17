@@ -25,6 +25,13 @@ enum class EditorViewportKey
     Down
 };
 
+struct EditorMouseLookSettings
+{
+    bool invertHorizontal = false;
+    bool invertVertical = false;
+    float sensitivity = 0.25f;
+};
+
 class EditorViewportController
 {
 public:
@@ -44,6 +51,10 @@ public:
     void ToggleGrid();
     void ResetCamera();
     void FrameCameraOn(float x, float y, float z, float radius);
+    void SetMouseLookSettings(EditorMouseLookSettings settings);
+    const EditorMouseLookSettings& MouseLookSettings() const
+    { return mouseLookSettings_; }
+    bool IsMouseLooking() const { return state_.rightButton; }
     void SetPickHandler(std::function<std::string(int, int)> handler)
     { pickHandler_ = std::move(handler); }
     std::string OnPrimaryClick(int x, int y) const;
@@ -63,6 +74,7 @@ private:
     bool up_ = false;
     bool down_ = false;
     bool haveMousePosition_ = false;
+    EditorMouseLookSettings mouseLookSettings_;
     std::function<std::string(int, int)> pickHandler_;
 };
 
